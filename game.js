@@ -716,11 +716,11 @@ function summonRush() {
     const { popup, rushImg } = popupData;
 
 rushJoinFrame = 2;
-rushJoinImg.src = `sprites/partner/rush/rush_join_02.png`;
+rushImg.src = `sprites/partner/rush/rush_join_02.png`;
 
-rushJoinImg.classList.remove('rush-drop');
-void rushJoinImg.offsetWidth;
-rushJoinImg.classList.add('rush-drop');
+rushImg.classList.remove('rush-drop');
+void rushImg.offsetWidth;
+rushImg.classList.add('rush-drop');
 
     if (rushJoinTimer) clearInterval(rushJoinTimer);
 
