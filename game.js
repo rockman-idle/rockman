@@ -310,10 +310,6 @@ function attack() {
 
     const isChargeShot = Math.random() * 100 < gameData.critChance;
 
-    rockman.classList.remove('attack-effect');
-    void rockman.offsetWidth;
-    rockman.classList.add('attack-effect');
-
     if (isChargeShot) fireChargeShot(screen, enemy);
     else fireNormalShot(screen, enemy);
 }
@@ -719,8 +715,12 @@ function summonRush() {
 
     const { popup, rushImg } = popupData;
 
-    rushJoinFrame = 1;
-    rushImg.src = `sprites/partner/rush/rush_join_01.png`;
+rushJoinFrame = 2;
+rushJoinImg.src = `sprites/partner/rush/rush_join_02.png`;
+
+rushJoinImg.classList.remove('rush-drop');
+void rushJoinImg.offsetWidth;
+rushJoinImg.classList.add('rush-drop');
 
     if (rushJoinTimer) clearInterval(rushJoinTimer);
 

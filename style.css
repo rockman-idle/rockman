@@ -647,8 +647,8 @@ body {
 }
 
 .beat-character {
-    width: 24px;
-    height: 24px;
+    width: 12px;
+    height: 12px;
     image-rendering: pixelated;
     object-fit: contain;
 }
