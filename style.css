@@ -635,10 +635,10 @@ body {
 }
 #beat-area {
     position: absolute;
-    left: -8px;
-    bottom: 34px;
+    left: -12px;
+    bottom: 42px;
     display: none;
-    z-index: 7;
+    z-index: 8;
 }
 
 #beat-area.active {
