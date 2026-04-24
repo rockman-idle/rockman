@@ -19,11 +19,12 @@ body {
     position: relative;
 }
 
-.title {
-    color: #00d4ff;
-    font-size: 26px;
-    margin-bottom: 15px;
-    text-shadow: 0 0 5px #00d4ff, 0 0 10px #00d4ff, 0 0 20px #00d4ff;
+.title-logo {
+    width: 280px;
+    max-width: 90%;
+    image-rendering: pixelated;
+    margin: 5px auto 15px auto;
+    display: block;
 }
 
 .tab-bookmark {
@@ -679,4 +680,17 @@ body {
 .partner-up-btn.active:hover {
     background: #003cff;
     color: #fff;
+}
+
+.footer-row {
+    position: relative;
+    margin-top: 20px;
+}
+
+.credit-text {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    color: #444;
+    font-size: 0.7rem;
 }
