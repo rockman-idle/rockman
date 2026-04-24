@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>ROCKMAN INC.</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<div class="preload">
+    <img src="sprites/background/stage_01.png">
+    <img src="sprites/rock/rock_01.png">
+    <img src="sprites/rock/rock_02.png">
+    <img src="sprites/rock/rock_03.png">
+    <img src="sprites/enemy/met/met_01.png">
+    <img src="sprites/enemy/met/met_02.png">
+    <img src="sprites/partner/rush/rush_01.png">
+    <img src="sprites/partner/rush/rush_02.png">
+    <img src="sprites/partner/rush/rush_03.png">
+    <img src="sprites/partner/rush/rush_04.png">
+    <img src="sprites/partner/rush/rush_join_01.png">
+    <img src="sprites/partner/rush/rush_join_02.png">
+    <img src="sprites/partner/rush/rush_join_03.png">
+    <img src="sprites/partner/rush/rush_join_04.png">
+    <img src="sprites/partner/beat/beat_01.png">
+    <img src="sprites/partner/beat/beat_02.png">
+    <img src="sprites/partner/beat/beat_03.png">
+    <img src="sprites/partner/beat/beat_04.png">
+</div>
+
+<div id="summon-popup" class="summon-popup">
+    <div class="summon-box">
+        <div id="summon-text" class="summon-text">RUSH JOIN!</div>
+        <img id="rush-join-img" class="rush-join-img" src="sprites/partner/rush/rush_join_01.png">
+        <img id="beat-join-img" class="rush-join-img" src="sprites/partner/beat/beat_01.png" style="display:none;">
+    </div>
+</div>
+
+<div class="container">
+    <div class="tab-bookmark">
+        <button id="battle-tab-btn" class="tab-btn active" onclick="showTab('battle')">전투</button>
+        <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">파트너</button>
+    </div>
+
+    <h1 class="title">- ROCKMAN -</h1>
+
+    <div id="battle-tab" class="tab-content active">
+
+        <div class="battle-info">
+            <div>STAGE <span id="stage">1</span></div>
+            <div>HP <span id="player-hp-text">100</span> / <span id="player-max-hp-text">100</span></div>
+        </div>
+
+        <div class="player-hp-bg">
+            <div id="player-hp-fill"></div>
+        </div>
+
+        <div class="game-screen" onclick="attack()">
+            <div id="scroll-bg"></div>
+
+            <div id="rockman-area">
+                <div id="partner-area">
+                <div id="beat-area">
+                    <img id="beat-img" class="beat-character" src="sprites/partner/beat/beat_01.png">
+                </div>
+                    <img id="rush-img" class="partner-character" src="sprites/partner/rush/rush_02.png">
+                </div>
+                <img id="rockman-img" class="character" src="sprites/rock/rock_01.png">
+            </div>
+
+            <div id="enemy-area">
+                <div class="boss-hp-container">
+                    <div class="hp-bar-bg"><div id="hp-bar-fill"></div></div>
+                </div>
+                <img id="enemy-img" class="character" src="sprites/enemy/met/met_01.png">
+            </div>
+        </div>
+
+        <div class="resource-panel">
+            <div class="resource-box">🔩 <span id="screws">0</span></div>
+            <div class="resource-box">💎 <span id="crystals">0</span></div>
+        </div>
+
+        <div class="exchange-panel">
+            <div class="exchange-title">나사 → 크리스탈 교환 (🔩100 : 💎1)</div>
+            <button id="exchange-btn1" class="exchange-btn" onclick="exchangeScrewsToCrystals(1)">💎 1개</button>
+            <button id="exchange-btn10" class="exchange-btn" onclick="exchangeScrewsToCrystals(10)">💎 10개</button>
+        </div>
+
+        <div class="upgrade-row">
+            <button class="upgrade-btn">버스터 공격력</button>
+            <div class="lv-tag">LV.<span id="atk-lv">1</span></div>
+            <button id="atk-btn1" class="up-btn tooltip-btn" onclick="buyUpgrade('atk',1)">+1</button>
+            <button id="atk-btn10" class="up-btn tooltip-btn" onclick="buyUpgrade('atk',10)">+10</button>
+            <button id="atk-btnMax" class="up-btn" onclick="buyUpgradeMax('atk')">+MAX</button>
+        </div>
+
+        <div class="upgrade-row">
+            <button class="upgrade-btn">공격 속도</button>
+            <div class="lv-tag">LV.<span id="spd-lv">1</span></div>
+            <button id="spd-btn1" class="up-btn tooltip-btn" onclick="buyUpgrade('spd',1)">+1</button>
+            <button id="spd-btn10" class="up-btn tooltip-btn" onclick="buyUpgrade('spd',10)">+10</button>
+            <button id="spd-btnMax" class="up-btn" onclick="buyUpgradeMax('spd')">+MAX</button>
+        </div>
+
+        <div class="upgrade-row">
+            <button class="upgrade-btn">차지샷 확률</button>
+            <div class="lv-tag">LV.<span id="crit-lv">1</span></div>
+            <button id="crit-btn1" class="up-btn tooltip-btn" onclick="buyUpgrade('crit',1)">+1</button>
+            <button id="crit-btn10" class="up-btn tooltip-btn" onclick="buyUpgrade('crit',10)">+10</button>
+            <button id="crit-btnMax" class="up-btn" onclick="buyUpgradeMax('crit')">+MAX</button>
+        </div>
+
+        <div class="upgrade-row rush-upgrade">
+            <button class="upgrade-btn rush-upgrade-btn">치명타 데미지</button>
+            <div class="lv-tag rush-lv-tag">LV.<span id="critDmg-lv">1</span></div>
+            <button id="critDmg-btn1" class="up-btn rush-up-btn tooltip-btn" onclick="buyUpgrade('critDmg',1)">+1</button>
+            <button id="critDmg-btn10" class="up-btn rush-up-btn tooltip-btn" onclick="buyUpgrade('critDmg',10)">+10</button>
+            <button id="critDmg-btnMax" class="up-btn rush-up-btn" onclick="buyUpgradeMax('critDmg')">+MAX</button>
+        </div>
+<div class="upgrade-row partner-upgrade">
+    <button class="upgrade-btn partner-upgrade-btn">동료 공격 속도</button>
+    <div class="lv-tag partner-lv-tag">LV.<span id="partnerSpd-lv">1</span></div>
+    <button id="partnerSpd-btn1" class="up-btn partner-up-btn tooltip-btn" onclick="buyUpgrade('partnerSpd',1)">+1</button>
+    <button id="partnerSpd-btn10" class="up-btn partner-up-btn tooltip-btn" onclick="buyUpgrade('partnerSpd',10)">+10</button>
+    <button id="partnerSpd-btnMax" class="up-btn partner-up-btn" onclick="buyUpgradeMax('partnerSpd')">+MAX</button>
+</div>
+    </div>
+
+    <div id="partner-tab" class="tab-content">
+        <div class="partner-panel">
+            <h2>PARTNER</h2>
+            <p class="partner-desc">크리스탈로 동료 조각을 구매하고 파트너를 소환할 수 있습니다.</p>
+
+            <div id="rush-card" class="partner-card">
+                <div class="partner-name">러쉬</div>
+                <div id="rush-complete-badge" class="complete-badge">COMPLETE</div>
+
+                <div class="partner-info">
+                    러쉬 보유 조각: <span id="rush-fragments">0</span> / 100
+                </div>
+
+                <div class="partner-actions">
+                    <button id="rush-buy1" class="partner-buy-btn" onclick="buyRushFragment(1)">조각 1개</button>
+                    <button id="rush-buy10" class="partner-buy-btn" onclick="buyRushFragment(10)">조각 10개</button>
+                    <button id="rush-buy100" class="partner-buy-btn" onclick="buyRushFragment(100)">조각 100개</button>
+                </div>
+
+                <button id="rush-summon-btn" class="summon-btn" onclick="summonRush()">러쉬 소환</button>
+            </div>
+<div id="beat-card" class="partner-card">
+    <div class="partner-name">비트</div>
+    <div id="beat-complete-badge" class="complete-badge">COMPLETE</div>
+
+    <div class="partner-info">
+        비트 보유 조각: <span id="beat-fragments">0</span> / 100
+    </div>
+
+    <div class="partner-actions">
+        <button id="beat-buy1" class="partner-buy-btn" onclick="buyBeatFragment(1)">조각 1개</button>
+        <button id="beat-buy10" class="partner-buy-btn" onclick="buyBeatFragment(10)">조각 10개</button>
+        <button id="beat-buy100" class="partner-buy-btn" onclick="buyBeatFragment(100)">조각 100개</button>
+    </div>
+
+    <button id="beat-summon-btn" class="summon-btn" onclick="summonBeat()">비트 소환</button>
+</div>
+        </div>
+    </div>
+
+    <button class="reset-btn" onclick="resetGame()">[데이터 초기화]</button>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
