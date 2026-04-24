@@ -765,6 +765,9 @@ function summonBeat() {
     beatDir = 1;
     beatFloat = 0;
     beatImg.src = `sprites/partner/beat/beat_01.png`;
+    beatImg.classList.remove('rush-drop');
+void beatImg.offsetWidth;
+beatImg.classList.add('rush-drop');
 
     if (beatJoinTimer) clearInterval(beatJoinTimer);
 
