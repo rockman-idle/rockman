@@ -719,9 +719,9 @@ function summonRush() {
     rushJoinFrame = 1;
     rushImg.src = `sprites/partner/rush/rush_join_01.png`;
 
-    rushImg.classList.remove('rush-drop');
-    void rushImg.offsetWidth;
-    rushImg.classList.add('rush-drop');
+rushImg.classList.remove('join-drop');
+void rushImg.offsetWidth;
+rushImg.classList.add('join-drop');
 
     if (rushJoinTimer) clearInterval(rushJoinTimer);
 
@@ -733,7 +733,7 @@ function summonRush() {
         } else {
             clearInterval(rushJoinTimer);
             rushJoinTimer = null;
-            rushImg.classList.remove('rush-drop');
+            rushImg.classList.remove('join-drop');
             rushImg.src = `sprites/partner/rush/rush_01.png`;
         }
     }, 180);
@@ -773,6 +773,9 @@ function summonBeat() {
         frame++;
         if (frame > 4) frame = 2;
         beatImg.src = `sprites/partner/beat/beat_0${frame}.png`;
+        beatImg.classList.remove('join-drop');
+void beatImg.offsetWidth;
+beatImg.classList.add('join-drop');
     }, 120);
 
     popup.onclick = () => {
@@ -813,6 +816,12 @@ if (rushJoinImg) {
         beatJoinImg.src = `sprites/partner/beat/beat_01.png`;
         beatJoinImg.style.display = 'none';
     }
+
+    if (beatJoinImg) {
+    beatJoinImg.classList.remove('join-drop');
+    beatJoinImg.src = `sprites/partner/beat/beat_01.png`;
+    beatJoinImg.style.display = 'none';
+}
 
     showTab('battle');
     updateUI();
