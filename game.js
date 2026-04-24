@@ -961,6 +961,16 @@ function resetGame() {
     }
 }
 
+function devCheat() {
+    gameData.screws += 100000;
+    gameData.crystals += 1000;
+
+    updateUI();
+    saveData();
+
+    alert("DEV 치트 적용됨");
+}
+
 updateUI();
 startAutoAttack();
 startChase();

@@ -20,8 +20,8 @@ body {
 }
 
 .title-logo {
-    width: 360px;
-    max-width: none;
+    width: 320px;
+    max-width: 95%;
     image-rendering: pixelated;
     display: block;
     margin: 10px auto 20px auto;
