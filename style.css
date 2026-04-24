@@ -701,13 +701,13 @@ body {
 }
 
 .rush-drop {
-    animation: rushDrop 0.45s ease-out forwards;
+    animation: rushDrop 0.75s ease-out forwards;
 }
 
 @keyframes rushDrop {
     0% {
         left: 50%;
-        bottom: 130px;
+        bottom: 95px;
         transform: translateX(-50%);
     }
 

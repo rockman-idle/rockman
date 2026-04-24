@@ -715,25 +715,26 @@ function summonRush() {
 
     const { popup, rushImg } = popupData;
 
-rushJoinFrame = 2;
-rushImg.src = `sprites/partner/rush/rush_join_02.png`;
+rushJoinFrame = 1;
+rushImg.src = `sprites/partner/rush/rush_join_01.png`;
 
 rushImg.classList.remove('rush-drop');
 void rushImg.offsetWidth;
 rushImg.classList.add('rush-drop');
 
-    if (rushJoinTimer) clearInterval(rushJoinTimer);
+if (rushJoinTimer) clearInterval(rushJoinTimer);
 
-    rushJoinTimer = setInterval(() => {
-        if (rushJoinFrame < 4) {
-            rushJoinFrame++;
-            rushImg.src = `sprites/partner/rush/rush_join_0${rushJoinFrame}.png`;
-        } else {
-            clearInterval(rushJoinTimer);
-            rushJoinTimer = null;
-            rushImg.src = `sprites/partner/rush/rush_01.png`;
-        }
-    }, 160);
+rushJoinTimer = setInterval(() => {
+    rushJoinFrame++;
+
+    if (rushJoinFrame <= 3) {
+        rushImg.src = `sprites/partner/rush/rush_join_0${rushJoinFrame}.png`;
+    } else {
+        clearInterval(rushJoinTimer);
+        rushJoinTimer = null;
+        rushImg.src = `sprites/partner/rush/rush_01.png`;
+    }
+}, 180);
 
     popup.onclick = () => {
         closeSummonPopup();
