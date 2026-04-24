@@ -158,8 +158,8 @@ body {
 
 #partner-area {
     position: absolute;
-    left: -30px;
-    bottom: 0;
+    left: -20px;
+    bottom: 10px;
     display: none;
 }
 
@@ -590,19 +590,28 @@ body {
 
 .rush-join-img {
     position: absolute;
-    left: -80px;
+    left: 50%;
     bottom: 20px;
     width: 54px;
     height: 54px;
     image-rendering: pixelated;
-    animation: rushJoin 1.2s ease-out forwards;
+    transform: translateX(-50%);
 }
 
-@keyframes rushJoin {
-    0% { transform: translateX(0) translateY(-20px); }
-    55% { transform: translateX(340px) translateY(-20px); }
-    75% { transform: translateX(360px) translateY(8px); }
-    100% { transform: translateX(360px) translateY(8px); }
+.rush-join-img.rush-drop {
+    animation: rushDrop 0.75s ease-out forwards;
+}
+
+@keyframes rushDrop {
+    0% {
+        bottom: 95px;
+        transform: translateX(-50%);
+    }
+
+    100% {
+        bottom: 20px;
+        transform: translateX(-50%);
+    }
 }
 
 .reset-btn {
@@ -652,8 +661,8 @@ body {
 }
 
 .beat-character {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     image-rendering: pixelated;
     object-fit: contain;
 }

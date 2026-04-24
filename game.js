@@ -707,6 +707,7 @@ function summonRush() {
     gameData.rushOwned = true;
 
     const popupData = prepareSummonPopup('rush');
+
     if (!popupData) {
         updateUI();
         saveData();
@@ -715,26 +716,27 @@ function summonRush() {
 
     const { popup, rushImg } = popupData;
 
-rushJoinFrame = 1;
-rushImg.src = `sprites/partner/rush/rush_join_01.png`;
+    rushJoinFrame = 1;
+    rushImg.src = `sprites/partner/rush/rush_join_01.png`;
 
-rushImg.classList.remove('rush-drop');
-void rushImg.offsetWidth;
-rushImg.classList.add('rush-drop');
+    rushImg.classList.remove('rush-drop');
+    void rushImg.offsetWidth;
+    rushImg.classList.add('rush-drop');
 
-if (rushJoinTimer) clearInterval(rushJoinTimer);
+    if (rushJoinTimer) clearInterval(rushJoinTimer);
 
-rushJoinTimer = setInterval(() => {
-    rushJoinFrame++;
+    rushJoinTimer = setInterval(() => {
+        rushJoinFrame++;
 
-    if (rushJoinFrame <= 3) {
-        rushImg.src = `sprites/partner/rush/rush_join_0${rushJoinFrame}.png`;
-    } else {
-        clearInterval(rushJoinTimer);
-        rushJoinTimer = null;
-        rushImg.src = `sprites/partner/rush/rush_01.png`;
-    }
-}, 180);
+        if (rushJoinFrame <= 3) {
+            rushImg.src = `sprites/partner/rush/rush_join_0${rushJoinFrame}.png`;
+        } else {
+            clearInterval(rushJoinTimer);
+            rushJoinTimer = null;
+            rushImg.classList.remove('rush-drop');
+            rushImg.src = `sprites/partner/rush/rush_01.png`;
+        }
+    }, 180);
 
     popup.onclick = () => {
         closeSummonPopup();
@@ -801,10 +803,11 @@ function closeSummonPopup() {
         beatJoinTimer = null;
     }
 
-    if (rushJoinImg) {
-        rushJoinImg.src = `sprites/partner/rush/rush_join_01.png`;
-        rushJoinImg.style.display = 'block';
-    }
+if (rushJoinImg) {
+    rushJoinImg.classList.remove('rush-drop');
+    rushJoinImg.src = `sprites/partner/rush/rush_join_01.png`;
+    rushJoinImg.style.display = 'block';
+}
 
     if (beatJoinImg) {
         beatJoinImg.src = `sprites/partner/beat/beat_01.png`;
