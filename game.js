@@ -22,6 +22,7 @@ const defaultData = {
     lv: {
         atk: 1,
         spd: 1,
+        hp: 1,
         crit: 1,
         critDmg: 1,
         partnerSpd: 1
@@ -30,6 +31,7 @@ const defaultData = {
     costs: {
         atk: 10,
         spd: 20,
+        hp: 30,
         crit: 50,
         critDmg: 150,
         partnerSpd: 200
@@ -108,7 +110,7 @@ function setupStage() {
     enemySpeed = 0.22 + s * 0.025;
     enemyAtk = Math.floor(4 + s * 1.6);
 
-    gameData.playerMaxHp = Math.floor(100 + gameData.lv.atk * 3 + s * 8);
+    gameData.playerMaxHp = Math.floor(100 + (gameData.lv.hp - 1) * 20);
     gameData.playerHp = gameData.playerMaxHp;
 
     enemyX = ENEMY_START_X;
@@ -196,6 +198,7 @@ function enemyHitsPlayer() {
     gameData.playerHp -= enemyAtk;
     if (gameData.playerHp < 0) gameData.playerHp = 0;
 
+    showPlayerDamageText(enemyAtk);
     playPlayerHitEffect();
 
     updateUI();
@@ -503,6 +506,31 @@ function showDamageText(damage, isChargeShot) {
     setTimeout(() => dmg.remove(), 600);
 }
 
+function showPlayerDamageText(damage) {
+    const screen = document.querySelector('.game-screen');
+    const rockmanArea = document.getElementById('rockman-area');
+
+    if (!screen || !rockmanArea) return;
+
+    const screenRect = screen.getBoundingClientRect();
+    const rockRect = rockmanArea.getBoundingClientRect();
+
+    const text = document.createElement('div');
+    text.className = 'damage-text';
+    text.innerText = `-${damage}`;
+    text.style.color = '#ff3b3b';
+    text.style.textShadow = '0 0 8px #ff3b3b';
+    text.style.left = (rockRect.left - screenRect.left + 10) + 'px';
+    text.style.right = 'auto';
+    text.style.bottom = '58px';
+
+    screen.appendChild(text);
+
+    setTimeout(() => {
+        text.remove();
+    }, 600);
+}
+
 function showRewardText(reward) {
     const screen = document.querySelector('.game-screen');
 
@@ -546,6 +574,7 @@ function calcCost(type, amount) {
 function getNextCost(type, cost) {
     if (type === 'atk') return Math.floor(cost * 1.5);
     if (type === 'spd') return Math.floor(cost * 2);
+    if (type === 'hp') return Math.floor(cost * 1.6);
     if (type === 'crit') return Math.floor(cost * 1.8);
     if (type === 'critDmg') return Math.floor(cost * 1.7);
     if (type === 'partnerSpd') return Math.floor(cost * 1.7);
@@ -563,6 +592,11 @@ function buyUpgrade(type, amount) {
         if (type === 'spd') {
             if (gameData.atkSpd > 300) gameData.atkSpd -= 200;
             startAutoAttack();
+        }
+
+        if (type === 'hp') {
+           gameData.playerMaxHp += 20;
+           gameData.playerHp += 20;
         }
 
         if (type === 'crit') gameData.critChance += 2;
@@ -809,7 +843,7 @@ function updateUI() {
     document.getElementById('hp-bar-fill').style.width =
         Math.max(0, (enemyHp / enemyMaxHp) * 100) + "%";
 
-    ['atk', 'spd', 'crit', 'critDmg', 'partnerSpd'].forEach(type => {
+    ['atk', 'spd', 'hp', 'crit', 'critDmg', 'partnerSpd'].forEach(type => {
         const lvEl = document.getElementById(type + '-lv');
         const btn1 = document.getElementById(`${type}-btn1`);
         const btn10 = document.getElementById(`${type}-btn10`);
@@ -884,6 +918,12 @@ function updateUI() {
             partnerArea.classList.remove('active');
         }
     }
+
+    const rushImg = document.getElementById('rush-img');
+
+if (rushImg) {
+    rushImg.style.display = gameData.rushOwned ? 'block' : 'none';
+}
 
     if (beatArea) {
         if (gameData.beatOwned) beatArea.classList.add('active');
