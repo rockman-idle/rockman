@@ -717,7 +717,7 @@ function summonRush() {
     const { popup, rushImg } = popupData;
 
     rushJoinFrame = 1;
-    rushImg.src = `sprites/partner/rush/rush_join_01.png`;
+    rushImg.src = `sprites/partner/rush/rush_01.png`;
 
 rushImg.classList.remove('join-drop');
 void rushImg.offsetWidth;
@@ -808,7 +808,7 @@ function closeSummonPopup() {
 
 if (rushJoinImg) {
     rushJoinImg.classList.remove('rush-drop');
-    rushJoinImg.src = `sprites/partner/rush/rush_join_01.png`;
+    rushJoinImg.src = `sprites/partner/rush/rush_01.png`;
     rushJoinImg.style.display = 'block';
 }
 
