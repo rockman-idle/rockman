@@ -20,7 +20,7 @@ body {
 }
 
 .title-logo {
-    width: 240px;
+    width: 480px;
     max-width: 90%;
     image-rendering: pixelated;
     margin: 5px auto 15px auto;
