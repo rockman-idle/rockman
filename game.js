@@ -1079,6 +1079,18 @@ if (rushImg) {
         else beatArea.classList.remove('active');
     }
 
+    const bluesArea = document.getElementById('blues-area');
+const bluesImg = document.getElementById('blues-img');
+
+if (bluesArea) {
+  if (gameData.bluesOwned) bluesArea.classList.add('active');
+  else bluesArea.classList.remove('active');
+}
+
+if (bluesImg) {
+  bluesImg.style.display = gameData.bluesOwned ? 'block' : 'none';
+}
+
     const rushUpgrade = document.querySelector('.rush-upgrade');
     if (rushUpgrade) {
         if (gameData.rushOwned) rushUpgrade.classList.add('active');

@@ -69,11 +69,15 @@
         <img id="rush-img" class="partner-character" src="sprites/partner/rush/rush_02.png">
     </div>
 
-    <div id="beat-area">
-        <img id="beat-img" class="beat-character" src="sprites/partner/beat/beat_01.png">
-    </div>
+<div id="beat-area">
+  <img id="beat-img" class="beat-character" src="sprites/partner/beat/beat_01.png">
+</div>
 
-    <img id="rockman-img" class="character" src="sprites/rock/rock_01.png">
+<div id="blues-area" class="blues-area">
+  <img id="blues-img" src="sprites/partner/blues/blues_06.png">
+</div>
+
+<img id="rockman-img" class="character" src="sprites/rock/rock_01.png">
 </div>
 
 <div id="enemy-area">
@@ -196,18 +200,62 @@
             <button class="inner-tab" onclick="showArmorTab('fourth')">포스아머</button>
         </div>
 
-        <div class="armor-view">
-            <img id="armor-img" class="system-image" src="sprites/armor/super-r/super-r.png">
-            <div id="armor-name" class="system-name">슈퍼록맨</div>
-        </div>
+<div class="armor-guide-text">슈퍼록맨 보스전에서 강화 재료 수급</div>
 
-        <div class="part-grid">
-            <button class="part-btn">헤드 LV.0</button>
-            <button class="part-btn">바디 LV.0</button>
-            <button class="part-btn">암 LV.0</button>
-            <button class="part-btn">풋 LV.0</button>
-            <button class="part-btn">코어 LV.0</button>
-        </div>
+<div class="armor-view super-armor-view">
+  <div class="armor-line"></div>
+  <img class="system-image armor-main-image" src="sprites/armor/super_rockman.png">
+</div>
+
+<div class="armor-part-list">
+  <div class="armor-part-row">
+    <div class="armor-part-name">헤드 파츠</div>
+    <div class="armor-box-gauge">
+      <span class="armor-box filled"></span>
+      <span class="armor-box"></span>
+      <span class="armor-box"></span>
+      <span class="armor-box"></span>
+      <span class="armor-box"></span>
+      <span class="armor-box"></span>
+      <span class="armor-box"></span>
+      <span class="armor-box"></span>
+      <span class="armor-box"></span>
+      <span class="armor-box"></span>
+    </div>
+  </div>
+
+  <div class="armor-part-row">
+    <div class="armor-part-name">바디 파츠</div>
+    <div class="armor-box-gauge">
+      <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
+      <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
+    </div>
+  </div>
+
+  <div class="armor-part-row">
+    <div class="armor-part-name">암 파츠</div>
+    <div class="armor-box-gauge">
+      <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
+      <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
+    </div>
+  </div>
+
+  <div class="armor-part-row">
+    <div class="armor-part-name">풋 파츠</div>
+    <div class="armor-box-gauge">
+      <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
+      <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
+    </div>
+  </div>
+
+  <div class="armor-part-row">
+    <div class="armor-part-name">코어 파츠</div>
+    <div class="armor-box-gauge">
+      <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
+      <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
+    </div>
+  </div>
+</div>
     </div>
 </div>
 
