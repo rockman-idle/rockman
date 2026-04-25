@@ -185,6 +185,27 @@
 
     <button id="beat-summon-btn" class="summon-btn" onclick="summonBeat()">비트 소환</button>
 </div>
+
+<div id="blues-card" class="partner-card">
+
+  <div class="partner-name">블루스</div>
+
+  <div id="blues-complete-badge" class="complete-badge">COMPLETE</div>
+
+  <div class="partner-info">
+    블루스 보유 조각: <span id="blues-fragments">0</span> / 100
+  </div>
+
+  <div class="partner-actions">
+    <button id="blues-buy1" class="partner-buy-btn" onclick="buyBluesFragment(1)">조각 1개</button>
+    <button id="blues-buy10" class="partner-buy-btn" onclick="buyBluesFragment(10)">조각 10개</button>
+    <button id="blues-buy100" class="partner-buy-btn" onclick="buyBluesFragment(100)">조각 100개</button>
+  </div>
+
+  <button id="blues-summon-btn" class="summon-btn" onclick="summonBlues()">블루스 소환</button>
+
+</div>
+
         </div>
     </div>
 
@@ -211,7 +232,7 @@
   <div class="armor-part-row">
     <div class="armor-part-name">헤드 파츠</div>
     <div class="armor-box-gauge">
-      <span class="armor-box filled"></span>
+      <span class="armor-box"></span>
       <span class="armor-box"></span>
       <span class="armor-box"></span>
       <span class="armor-box"></span>
