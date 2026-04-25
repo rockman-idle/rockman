@@ -850,6 +850,7 @@ function summonBeat() {
         saveData();
         return;
     }
+}
 
 function summonBlues() {
   if (gameData.bluesOwned) return;
@@ -889,7 +890,7 @@ beatImg.classList.add('join-drop');
 
     updateUI();
     saveData();
-}
+
 
 function closeSummonPopup() {
     const popup = document.getElementById('summon-popup');
