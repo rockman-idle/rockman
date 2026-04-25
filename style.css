@@ -812,40 +812,6 @@ body {
   z-index: 2;
 }
 
-.armor-line {
-  position: absolute;
-  left: 50%;
-  top: 15px;
-  width: 2px;
-  height: 120px;
-  background: #00d4ff;
-  box-shadow: 0 0 8px #00d4ff;
-  z-index: 1;
-}
-
-.armor-line::before,
-.armor-line::after {
-  content: "";
-  position: absolute;
-  top: 28px;
-  width: 90px;
-  height: 2px;
-  background: #00d4ff;
-  box-shadow: 0 0 8px #00d4ff;
-}
-
-.armor-line::before {
-  right: 0;
-  transform: rotate(-25deg);
-  transform-origin: right center;
-}
-
-.armor-line::after {
-  left: 0;
-  transform: rotate(25deg);
-  transform-origin: left center;
-}
-
 .armor-part-list {
   display: flex;
   flex-direction: column;
@@ -919,18 +885,45 @@ body {
   align-items: center;
   min-height: 260px;
   margin-top: 16px;
+  margin-bottom: 12px;
 }
 
 .boss-main-image {
-  width: 180px;
+  width: 300px;
   max-width: none;
+  max-height: none;
   cursor: pointer;
   image-rendering: pixelated;
-  transition: transform 0.15s ease, filter 0.15s ease;
+  object-fit: contain;
 }
 
 .boss-main-image:hover {
   transform: scale(1.05);
   filter: brightness(1.2);
+}
+
+.armor-layout {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.armor-left {
+  flex: 0 0 110px;
+}
+
+.armor-main-image {
+  width: 180px;
+  max-width: none;
+  max-height: none;
+  image-rendering: pixelated;
+  
+}
+
+.armor-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
