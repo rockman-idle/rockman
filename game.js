@@ -851,7 +851,7 @@ function summonBeat() {
         return;
     }
 
-    function summonBlues() {
+function summonBlues() {
   if (gameData.bluesOwned) return;
   if (gameData.bluesFragments < BLUES_REQUIRED_FRAGMENTS) return;
 
