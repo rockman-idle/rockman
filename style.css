@@ -912,3 +912,25 @@ body {
   45% { transform: translateX(48px); }
   100% { transform: translateX(0); }
 }
+
+.boss-view {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 260px;
+  margin-top: 16px;
+}
+
+.boss-main-image {
+  width: 180px;
+  max-width: none;
+  cursor: pointer;
+  image-rendering: pixelated;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.boss-main-image:hover {
+  transform: scale(1.05);
+  filter: brightness(1.2);
+}
+

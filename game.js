@@ -193,10 +193,11 @@ function startBluesAttack() {
 
   bluesAttackTimer = setInterval(() => {
     if (!gameData.bluesOwned || enemyDead || playerDead || bluesAttacking) return;
-    if (enemyX > 180) return;
+
+    if (enemyX > 150) return;
 
     bluesShieldCharge();
-  }, 3000);
+  }, gameData.partnerAtkSpd);
 }
 
 function bluesShieldCharge() {
@@ -224,7 +225,7 @@ function bluesShieldCharge() {
       showDamageText(damage, false);
       playEnemyHit(enemy);
 
-      enemyX += 30;
+      enemyX += 10;
       if (enemyX > ENEMY_START_X) enemyX = ENEMY_START_X;
       updateEnemyPosition();
 
@@ -681,11 +682,11 @@ function buyUpgrade(type, amount) {
         if (type === 'critDmg') gameData.critMultiplier += 0.25;
 
         if (type === 'partnerSpd') {
-            if (gameData.partnerAtkSpd > 400) {
-                gameData.partnerAtkSpd -= 120;
-            }
+        if (gameData.partnerAtkSpd > 400) {
+            gameData.partnerAtkSpd -= 120;
+            startBluesAttack();
         }
-
+}
         gameData.costs[type] = getNextCost(type, gameData.costs[type]);
     }
 
@@ -1057,6 +1058,30 @@ function showBossTab(type) {
     if (event && event.target) {
         event.target.classList.add('active');
     }
+}
+
+function enterBossBattle() {
+  showTab('battle');
+
+  const enemyImg = document.getElementById('enemy-img');
+  if (enemyImg) {
+    enemyImg.src = 'sprites/boss/super-rboss/super-rboss.png';
+    enemyImg.style.width = '60px';
+    enemyImg.style.height = '60px';
+  }
+
+  enemyMaxHp = 5000;
+  enemyHp = enemyMaxHp;
+  enemyAtk = 20;
+  enemySpeed = 0.18;
+  enemyX = ENEMY_START_X;
+
+  enemyDead = false;
+  enemyAttacking = false;
+  playerDead = false;
+
+  updateEnemyPosition();
+  updateUI();
 }
 
 function startAutoAttack() {
