@@ -850,17 +850,8 @@ function summonBeat() {
         saveData();
         return;
     }
-}
 
-function summonBlues() {
-  if (gameData.bluesOwned) return;
-  if (gameData.bluesFragments < BLUES_REQUIRED_FRAGMENTS) return;
 
-  gameData.bluesOwned = true;
-
-  updateUI();
-  saveData();
-}
 
     const { popup, beatImg } = popupData;
 
@@ -891,6 +882,17 @@ beatImg.classList.add('join-drop');
     updateUI();
     saveData();
 
+}
+
+function summonBlues() {
+  if (gameData.bluesOwned) return;
+  if (gameData.bluesFragments < BLUES_REQUIRED_FRAGMENTS) return;
+
+  gameData.bluesOwned = true;
+
+  updateUI();
+  saveData();
+}
 
 function closeSummonPopup() {
     const popup = document.getElementById('summon-popup');
