@@ -17,8 +17,12 @@ const defaultData = {
 
     beatFragments: 0,
     beatOwned: false,
+
+    partnerAtkSpeedLevel: 0,
+
     bluesFragments: 0,
     bluesOwned: false,
+
     partnerAtkSpd: 2000,
 
     lv: {
@@ -689,6 +693,18 @@ function buyUpgrade(type, amount) {
     saveData();
 }
 
+function upgradePartnerAttackSpeed() {
+  const cost = 50 + (gameData.partnerAtkSpeedLevel * 50);
+
+  if (gameData.crystals < cost) return;
+
+  gameData.crystals -= cost;
+  gameData.partnerAtkSpeedLevel++;
+
+  updateUI();
+  saveData();
+}
+
 function buyUpgradeMax(type) {
     while (gameData.screws >= gameData.costs[type]) {
         buyUpgrade(type, 1);
@@ -1187,13 +1203,15 @@ if (bluesImg) {
     }
 
 const partnerUpgrade = document.querySelector('.partner-upgrade');
+
 if (partnerUpgrade) {
-  if (gameData.beatOwned || gameData.bluesOwned) {
+  if (gameData.beatOwned) {
     partnerUpgrade.classList.add('active');
   } else {
     partnerUpgrade.classList.remove('active');
   }
 }
+
 }
 
 function setButtonActive(button, isActive) {
