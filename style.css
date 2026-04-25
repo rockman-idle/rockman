@@ -888,8 +888,8 @@ body {
 
 .blues-area {
   position: absolute;
-  left: 92px;
-  bottom: 28px;
+  left: 46px;
+  bottom: 14px;
   display: none;
   z-index: 4;
 }
@@ -899,7 +899,7 @@ body {
 }
 
 #blues-img {
-  width: 54px;
+  width: 48px;
   image-rendering: pixelated;
 }
 

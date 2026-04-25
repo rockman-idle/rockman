@@ -768,7 +768,6 @@ function prepareSummonPopup(type) {
         beatImg = document.createElement('img');
         beatImg.id = 'beat-join-img';
         beatImg.className = 'rush-join-img';
-        beatImg.src = 'sprites/partner/beat/beat_01.png';
         beatImg.style.display = 'none';
 
         const box = document.querySelector('.summon-box');
@@ -777,6 +776,7 @@ function prepareSummonPopup(type) {
 
     if (type === 'rush') {
         text.innerText = 'RUSH JOIN!';
+        rushImg.src = 'sprites/partner/rush/rush_02.png';
         rushImg.style.display = 'block';
         beatImg.style.display = 'none';
     }
@@ -784,6 +784,14 @@ function prepareSummonPopup(type) {
     if (type === 'beat') {
         text.innerText = 'BEAT JOIN!';
         rushImg.style.display = 'none';
+        beatImg.src = 'sprites/partner/beat/beat_01.png';
+        beatImg.style.display = 'block';
+    }
+
+    if (type === 'blues') {
+        text.innerText = 'BLUES JOIN!';
+        rushImg.style.display = 'none';
+        beatImg.src = 'sprites/partner/blues/blues_06.png';
         beatImg.style.display = 'block';
     }
 
@@ -850,7 +858,7 @@ function summonBeat() {
         saveData();
         return;
     }
-
+}
 
 
     const { popup, beatImg } = popupData;
@@ -882,7 +890,7 @@ beatImg.classList.add('join-drop');
     updateUI();
     saveData();
 
-}
+
 
 function summonBlues() {
   if (gameData.bluesOwned) return;
@@ -890,8 +898,41 @@ function summonBlues() {
 
   gameData.bluesOwned = true;
 
-  updateUI();
-  saveData();
+  const popupData = prepareSummonPopup('blues');
+  if (!popupData) {
+    updateUI();
+    saveData();
+    return;
+  }
+
+  const { popup, beatImg } = popupData;
+
+  beatFrame = 1;
+  beatDir = 1;
+  beatFloat = 0;
+  beatImg.src = 'sprites/partner/blues/blues_06.png';
+  beatImg.classList.remove('rush-drop');
+  void beatImg.offsetWidth;
+  beatImg.classList.add('rush-drop');
+
+  if (beatJoinTimer) clearInterval(beatJoinTimer);
+
+  beatJoinTimer = setInterval(() => {
+    beatFrame += beatDir;
+
+    if (beatFrame >= 9) beatDir = -1;
+    if (beatFrame <= 6) beatDir = 1;
+
+    beatFloat += 1;
+    beatImg.src = `sprites/partner/blues/blues_0${beatFrame}.png`;
+    beatImg.style.transform = `translateY(${Math.sin(beatFloat / 2) * 4}px)`;
+  }, 120);
+
+  setTimeout(() => {
+    closeSummonPopup();
+    updateUI();
+    saveData();
+  }, 1800);
 }
 
 function closeSummonPopup() {
