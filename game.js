@@ -831,13 +831,71 @@ if (rushJoinImg) {
 }
 
 function showTab(tabName) {
-    document.getElementById('battle-tab').classList.remove('active');
-    document.getElementById('partner-tab').classList.remove('active');
-    document.getElementById('battle-tab-btn').classList.remove('active');
-    document.getElementById('partner-tab-btn').classList.remove('active');
+    ['battle', 'partner', 'armor', 'boss'].forEach(name => {
+        const tab = document.getElementById(name + '-tab');
+        const btn = document.getElementById(name + '-tab-btn');
 
-    document.getElementById(tabName + '-tab').classList.add('active');
-    document.getElementById(tabName + '-tab-btn').classList.add('active');
+        if (tab) tab.classList.remove('active');
+        if (btn) btn.classList.remove('active');
+    });
+
+    const targetTab = document.getElementById(tabName + '-tab');
+    const targetBtn = document.getElementById(tabName + '-tab-btn');
+
+    if (targetTab) targetTab.classList.add('active');
+    if (targetBtn) targetBtn.classList.add('active');
+}
+
+function showArmorTab(type) {
+    const armorImg = document.getElementById('armor-img');
+    const armorName = document.getElementById('armor-name');
+
+    const armorData = {
+        'super-r': { name: '슈퍼록맨', img: 'sprites/armor/super-r/super-r.png' },
+        'first': { name: '퍼스트아머', img: 'sprites/armor/super-r/super-r.png' },
+        'second': { name: '세컨드아머', img: 'sprites/armor/super-r/super-r.png' },
+        'third': { name: '서드아머', img: 'sprites/armor/super-r/super-r.png' },
+        'fourth': { name: '포스아머', img: 'sprites/armor/super-r/super-r.png' }
+    };
+
+    if (!armorData[type]) return;
+
+    armorImg.src = armorData[type].img;
+    armorName.innerText = armorData[type].name;
+
+    document.querySelectorAll('#armor-tab .inner-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+}
+
+function showBossTab(type) {
+    const bossImg = document.getElementById('boss-img');
+    const bossName = document.getElementById('boss-name');
+
+    const bossData = {
+        'super-rboss': { name: '슈퍼록맨 보스전', img: 'sprites/boss/super-rboss/super-rboss.png' },
+        'first-boss': { name: '퍼스트 보스전', img: 'sprites/boss/super-rboss/super-rboss.png' },
+        'second-boss': { name: '세컨드 보스전', img: 'sprites/boss/super-rboss/super-rboss.png' },
+        'third-boss': { name: '서드 보스전', img: 'sprites/boss/super-rboss/super-rboss.png' },
+        'fourth-boss': { name: '포스 보스전', img: 'sprites/boss/super-rboss/super-rboss.png' }
+    };
+
+    if (!bossData[type]) return;
+
+    bossImg.src = bossData[type].img;
+    bossName.innerText = bossData[type].name;
+
+    document.querySelectorAll('#boss-tab .inner-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
 }
 
 function startAutoAttack() {

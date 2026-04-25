@@ -21,11 +21,12 @@
     <img src="sprites/partner/rush/rush_join_01.png">
     <img src="sprites/partner/rush/rush_join_02.png">
     <img src="sprites/partner/rush/rush_join_03.png">
-    <img src="sprites/partner/rush/rush_join_04.png">
     <img src="sprites/partner/beat/beat_01.png">
     <img src="sprites/partner/beat/beat_02.png">
     <img src="sprites/partner/beat/beat_03.png">
     <img src="sprites/partner/beat/beat_04.png">
+    <img src="sprites/armor/super-r/super-r.png">
+    <img src="sprites/boss/super-rboss/super-rboss.png">
 </div>
 
 <div id="summon-popup" class="summon-popup">
@@ -37,10 +38,15 @@
 </div>
 
 <div class="container">
-    <div class="tab-bookmark">
-        <button id="battle-tab-btn" class="tab-btn active" onclick="showTab('battle')">전투</button>
-        <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">파트너</button>
-    </div>
+<div class="tab-bookmark">
+    <button id="battle-tab-btn" class="tab-btn active" onclick="showTab('battle')">전투</button>
+    <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">파트너</button>
+    <button id="armor-tab-btn" class="tab-btn" onclick="showTab('armor')">아머</button>
+</div>
+
+<div class="tab-bookmark-left">
+    <button id="boss-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('boss')">보스전</button>
+</div>
 
    <img class="title-logo" src="sprites/title/title.png" alt="ROCKMAN IDLE">
 
@@ -177,6 +183,54 @@
 </div>
         </div>
     </div>
+
+    <div id="armor-tab" class="tab-content">
+    <div class="system-panel">
+        <h2>ARMOR</h2>
+
+        <div class="inner-tabs">
+            <button class="inner-tab active" onclick="showArmorTab('super-r')">슈퍼록맨</button>
+            <button class="inner-tab" onclick="showArmorTab('first')">퍼스트아머</button>
+            <button class="inner-tab" onclick="showArmorTab('second')">세컨드아머</button>
+            <button class="inner-tab" onclick="showArmorTab('third')">서드아머</button>
+            <button class="inner-tab" onclick="showArmorTab('fourth')">포스아머</button>
+        </div>
+
+        <div class="armor-view">
+            <img id="armor-img" class="system-image" src="sprites/armor/super-r/super-r.png">
+            <div id="armor-name" class="system-name">슈퍼록맨</div>
+        </div>
+
+        <div class="part-grid">
+            <button class="part-btn">헤드 LV.0</button>
+            <button class="part-btn">바디 LV.0</button>
+            <button class="part-btn">암 LV.0</button>
+            <button class="part-btn">풋 LV.0</button>
+            <button class="part-btn">코어 LV.0</button>
+        </div>
+    </div>
+</div>
+
+<div id="boss-tab" class="tab-content">
+    <div class="system-panel">
+        <h2>BOSS BATTLE</h2>
+
+        <div class="inner-tabs">
+            <button class="inner-tab active" onclick="showBossTab('super-rboss')">슈퍼록맨</button>
+            <button class="inner-tab" onclick="showBossTab('first-boss')">퍼스트</button>
+            <button class="inner-tab" onclick="showBossTab('second-boss')">세컨드</button>
+            <button class="inner-tab" onclick="showBossTab('third-boss')">서드</button>
+            <button class="inner-tab" onclick="showBossTab('fourth-boss')">포스</button>
+        </div>
+
+        <div class="armor-view">
+            <img id="boss-img" class="system-image" src="sprites/boss/super-rboss/super-rboss.png">
+            <div id="boss-name" class="system-name">슈퍼록맨 보스전</div>
+        </div>
+
+        <button class="summon-btn">보스전 입장</button>
+    </div>
+</div>
 
 <div class="footer-row">
     <button class="reset-btn" onclick="resetGame()">[데이터 초기화]</button>
