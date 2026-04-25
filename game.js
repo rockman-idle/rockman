@@ -63,6 +63,8 @@ gameData.rushFragments = Math.floor(gameData.rushFragments || 0);
 gameData.beatFragments = Math.floor(gameData.beatFragments || 0);
 gameData.rushOwned = gameData.rushOwned || false;
 gameData.beatOwned = gameData.beatOwned || false;
+gameData.bluesFragments = Math.floor(gameData.bluesFragments || 0);
+gameData.bluesOwned = gameData.bluesOwned || false;
 gameData.partnerAtkSpd = gameData.partnerAtkSpd || 2000;
 gameData.playerHp = gameData.playerMaxHp;
 
@@ -70,8 +72,8 @@ Object.keys(gameData.costs).forEach(key => {
     gameData.costs[key] = Math.floor(gameData.costs[key]);
 });
 
-const RUSH_REQUIRED_FRAGMENTS = 50;
-const BEAT_REQUIRED_FRAGMENTS = 50;
+const RUSH_REQUIRED_FRAGMENTS = 100;
+const BEAT_REQUIRED_FRAGMENTS = 100;
 const BLUES_REQUIRED_FRAGMENTS = 100;
 const ENEMY_START_X = 460;
 const ENEMY_ATTACK_X = 120;
@@ -734,6 +736,21 @@ function buyBeatFragment(amount) {
     saveData();
 }
 
+function buyBluesFragment(amount) {
+  if (gameData.bluesOwned) return;
+  if (gameData.crystals < amount) return;
+
+  gameData.crystals -= amount;
+  gameData.bluesFragments += amount;
+
+  if (gameData.bluesFragments > BLUES_REQUIRED_FRAGMENTS) {
+    gameData.bluesFragments = BLUES_REQUIRED_FRAGMENTS;
+  }
+
+  updateUI();
+  saveData();
+}
+
 function getSummonTextElement() {
     return document.getElementById('summon-text') || document.querySelector('.summon-text');
 }
@@ -833,6 +850,16 @@ function summonBeat() {
         saveData();
         return;
     }
+
+    function summonBlues() {
+  if (gameData.bluesOwned) return;
+  if (gameData.bluesFragments < BLUES_REQUIRED_FRAGMENTS) return;
+
+  gameData.bluesOwned = true;
+
+  updateUI();
+  saveData();
+}
 
     const { popup, beatImg } = popupData;
 
@@ -1044,11 +1071,29 @@ function updateUI() {
     setButtonActive(document.getElementById('beat-buy10'), !gameData.beatOwned && gameData.crystals >= 10 && gameData.beatFragments <= 90);
     setButtonActive(document.getElementById('beat-buy100'), !gameData.beatOwned && gameData.crystals >= 100 && gameData.beatFragments === 0);
     setButtonActive(document.getElementById('beat-summon-btn'), !gameData.beatOwned && gameData.beatFragments >= 100);
+const bluesFragmentsEl = document.getElementById('blues-fragments');
+if (bluesFragmentsEl) bluesFragmentsEl.innerText = gameData.bluesFragments;
+
+setButtonActive(document.getElementById('blues-buy1'), !gameData.bluesOwned && gameData.crystals >= 1 && gameData.bluesFragments < 100);
+setButtonActive(document.getElementById('blues-buy10'), !gameData.bluesOwned && gameData.crystals >= 10 && gameData.bluesFragments <= 90);
+setButtonActive(document.getElementById('blues-buy100'), !gameData.bluesOwned && gameData.crystals >= 100 && gameData.bluesFragments === 0);
+setButtonActive(document.getElementById('blues-summon-btn'), !gameData.bluesOwned && gameData.bluesFragments >= 100);
 
     const beatCard = document.getElementById('beat-card');
     const beatBadge = document.getElementById('beat-complete-badge');
     const beatArea = document.getElementById('beat-area');
+const bluesCard = document.getElementById('blues-card');
+const bluesBadge = document.getElementById('blues-complete-badge');
 
+if (bluesCard && bluesBadge) {
+  if (gameData.bluesOwned) {
+    bluesCard.classList.add('complete');
+    bluesBadge.classList.add('active');
+  } else {
+    bluesCard.classList.remove('complete');
+    bluesBadge.classList.remove('active');
+  }
+}
     if (beatCard && beatBadge) {
         if (gameData.beatOwned) {
             beatCard.classList.add('complete');
@@ -1058,6 +1103,7 @@ function updateUI() {
             beatBadge.classList.remove('active');
         }
     }
+
 
     const partnerArea = document.getElementById('partner-area');
     if (partnerArea) {
