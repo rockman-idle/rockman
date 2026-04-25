@@ -220,7 +220,7 @@ function bluesShieldCharge() {
       showDamageText(damage, false);
       playEnemyHit(enemy);
 
-      enemyX += 22;
+      enemyX += 30;
       if (enemyX > ENEMY_START_X) enemyX = ENEMY_START_X;
       updateEnemyPosition();
 
