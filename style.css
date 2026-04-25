@@ -622,8 +622,8 @@ body {
 }
 
 .beat-character {
-    width: 10px;
-    height: 10px;
+    width: 15px;
+    height: 15px;
     image-rendering: pixelated;
     object-fit: contain;
 }
@@ -888,8 +888,8 @@ body {
 
 .blues-area {
   position: absolute;
-  left: 46px;
-  bottom: 14px;
+  left: 42px;
+  bottom: 10px;
   display: none;
   z-index: 4;
 }
@@ -899,7 +899,7 @@ body {
 }
 
 #blues-img {
-  width: 48px;
+  width: 40px;
   image-rendering: pixelated;
 }
 
@@ -909,6 +909,6 @@ body {
 
 @keyframes bluesChargeMove {
   0% { transform: translateX(0); }
-  45% { transform: translateX(95px); }
+  45% { transform: translateX(48px); }
   100% { transform: translateX(0); }
 }

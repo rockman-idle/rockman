@@ -189,7 +189,7 @@ function startBluesAttack() {
 
   bluesAttackTimer = setInterval(() => {
     if (!gameData.bluesOwned || enemyDead || playerDead || bluesAttacking) return;
-    if (enemyX > 210) return;
+    if (enemyX > 180) return;
 
     bluesShieldCharge();
   }, 3000);
@@ -220,7 +220,7 @@ function bluesShieldCharge() {
       showDamageText(damage, false);
       playEnemyHit(enemy);
 
-      enemyX += 45;
+      enemyX += 22;
       if (enemyX > ENEMY_START_X) enemyX = ENEMY_START_X;
       updateEnemyPosition();
 
@@ -858,81 +858,80 @@ function summonBeat() {
         saveData();
         return;
     }
-}
 
-
-    const { popup, beatImg } = popupData;
+    const { beatImg } = popupData;
 
     beatFrame = 1;
     beatDir = 1;
     beatFloat = 0;
-    beatImg.src = `sprites/partner/beat/beat_01.png`;
+
+    beatImg.src = 'sprites/partner/beat/beat_01.png';
     beatImg.classList.remove('rush-drop');
-void beatImg.offsetWidth;
-beatImg.classList.add('rush-drop');
+    void beatImg.offsetWidth;
+    beatImg.classList.add('rush-drop');
 
     if (beatJoinTimer) clearInterval(beatJoinTimer);
 
-    let frame = 1;
     beatJoinTimer = setInterval(() => {
-        frame++;
-        if (frame > 4) frame = 2;
-        beatImg.src = `sprites/partner/beat/beat_0${frame}.png`;
-        beatImg.classList.remove('join-drop');
-void beatImg.offsetWidth;
-beatImg.classList.add('join-drop');
+        beatFrame += beatDir;
+
+        if (beatFrame >= 3) beatDir = -1;
+        if (beatFrame <= 1) beatDir = 1;
+
+        beatFloat += 1;
+        beatImg.src = `sprites/partner/beat/beat_0${beatFrame}.png`;
+        beatImg.style.transform = `translateY(${Math.sin(beatFloat / 2) * 4}px)`;
     }, 120);
 
-    popup.onclick = () => {
+    setTimeout(() => {
         closeSummonPopup();
-    };
-
-    updateUI();
-    saveData();
-
-
+        updateUI();
+        saveData();
+    }, 1800);
+}
 
 function summonBlues() {
-  if (gameData.bluesOwned) return;
-  if (gameData.bluesFragments < BLUES_REQUIRED_FRAGMENTS) return;
+    if (gameData.bluesOwned) return;
+    if (gameData.bluesFragments < BLUES_REQUIRED_FRAGMENTS) return;
 
-  gameData.bluesOwned = true;
+    gameData.bluesOwned = true;
 
-  const popupData = prepareSummonPopup('blues');
-  if (!popupData) {
-    updateUI();
-    saveData();
-    return;
-  }
+    const popupData = prepareSummonPopup('blues');
+    if (!popupData) {
+        updateUI();
+        saveData();
+        return;
+    }
 
-  const { popup, beatImg } = popupData;
+    const { beatImg } = popupData;
 
-  beatFrame = 1;
-  beatDir = 1;
-  beatFloat = 0;
-  beatImg.src = 'sprites/partner/blues/blues_06.png';
-  beatImg.classList.remove('rush-drop');
-  void beatImg.offsetWidth;
-  beatImg.classList.add('rush-drop');
+let bluesJoinFrame = 6;
+let bluesJoinDir = 1;
+let bluesJoinFloat = 0;
 
-  if (beatJoinTimer) clearInterval(beatJoinTimer);
+beatImg.src = 'sprites/partner/blues/blues_06.png';
+    beatImg.classList.remove('rush-drop');
+    void beatImg.offsetWidth;
+    beatImg.classList.add('rush-drop');
 
-  beatJoinTimer = setInterval(() => {
-    beatFrame += beatDir;
+    if (beatJoinTimer) clearInterval(beatJoinTimer);
 
-    if (beatFrame >= 9) beatDir = -1;
-    if (beatFrame <= 6) beatDir = 1;
+    beatJoinTimer = setInterval(() => {
+bluesJoinFrame += bluesJoinDir;
 
-    beatFloat += 1;
-    beatImg.src = `sprites/partner/blues/blues_0${beatFrame}.png`;
-    beatImg.style.transform = `translateY(${Math.sin(beatFloat / 2) * 4}px)`;
-  }, 120);
+if (bluesJoinFrame >= 9) bluesJoinDir = -1;
+if (bluesJoinFrame <= 6) bluesJoinDir = 1;
 
-  setTimeout(() => {
-    closeSummonPopup();
-    updateUI();
-    saveData();
-  }, 1800);
+bluesJoinFloat += 1;
+beatImg.src = `sprites/partner/blues/blues_0${bluesJoinFrame}.png`;
+beatImg.style.transform = `translateY(${Math.sin(bluesJoinFloat / 2) * 4}px)`;
+    }, 120);
+
+    setTimeout(() => {
+        closeSummonPopup();
+        updateUI();
+        saveData();
+    }, 1800);
 }
 
 function closeSummonPopup() {
