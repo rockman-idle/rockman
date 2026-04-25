@@ -279,17 +279,16 @@
         <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
         <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
         <span class="armor-box"></span>
-      </div>
-    </div>
+   </div>
+    </div> <!-- 코어 파츠 -->
 
-  </div>
-
-</div>
-</div>
-
+  </div> <!-- armor-right -->
+</div> <!-- armor-layout -->
+</div> <!-- system-panel -->
+</div> <!-- armor-tab -->
 
 <div id="boss-tab" class="tab-content">
-    <div class="system-panel">
+        <div class="system-panel">
         <h2>BOSS BATTLE</h2>
 
         <div class="inner-tabs">
@@ -300,16 +299,19 @@
             <button class="inner-tab" onclick="showBossTab('fourth-boss')">포스</button>
         </div>
 
-<div class="boss-view">
+        <div class="boss-view">
+            <img id="boss-img"
+                 class="boss-main-image"
+                 src="sprites/boss/super-rboss/super-rboss.png"
+                 onclick="enterBossBattle()">
+        </div>
 
-  <img id="boss-img" class="boss-main-image" 
-       src="sprites/boss/super-rboss/super-rboss.png"
-       onclick="enterBossBattle()">
+    </div> <!-- system-panel -->
+</div> <!-- boss-tab -->
 
-</div>
 
 <div class="footer-row">
-    <button class="reset-btn" onclick="resetGame()">[데이터 초기화]</button>
+            <button class="reset-btn" onclick="resetGame()">[데이터 초기화]</button>
     <div class="credit-text">햇밤</div>
 </div>
 </div>
