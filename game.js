@@ -1186,11 +1186,14 @@ if (bluesImg) {
         else rushUpgrade.classList.remove('active');
     }
 
-    const partnerUpgrade = document.querySelector('.partner-upgrade');
-    if (partnerUpgrade) {
-        if (gameData.beatOwned) partnerUpgrade.classList.add('active');
-        else partnerUpgrade.classList.remove('active');
-    }
+const partnerUpgrade = document.querySelector('.partner-upgrade');
+if (partnerUpgrade) {
+  if (gameData.beatOwned || gameData.bluesOwned) {
+    partnerUpgrade.classList.add('active');
+  } else {
+    partnerUpgrade.classList.remove('active');
+  }
+}
 }
 
 function setButtonActive(button, isActive) {
