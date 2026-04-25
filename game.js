@@ -17,6 +17,8 @@ const defaultData = {
 
     beatFragments: 0,
     beatOwned: false,
+    bluesFragments: 0,
+    bluesOwned: false,
     partnerAtkSpd: 2000,
 
     lv: {
@@ -68,8 +70,9 @@ Object.keys(gameData.costs).forEach(key => {
     gameData.costs[key] = Math.floor(gameData.costs[key]);
 });
 
-const RUSH_REQUIRED_FRAGMENTS = 100;
-const BEAT_REQUIRED_FRAGMENTS = 100;
+const RUSH_REQUIRED_FRAGMENTS = 50;
+const BEAT_REQUIRED_FRAGMENTS = 50;
+const BLUES_REQUIRED_FRAGMENTS = 100;
 const ENEMY_START_X = 460;
 const ENEMY_ATTACK_X = 120;
 
@@ -98,6 +101,10 @@ let beatFrame = 1;
 let beatDir = 1;
 let beatFloat = 0;
 let beatJoinTimer = null;
+
+let bluesFrame = 6;
+let bluesAttackTimer = null;
+let bluesAttacking = false;
 
 setupStage();
 
@@ -141,6 +148,7 @@ function animate() {
 
     animateRush();
     animateBeat();
+    animateBlues();
 }
 
 function animateRush() {
@@ -162,6 +170,73 @@ function animateBeat() {
 
     beatImg.src = `sprites/partner/beat/beat_0${beatFrame}.png`;
     beatImg.style.transform = `translateY(${Math.sin(beatFloat) * 4}px)`;
+}
+
+function animateBlues() {
+  const bluesImg = document.getElementById('blues-img');
+  if (!bluesImg || !gameData.bluesOwned || bluesAttacking) return;
+
+  bluesFrame++;
+  if (bluesFrame > 9) bluesFrame = 6;
+
+  bluesImg.src = `sprites/partner/blues/blues_0${bluesFrame}.png`;
+}
+
+function startBluesAttack() {
+  if (bluesAttackTimer) clearInterval(bluesAttackTimer);
+
+  bluesAttackTimer = setInterval(() => {
+    if (!gameData.bluesOwned || enemyDead || playerDead || bluesAttacking) return;
+    if (enemyX > 210) return;
+
+    bluesShieldCharge();
+  }, 3000);
+}
+
+function bluesShieldCharge() {
+  const bluesArea = document.getElementById('blues-area');
+  const bluesImg = document.getElementById('blues-img');
+  const enemy = document.getElementById('enemy-img');
+
+  if (!bluesArea || !bluesImg || !enemy) return;
+
+  bluesAttacking = true;
+  let frame = 1;
+
+  bluesArea.classList.add('blues-charge');
+
+  const chargeAnim = setInterval(() => {
+    bluesImg.src = `sprites/partner/blues/blues_0${frame}.png`;
+    frame++;
+
+    if (frame > 5) {
+      clearInterval(chargeAnim);
+
+      const damage = Math.floor(gameData.atk * 1.8);
+      enemyHp -= damage;
+
+      showDamageText(damage, false);
+      playEnemyHit(enemy);
+
+      enemyX += 45;
+      if (enemyX > ENEMY_START_X) enemyX = ENEMY_START_X;
+      updateEnemyPosition();
+
+      if (enemyHp <= 0) {
+        killEnemy();
+      }
+
+      updateUI();
+      saveData();
+
+      setTimeout(() => {
+        bluesArea.classList.remove('blues-charge');
+        bluesFrame = 6;
+        bluesImg.src = `sprites/partner/blues/blues_06.png`;
+        bluesAttacking = false;
+      }, 250);
+    }
+  }, 90);
 }
 
 setInterval(animate, 200);
@@ -1048,3 +1123,4 @@ function devCheat() {
 updateUI();
 startAutoAttack();
 startChase();
+startBluesAttack();

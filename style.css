@@ -885,3 +885,30 @@ body {
   border-color: #fff2a0;
   box-shadow: 0 0 6px #ffd700, inset 0 0 3px #fff2a0;
 }
+
+.blues-area {
+  position: absolute;
+  left: 92px;
+  bottom: 28px;
+  display: none;
+  z-index: 4;
+}
+
+.blues-area.active {
+  display: block;
+}
+
+#blues-img {
+  width: 54px;
+  image-rendering: pixelated;
+}
+
+.blues-charge {
+  animation: bluesChargeMove 0.45s ease-in-out;
+}
+
+@keyframes bluesChargeMove {
+  0% { transform: translateX(0); }
+  45% { transform: translateX(95px); }
+  100% { transform: translateX(0); }
+}
