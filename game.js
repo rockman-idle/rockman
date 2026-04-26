@@ -1060,28 +1060,62 @@ function showBossTab(type) {
     }
 }
 
-function enterBossBattle() {
-  showTab('battle');
+let isBossWarning = false;
 
-  const enemyImg = document.getElementById('enemy-img');
-  if (enemyImg) {
-    enemyImg.src = 'sprites/boss/super-rboss/super-rboss.png';
-    enemyImg.style.width = '60px';
-    enemyImg.style.height = '60px';
+function showBossWarning(callback) {
+  const overlay = document.getElementById("bossWarningOverlay");
+  const text = document.getElementById("bossWarningText");
+
+  // 오버레이 HTML이 없으면 그냥 바로 보스전 입장
+  if (!overlay || !text) {
+    if (callback) callback();
+    return;
   }
 
-  enemyMaxHp = 5000;
-  enemyHp = enemyMaxHp;
-  enemyAtk = 20;
-  enemySpeed = 0.18;
-  enemyX = ENEMY_START_X;
+  if (isBossWarning) return;
+  isBossWarning = true;
 
-  enemyDead = false;
-  enemyAttacking = false;
-  playerDead = false;
+  overlay.classList.add("active");
+  text.classList.remove("flash");
 
-  updateEnemyPosition();
-  updateUI();
+  void text.offsetWidth;
+  text.classList.add("flash");
+
+  setTimeout(() => {
+    overlay.classList.remove("active");
+    text.classList.remove("flash");
+    isBossWarning = false;
+
+    if (callback) callback();
+  }, 2100);
+}
+
+function enterBossBattle() {
+  showBossWarning(() => {
+
+    showTab('battle');
+
+    const enemyImg = document.getElementById('enemy-img');
+    if (enemyImg) {
+      enemyImg.src = 'sprites/boss/super-rboss/super-rboss.png';
+      enemyImg.style.width = '60px';
+      enemyImg.style.height = '60px';
+    }
+
+    enemyMaxHp = 5000;
+    enemyHp = enemyMaxHp;
+    enemyAtk = 20;
+    enemySpeed = 0.18;
+    enemyX = ENEMY_START_X;
+
+    enemyDead = false;
+    enemyAttacking = false;
+    playerDead = false;
+
+    updateEnemyPosition();
+    updateUI();
+
+  });
 }
 
 function startAutoAttack() {
