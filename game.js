@@ -131,8 +131,30 @@ function setupStage() {
     enemyAttacking = false;
     playerDead = false;
 
-    const rockman = document.getElementById('rockman-img');
-    if (rockman) rockman.classList.remove('rockman-death-hide');
+const rockman = document.getElementById('rockman-img');
+if (rockman) rockman.classList.remove('rockman-death-hide');
+
+const enemyImg = document.getElementById('enemy-img');
+if (enemyImg) {
+    enemyImg.style.width = '';
+    enemyImg.style.height = '';
+    enemyImg.style.transform = '';
+    enemyImg.style.marginTop = '18px';
+
+    // 🔴 추가
+    enemyImg.classList.remove('boss-enter');
+}
+
+const enemyArea = document.getElementById('enemy-area');
+if (enemyArea) {
+  enemyArea.classList.remove('boss-enter-area');
+  enemyArea.style.bottom = '19px';
+}
+
+const screen = document.querySelector('.game-screen');
+if (screen) {
+    screen.classList.remove('boss-mode');
+}
 
     updateEnemyPosition();
 }
@@ -1066,7 +1088,6 @@ function showBossWarning(callback) {
   const overlay = document.getElementById("bossWarningOverlay");
   const text = document.getElementById("bossWarningText");
 
-  // 오버레이 HTML이 없으면 그냥 바로 보스전 입장
   if (!overlay || !text) {
     if (callback) callback();
     return;
@@ -1077,7 +1098,6 @@ function showBossWarning(callback) {
 
   overlay.classList.add("active");
   text.classList.remove("flash");
-
   void text.offsetWidth;
   text.classList.add("flash");
 
@@ -1085,21 +1105,33 @@ function showBossWarning(callback) {
     overlay.classList.remove("active");
     text.classList.remove("flash");
     isBossWarning = false;
-
     if (callback) callback();
-  }, 2100);
+  }, 3000);
 }
 
 function enterBossBattle() {
+  showTab('battle');
+
   showBossWarning(() => {
 
-    showTab('battle');
+    const screen = document.querySelector('.game-screen');
+    if (screen) {
+      screen.classList.add('boss-mode');
+    }
 
     const enemyImg = document.getElementById('enemy-img');
     if (enemyImg) {
       enemyImg.src = 'sprites/boss/super-rboss/super-rboss.png';
       enemyImg.style.width = '60px';
       enemyImg.style.height = '60px';
+      enemyImg.style.marginTop = '-15px';
+
+const enemyArea = document.getElementById('enemy-area');
+if (enemyArea) {
+  enemyArea.classList.remove('boss-enter-area');
+  void enemyArea.offsetWidth;
+  enemyArea.classList.add('boss-enter-area');
+}
     }
 
     enemyMaxHp = 5000;
