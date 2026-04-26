@@ -1049,3 +1049,35 @@ body {
     opacity: 1;
   }
 }
+
+.boss-view-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.boss-reward-guide {
+  margin-bottom: 6px;
+  padding: 5px 10px;
+
+  color: #ffffff;
+
+  background: none;     /* 🔴 제거 */
+  border: none;         /* 🔴 제거 */
+
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.armor-material-owned {
+  margin-left: 8px;
+  color: #ff5555;
+}
+
+.partner-desc-inline {
+  color: #aaa;
+  font-size: 11px;
+  margin-left: 6px;
+}
+

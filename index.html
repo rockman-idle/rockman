@@ -159,7 +159,9 @@
             <p class="partner-desc">크리스탈로 동료 조각을 구매하고 파트너를 소환할 수 있습니다.</p>
 
             <div id="rush-card" class="partner-card">
-                <div class="partner-name">러쉬</div>
+<div class="partner-name">
+  러쉬 <span class="partner-desc-inline">- 치명타 데미지 강화 해금</span>
+</div>
                 <div id="rush-complete-badge" class="complete-badge">COMPLETE</div>
 
                 <div class="partner-info">
@@ -175,7 +177,9 @@
                 <button id="rush-summon-btn" class="summon-btn" onclick="summonRush()">러쉬 소환</button>
             </div>
 <div id="beat-card" class="partner-card">
-    <div class="partner-name">비트</div>
+<div class="partner-name">
+  비트 <span class="partner-desc-inline">- 동료 공격속도 강화 해금</span>
+</div>
     <div id="beat-complete-badge" class="complete-badge">COMPLETE</div>
 
     <div class="partner-info">
@@ -193,7 +197,9 @@
 
 <div id="blues-card" class="partner-card">
 
-  <div class="partner-name">블루스</div>
+<div class="partner-name">
+  블루스 <span class="partner-desc-inline">- 적 접근 시 돌진 공격 + 넉백</span>
+</div>
 
   <div id="blues-complete-badge" class="complete-badge">COMPLETE</div>
 
@@ -226,7 +232,10 @@
             <button class="inner-tab" onclick="showArmorTab('fourth')">포스아머</button>
         </div>
 
-<div class="armor-guide-text">슈퍼록맨 보스전에서 강화 재료 수급</div>
+<div class="armor-guide-text">
+  슈퍼록맨 보스전에서 강화 재료 수급 
+  <span class="armor-material-owned">🔴 : <span class="super-rock-gem-count">0</span> 보유중</span>
+</div>
 <div class="armor-layout">
 
   <!-- 좌측 이미지 -->
@@ -304,13 +313,18 @@
             <button class="inner-tab" onclick="showBossTab('fourth-boss')">포스</button>
         </div>
 
-        <div class="boss-view">
-            <img id="boss-img"
-                 class="boss-main-image"
-                 src="sprites/boss/super-rboss/super-rboss.png"
-                 onclick="enterBossBattle()">
-        </div>
+<div class="boss-view-box">
 
+<div class="boss-reward-guide">
+  슈퍼록맨 아머 강화재료 획득 가능 / 🔴 : 
+  <span class="super-rock-gem-count">0</span> 보유중
+</div>
+
+  <img id="boss-img" class="boss-main-image"
+       src="sprites/boss/super-rboss/super-rboss.png"
+       onclick="enterBossBattle()">
+
+</div>
     </div> <!-- system-panel -->
 </div> <!-- boss-tab -->
 

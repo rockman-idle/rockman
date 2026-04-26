@@ -1,6 +1,7 @@
 const defaultData = { 
     screws: 0,
     crystals: 0,
+    superRockGem: 0,
 
     stage: 1,
 
@@ -63,6 +64,7 @@ if (savedData.gold && !savedData.screws) {
 
 gameData.screws = Math.floor(gameData.screws || 0);
 gameData.crystals = Math.floor(gameData.crystals || 0);
+gameData.superRockGem = Math.floor(gameData.superRockGem || 0);
 gameData.rushFragments = Math.floor(gameData.rushFragments || 0);
 gameData.beatFragments = Math.floor(gameData.beatFragments || 0);
 gameData.rushOwned = gameData.rushOwned || false;
@@ -80,6 +82,7 @@ const RUSH_REQUIRED_FRAGMENTS = 100;
 const BEAT_REQUIRED_FRAGMENTS = 100;
 const BLUES_REQUIRED_FRAGMENTS = 100;
 const ENEMY_START_X = 460;
+const BOSS_START_X = 380; // 보스 등장 시작 위치: 숫자가 작을수록 왼쪽
 const ENEMY_ATTACK_X = 120;
 
 let enemyMaxHp = 1000;
@@ -93,6 +96,8 @@ let chaseTimer = null;
 let enemyDead = false;
 let enemyAttacking = false;
 let playerDead = false;
+let isBossBattle = false;
+let currentBossType = null;
 
 let rockFrame = 1;
 let rockDir = 1;
@@ -155,6 +160,9 @@ const screen = document.querySelector('.game-screen');
 if (screen) {
     screen.classList.remove('boss-mode');
 }
+
+isBossBattle = false;
+currentBossType = null;
 
     updateEnemyPosition();
 }
@@ -539,6 +547,23 @@ function killEnemy() {
     enemyDead = true;
     enemyHp = 0;
 
+    if (isBossBattle && currentBossType === 'super-rboss') {
+        const rewardGem = 1;
+        gameData.superRockGem += rewardGem;
+
+        playEnemyDeathEffect();
+        showRewardText(`+${rewardGem}🔴`);
+
+        setTimeout(() => {
+            setupStage();
+            showStageText("BOSS CLEAR");
+            updateUI();
+            saveData();
+        }, 500);
+
+        return;
+    }
+
     const reward = Math.floor(80 + gameData.stage * 20);
     gameData.screws += reward;
 
@@ -636,7 +661,13 @@ function showRewardText(reward) {
 
     const text = document.createElement('div');
     text.className = 'damage-text reward-text';
-    text.innerText = `+${reward}🔩`;
+
+    if (typeof reward === 'string') {
+        text.innerText = reward;
+    } else {
+        text.innerText = `+${reward}🔩`;
+    }
+
     text.style.left = enemyX + "px";
     text.style.right = "auto";
     text.style.bottom = "38px";
@@ -1114,6 +1145,9 @@ function enterBossBattle() {
 
   showBossWarning(() => {
 
+    isBossBattle = true;
+    currentBossType = 'super-rboss';
+
     const screen = document.querySelector('.game-screen');
     if (screen) {
       screen.classList.add('boss-mode');
@@ -1125,20 +1159,20 @@ function enterBossBattle() {
       enemyImg.style.width = '60px';
       enemyImg.style.height = '60px';
       enemyImg.style.marginTop = '-15px';
+    }
 
-const enemyArea = document.getElementById('enemy-area');
-if (enemyArea) {
-  enemyArea.classList.remove('boss-enter-area');
-  void enemyArea.offsetWidth;
-  enemyArea.classList.add('boss-enter-area');
-}
+    const enemyArea = document.getElementById('enemy-area');
+    if (enemyArea) {
+      enemyArea.classList.remove('boss-enter-area');
+      void enemyArea.offsetWidth;
+      enemyArea.classList.add('boss-enter-area');
     }
 
     enemyMaxHp = 5000;
     enemyHp = enemyMaxHp;
     enemyAtk = 20;
     enemySpeed = 0.18;
-    enemyX = ENEMY_START_X;
+    enemyX = BOSS_START_X;
 
     enemyDead = false;
     enemyAttacking = false;
@@ -1302,6 +1336,10 @@ if (partnerUpgrade) {
     partnerUpgrade.classList.remove('active');
   }
 }
+const superRockGemEls = document.querySelectorAll('.super-rock-gem-count');
+superRockGemEls.forEach(el => {
+    el.innerText = Math.floor(gameData.superRockGem || 0).toLocaleString();
+});
 
 }
 
