@@ -85,6 +85,10 @@
 <img id="rockman-img" class="character" src="sprites/rock/rock_01.png">
 </div>
 
+<div id="forte-area" class="forte-area">
+  <img id="forte-img" src="sprites/partner/forte/forte_01.png">
+</div>
+
 <div id="enemy-area">
                 <div class="boss-hp-container">
                     <div class="hp-bar-bg"><div id="hp-bar-fill"></div></div>
@@ -158,41 +162,66 @@
             <h2>PARTNER</h2>
             <p class="partner-desc">크리스탈로 동료 조각을 구매하고 파트너를 소환할 수 있습니다.</p>
 
-            <div id="rush-card" class="partner-card">
-<div class="partner-name">
-  러쉬 <span class="partner-desc-inline">- 차지샷 데미지 강화 해금</span>
+<div id="rush-card" class="partner-card">
+
+  <div class="partner-top">
+
+    <div class="partner-left">
+      <img src="sprites/partner/rush/rush_01.png" class="partner-icon">
+      <span class="partner-title">
+        러쉬 (<span id="rush-fragments">0</span> / 100)
+      </span>
+    </div>
+
+    <button id="rush-summon-btn" class="summon-btn" onclick="summonRush()">
+      소환
+    </button>
+
+  </div>
+
+  <div class="partner-desc">
+    - 차지샷 데미지 강화 해금
+  </div>
+
+  <div class="partner-actions">
+    <button id="rush-buy1" class="partner-buy-btn" onclick="buyRushFragment(1)">조각 1개</button>
+    <button id="rush-buy10" class="partner-buy-btn" onclick="buyRushFragment(10)">조각 10개</button>
+    <button id="rush-buy100" class="partner-buy-btn" onclick="buyRushFragment(100)">조각 100개</button>
+  </div>
+
+  <div id="rush-complete-badge" class="complete-badge">COMPLETE</div>
+
 </div>
-                <div id="rush-complete-badge" class="complete-badge">COMPLETE</div>
 
-                <div class="partner-info">
-                    러쉬 보유 조각: <span id="rush-fragments">0</span> / 100
-                </div>
-
-                <div class="partner-actions">
-                    <button id="rush-buy1" class="partner-buy-btn" onclick="buyRushFragment(1)">조각 1개</button>
-                    <button id="rush-buy10" class="partner-buy-btn" onclick="buyRushFragment(10)">조각 10개</button>
-                    <button id="rush-buy100" class="partner-buy-btn" onclick="buyRushFragment(100)">조각 100개</button>
-                </div>
-
-                <button id="rush-summon-btn" class="summon-btn" onclick="summonRush()">러쉬 소환</button>
-            </div>
 <div id="beat-card" class="partner-card">
-<div class="partner-name">
-  비트 <span class="partner-desc-inline">- 동료 공격속도 강화 해금</span>
-</div>
-    <div id="beat-complete-badge" class="complete-badge">COMPLETE</div>
 
-    <div class="partner-info">
-        비트 보유 조각: <span id="beat-fragments">0</span> / 100
+  <div class="partner-top">
+
+    <div class="partner-left">
+      <img src="sprites/partner/beat/beat_01.png" class="partner-icon">
+      <span class="partner-title">
+        비트 (<span id="beat-fragments">0</span> / 100)
+      </span>
     </div>
 
-    <div class="partner-actions">
-        <button id="beat-buy1" class="partner-buy-btn" onclick="buyBeatFragment(1)">조각 1개</button>
-        <button id="beat-buy10" class="partner-buy-btn" onclick="buyBeatFragment(10)">조각 10개</button>
-        <button id="beat-buy100" class="partner-buy-btn" onclick="buyBeatFragment(100)">조각 100개</button>
-    </div>
+    <button id="beat-summon-btn" class="summon-btn" onclick="summonBeat()">
+      소환
+    </button>
 
-    <button id="beat-summon-btn" class="summon-btn" onclick="summonBeat()">비트 소환</button>
+  </div>
+
+  <div class="partner-desc">
+    - 동료 공격속도 강화 해금
+  </div>
+
+  <div class="partner-actions">
+    <button id="beat-buy1" class="partner-buy-btn" onclick="buyBeatFragment(1)">조각 1개</button>
+    <button id="beat-buy10" class="partner-buy-btn" onclick="buyBeatFragment(10)">조각 10개</button>
+    <button id="beat-buy100" class="partner-buy-btn" onclick="buyBeatFragment(100)">조각 100개</button>
+  </div>
+
+  <div id="beat-complete-badge" class="complete-badge">COMPLETE</div>
+
 </div>
 
 <div id="blues-card" class="partner-card">
@@ -214,6 +243,28 @@
   </div>
 
   <button id="blues-summon-btn" class="summon-btn" onclick="summonBlues()">블루스 소환</button>
+
+</div>
+
+<div id="forte-card" class="partner-card">
+
+  <div class="partner-name">
+    포르테 <span class="partner-desc-inline">- 추후 전투 기능 추가 예정</span>
+  </div>
+
+  <div id="forte-complete-badge" class="complete-badge">COMPLETE</div>
+
+  <div class="partner-info">
+    포르테 보유 조각: <span id="forte-fragments">0</span> / 100
+  </div>
+
+  <div class="partner-actions">
+    <button id="forte-buy1" class="partner-buy-btn" onclick="buyForteFragment(1)">조각 1개</button>
+    <button id="forte-buy10" class="partner-buy-btn" onclick="buyForteFragment(10)">조각 10개</button>
+    <button id="forte-buy100" class="partner-buy-btn" onclick="buyForteFragment(100)">조각 100개</button>
+  </div>
+
+  <button id="forte-summon-btn" class="summon-btn" onclick="summonForte()">포르테 소환</button>
 
 </div>
 

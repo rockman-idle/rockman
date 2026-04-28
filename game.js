@@ -24,6 +24,9 @@ const defaultData = {
     bluesFragments: 0,
     bluesOwned: false,
 
+    forteFragments: 0,
+    forteOwned: false,
+
     partnerAtkSpd: 2000,
 
     lv: {
@@ -71,6 +74,8 @@ gameData.rushOwned = gameData.rushOwned || false;
 gameData.beatOwned = gameData.beatOwned || false;
 gameData.bluesFragments = Math.floor(gameData.bluesFragments || 0);
 gameData.bluesOwned = gameData.bluesOwned || false;
+gameData.forteFragments = Math.floor(gameData.forteFragments || 0);
+gameData.forteOwned = gameData.forteOwned || false;
 gameData.partnerAtkSpd = gameData.partnerAtkSpd || 2000;
 gameData.playerHp = gameData.playerMaxHp;
 
@@ -81,6 +86,7 @@ Object.keys(gameData.costs).forEach(key => {
 const RUSH_REQUIRED_FRAGMENTS = 100;
 const BEAT_REQUIRED_FRAGMENTS = 100;
 const BLUES_REQUIRED_FRAGMENTS = 100;
+const FORTE_REQUIRED_FRAGMENTS = 100;
 const ENEMY_START_X = 460;
 const BOSS_START_X = 380; // 보스 등장 시작 위치: 숫자가 작을수록 왼쪽
 const ENEMY_ATTACK_X = 120;
@@ -117,6 +123,10 @@ let beatJoinTimer = null;
 let bluesFrame = 6;
 let bluesAttackTimer = null;
 let bluesAttacking = false;
+
+let forteFramePattern = [1, 2, 3, 2];
+let forteFrameIndex = 0;
+let forteJoinTimer = null;
 
 setupStage();
 
@@ -186,6 +196,7 @@ function animate() {
     animateRush();
     animateBeat();
     animateBlues();
+    animateForte();
 }
 
 function animateRush() {
@@ -217,6 +228,16 @@ function animateBlues() {
   if (bluesFrame > 9) bluesFrame = 6;
 
   bluesImg.src = `sprites/partner/blues/blues_0${bluesFrame}.png`;
+}
+
+function animateForte() {
+  const forteImg = document.getElementById('forte-img');
+  if (!forteImg || !gameData.forteOwned) return;
+
+  const frame = forteFramePattern[forteFrameIndex];
+  forteImg.src = `sprites/partner/forte/forte_0${frame}.png`;
+
+  forteFrameIndex = (forteFrameIndex + 1) % forteFramePattern.length;
 }
 
 function startBluesAttack() {
@@ -850,6 +871,21 @@ function buyBluesFragment(amount) {
   saveData();
 }
 
+function buyForteFragment(amount) {
+  if (gameData.forteOwned) return;
+  if (gameData.crystals < amount) return;
+
+  gameData.crystals -= amount;
+  gameData.forteFragments += amount;
+
+  if (gameData.forteFragments > FORTE_REQUIRED_FRAGMENTS) {
+    gameData.forteFragments = FORTE_REQUIRED_FRAGMENTS;
+  }
+
+  updateUI();
+  saveData();
+}
+
 function getSummonTextElement() {
     return document.getElementById('summon-text') || document.querySelector('.summon-text');
 }
@@ -891,6 +927,13 @@ function prepareSummonPopup(type) {
         text.innerText = 'BLUES JOIN!';
         rushImg.style.display = 'none';
         beatImg.src = 'sprites/partner/blues/blues_06.png';
+        beatImg.style.display = 'block';
+    }
+
+    if (type === 'forte') {
+        text.innerText = 'FORTE JOIN!';
+        rushImg.style.display = 'none';
+        beatImg.src = 'sprites/partner/forte/forte_01.png';
         beatImg.style.display = 'block';
     }
 
@@ -1031,6 +1074,49 @@ beatImg.style.transform = `translateY(${Math.sin(bluesJoinFloat / 2) * 4}px)`;
         updateUI();
         saveData();
     }, 1800);
+}
+
+function summonForte() {
+    if (gameData.forteOwned) return;
+    if (gameData.forteFragments < FORTE_REQUIRED_FRAGMENTS) return;
+
+    gameData.forteOwned = true;
+
+    const popupData = prepareSummonPopup('forte');
+    if (!popupData) {
+        updateUI();
+        saveData();
+        return;
+    }
+
+    const { beatImg } = popupData;
+
+    let forteJoinFrame = 1;
+
+    beatImg.src = 'sprites/partner/forte/forte_join_01.png';
+    beatImg.classList.remove('rush-drop');
+    beatImg.classList.remove('join-drop');
+
+    if (forteJoinTimer) clearInterval(forteJoinTimer);
+
+    forteJoinTimer = setInterval(() => {
+        forteJoinFrame++;
+
+        if (forteJoinFrame <= 8) {
+            beatImg.src = `sprites/partner/forte/forte_join_0${forteJoinFrame}.png`;
+        } else {
+            clearInterval(forteJoinTimer);
+            forteJoinTimer = null;
+
+            beatImg.src = 'sprites/partner/forte/forte_join_08.png';
+        }
+    }, 120);
+
+    setTimeout(() => {
+        closeSummonPopup();
+        updateUI();
+        saveData();
+    }, 1600);
 }
 
 function closeSummonPopup() {
@@ -1292,6 +1378,14 @@ setButtonActive(document.getElementById('blues-buy10'), !gameData.bluesOwned && 
 setButtonActive(document.getElementById('blues-buy100'), !gameData.bluesOwned && gameData.crystals >= 100 && gameData.bluesFragments === 0);
 setButtonActive(document.getElementById('blues-summon-btn'), !gameData.bluesOwned && gameData.bluesFragments >= 100);
 
+const forteFragmentsEl = document.getElementById('forte-fragments');
+if (forteFragmentsEl) forteFragmentsEl.innerText = gameData.forteFragments;
+
+setButtonActive(document.getElementById('forte-buy1'), !gameData.forteOwned && gameData.crystals >= 1 && gameData.forteFragments < 100);
+setButtonActive(document.getElementById('forte-buy10'), !gameData.forteOwned && gameData.crystals >= 10 && gameData.forteFragments <= 90);
+setButtonActive(document.getElementById('forte-buy100'), !gameData.forteOwned && gameData.crystals >= 100 && gameData.forteFragments === 0);
+setButtonActive(document.getElementById('forte-summon-btn'), !gameData.forteOwned && gameData.forteFragments >= 100);
+
     const beatCard = document.getElementById('beat-card');
     const beatBadge = document.getElementById('beat-complete-badge');
     const beatArea = document.getElementById('beat-area');
@@ -1307,6 +1401,20 @@ if (bluesCard && bluesBadge) {
     bluesBadge.classList.remove('active');
   }
 }
+
+const forteCard = document.getElementById('forte-card');
+const forteBadge = document.getElementById('forte-complete-badge');
+
+if (forteCard && forteBadge) {
+  if (gameData.forteOwned) {
+    forteCard.classList.add('complete');
+    forteBadge.classList.add('active');
+  } else {
+    forteCard.classList.remove('complete');
+    forteBadge.classList.remove('active');
+  }
+}
+
     if (beatCard && beatBadge) {
         if (gameData.beatOwned) {
             beatCard.classList.add('complete');
@@ -1350,6 +1458,18 @@ if (bluesImg) {
   bluesImg.style.display = gameData.bluesOwned ? 'block' : 'none';
 }
 
+const forteArea = document.getElementById('forte-area');
+const forteImg = document.getElementById('forte-img');
+
+if (forteArea) {
+  if (gameData.forteOwned) forteArea.classList.add('active');
+  else forteArea.classList.remove('active');
+}
+
+if (forteImg) {
+  forteImg.style.display = gameData.forteOwned ? 'block' : 'none';
+}
+
     const rushUpgrade = document.querySelector('.rush-upgrade');
     if (rushUpgrade) {
         if (gameData.rushOwned) rushUpgrade.classList.add('active');
@@ -1369,27 +1489,6 @@ const superRockGemEls = document.querySelectorAll('.super-rock-gem-count');
 superRockGemEls.forEach(el => {
     el.innerText = Math.floor(gameData.superRockGem || 0).toLocaleString();
 });
-
-const segContainer = document.getElementById('player-hp-segments');
-if (segContainer) {
-
-  const maxSeg = 10; // 칸 개수
-  const hpRatio = gameData.playerHp / gameData.maxHp;
-  const filledCount = Math.round(maxSeg * hpRatio);
-
-  segContainer.innerHTML = "";
-
-  for (let i = 0; i < maxSeg; i++) {
-    const seg = document.createElement('div');
-    seg.className = 'hp-seg';
-
-    if (i < filledCount) {
-      seg.classList.add('filled');
-    }
-
-    segContainer.appendChild(seg);
-  }
-}
 
 }
 

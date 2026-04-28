@@ -347,13 +347,13 @@ body {
 .up-btn,
 .partner-buy-btn,
 .summon-btn {
-    padding: 6px 7px;
+    padding: 2px 5px;
     background: #111;
-    color: #555;
+    color: #00d4ff;
     border: 1px solid #333;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: default;
+    border-radius: 3px;
+    font-size: 10px;
+    cursor: pointer;
 }
 
 .exchange-btn.active {
@@ -485,8 +485,9 @@ body {
 }
 
 .partner-card {
+    position: relative;
     margin-top: 15px;
-    padding: 12px;
+    padding: 1px 8px;
     border: 2px solid #00d4ff;
     border-radius: 6px;
     background: #111;
@@ -508,19 +509,24 @@ body {
 
 .complete-badge {
     display: none;
-    float: right;
-    margin-top: -25px;
-    padding: 3px 8px;
+
+    position: absolute;
+    top: 52px;      /* 소환 버튼 아래쪽 */
+    right: 8px;
+
+    padding: 2px 6px;
     color: #000;
     background: #ff3b3b;
     border-radius: 4px;
-    font-size: 11px;
+
+    font-size: 10px;
     font-weight: bold;
-    box-shadow: 0 0 8px #ff3b3b;
+
+    box-shadow: 0 0 6px #ff3b3b;
 }
 
 .complete-badge.active {
-    display: inline-block;
+    display: block;
 }
 
 .partner-info {
@@ -553,6 +559,8 @@ body {
 }
 
 .summon-btn {
+    position: relative;
+    z-index: 2;
     width: 100%;
     padding: 8px;
     font-weight: bold;
@@ -1135,4 +1143,75 @@ body {
 /* 마우스 올렸을 때 */
 #partner-tab::-webkit-scrollbar-thumb:hover {
   background: #4aa3ff;
+}
+
+#partner-tab .summon-btn {
+    width: auto;
+    padding: 2px 6px;
+    font-size: 10px;
+    height: 18px;
+    line-height: 1;
+    display: inline-block;
+}
+
+.forte-area {
+  position: absolute;
+  left: 80px;
+  bottom: 10px;
+  display: none;
+  z-index: 4;
+}
+
+.forte-area.active {
+  display: block;
+}
+
+#forte-img {
+  width: 40px;
+  image-rendering: pixelated;
+}
+
+.partner-top {
+  display: flex;
+  margin-bottom: 1px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.partner-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.partner-icon {
+  width: 60px;
+  height: 60px;
+  image-rendering: pixelated;
+  transform: translateY(-18px);
+  display: block;
+}
+
+.partner-title {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.partner-desc {
+    margin: 0 0 4px 22px;  /* 왼쪽으로 밀고 싶으면 22px 조절 */
+    bottom: 10px;
+    font-size: 11px;
+    color: #00d4ff;
+    text-align: left;
+}
+
+.partner-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.beat-summon-small {
+  width: 10px !important;
+  height: 10px !important;
+  object-fit: contain;
 }
