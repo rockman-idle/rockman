@@ -226,14 +226,19 @@
 
 <div id="blues-card" class="partner-card">
 
-<div class="partner-name">
-  블루스 <span class="partner-desc-inline">- 적 접근 시 돌진 공격 + 넉백</span>
-</div>
+  <div class="partner-top">
+    <div class="partner-left">
+      <img src="sprites/partner/blues/blues_06.png" class="partner-icon">
+      <span class="partner-title">
+        블루스 (<span id="blues-fragments">0</span> / 100)
+      </span>
+    </div>
 
-  <div id="blues-complete-badge" class="complete-badge">COMPLETE</div>
+    <button id="blues-summon-btn" class="summon-btn" onclick="summonBlues()">소환</button>
+  </div>
 
-  <div class="partner-info">
-    블루스 보유 조각: <span id="blues-fragments">0</span> / 100
+  <div class="partner-desc">
+    - 적 접근 시 돌진 공격 + 넉백
   </div>
 
   <div class="partner-actions">
@@ -242,20 +247,25 @@
     <button id="blues-buy100" class="partner-buy-btn" onclick="buyBluesFragment(100)">조각 100개</button>
   </div>
 
-  <button id="blues-summon-btn" class="summon-btn" onclick="summonBlues()">블루스 소환</button>
+  <div id="blues-complete-badge" class="complete-badge">COMPLETE</div>
 
 </div>
 
 <div id="forte-card" class="partner-card">
 
-  <div class="partner-name">
-    포르테 <span class="partner-desc-inline">- 추후 전투 기능 추가 예정</span>
+  <div class="partner-top">
+    <div class="partner-left">
+      <img src="sprites/partner/forte/forte_01.png" class="partner-icon">
+      <span class="partner-title">
+        포르테 (<span id="forte-fragments">0</span> / 100)
+      </span>
+    </div>
+
+    <button id="forte-summon-btn" class="summon-btn" onclick="summonForte()">소환</button>
   </div>
 
-  <div id="forte-complete-badge" class="complete-badge">COMPLETE</div>
-
-  <div class="partner-info">
-    포르테 보유 조각: <span id="forte-fragments">0</span> / 100
+  <div class="partner-desc">
+    - 추후 전투 기능 추가 예정
   </div>
 
   <div class="partner-actions">
@@ -264,7 +274,7 @@
     <button id="forte-buy100" class="partner-buy-btn" onclick="buyForteFragment(100)">조각 100개</button>
   </div>
 
-  <button id="forte-summon-btn" class="summon-btn" onclick="summonForte()">포르테 소환</button>
+  <div id="forte-complete-badge" class="complete-badge">COMPLETE</div>
 
 </div>
 

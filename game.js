@@ -1008,6 +1008,9 @@ function summonBeat() {
     beatFloat = 0;
 
     beatImg.src = 'sprites/partner/beat/beat_01.png';
+    beatImg.style.setProperty('width', '28px', 'important');
+    beatImg.style.setProperty('height', '28px', 'important');
+
     beatImg.classList.remove('rush-drop');
     void beatImg.offsetWidth;
     beatImg.classList.add('rush-drop');
@@ -1022,7 +1025,7 @@ function summonBeat() {
 
         beatFloat += 1;
         beatImg.src = `sprites/partner/beat/beat_0${beatFrame}.png`;
-        beatImg.style.transform = `translateY(${Math.sin(beatFloat / 2) * 4}px)`;
+        beatImg.style.transform = `translateX(-50%) translateY(${Math.sin(beatFloat / 2) * 4}px)`;
     }, 120);
 
     setTimeout(() => {
@@ -1145,10 +1148,13 @@ if (rushJoinImg) {
     rushJoinImg.style.display = 'block';
 }
 
-    if (beatJoinImg) {
-        beatJoinImg.src = `sprites/partner/beat/beat_01.png`;
-        beatJoinImg.style.display = 'none';
-    }
+if (beatJoinImg) {
+    beatJoinImg.src = `sprites/partner/beat/beat_01.png`;
+    beatJoinImg.style.width = '';
+    beatJoinImg.style.height = '';
+    beatJoinImg.style.transform = 'translateX(-50%)';
+    beatJoinImg.style.display = 'none';
+}
 
     if (beatJoinImg) {
     beatJoinImg.classList.remove('join-drop');

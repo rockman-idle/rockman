@@ -486,12 +486,19 @@ body {
 
 .partner-card {
     position: relative;
-    margin-top: 15px;
-    padding: 1px 8px;
+    margin-top: 0px;          /* 🔴 간격 줄이기 */
+    padding: 6px 8px;          /* 🔴 위아래 여백 정상화 */
+    
     border: 2px solid #00d4ff;
     border-radius: 6px;
     background: #111;
+
     text-align: left;
+
+    display: flex;             /* 🔴 핵심 */
+    flex-direction: column;
+    gap: 4px;                  /* 🔴 내부 간격 통일 */
+
     transition: transform 0.3s, opacity 0.3s;
 }
 
@@ -499,6 +506,12 @@ body {
     opacity: 0.65;
     transform: translateY(24px);
     border-color: #555;
+}
+
+.partner-top,
+.partner-desc,
+.partner-actions {
+    margin: 0;
 }
 
 .partner-name {
@@ -1210,8 +1223,14 @@ body {
   gap: 6px;
 }
 
-.beat-summon-small {
-  width: 10px !important;
-  height: 10px !important;
-  object-fit: contain;
+#beat-join-img {
+  width: 28px !important;
+  height: 28px !important;
 }
+
+#beat-card .partner-icon {
+  width: 40px;
+  height: 40px;
+  transform: translateY(-1px);
+}
+
