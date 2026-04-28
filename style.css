@@ -68,18 +68,26 @@ body {
 }
 
 .player-hp-bg {
-    height: 8px;
-    background: #333;
-    border: 1px solid #555;
-    border-radius: 4px;
+    height: 10px;
+    background: #111;
+    border: 2px solid #777;
+    border-radius: 3px;
     overflow: hidden;
     margin-bottom: 8px;
+    padding: 1px;
 }
 
 #player-hp-fill {
     height: 100%;
     width: 100%;
-    background: #00ff66;
+    background:
+        repeating-linear-gradient(
+            to right,
+            #ffcc00 0px,
+            #ffcc00 5px,
+            #111 5px,
+            #111 7px
+        );
     transition: width 0.15s;
 }
 
@@ -266,26 +274,37 @@ body {
     font-size: 14px;
     font-weight: bold;
     pointer-events: none;
-    animation: floatUp 0.6s ease-out forwards;
+    animation: floatUp 1s ease-out forwards;
     text-shadow: 0 0 5px #000;
     z-index: 30;
 }
 
 .damage-text.crit {
-    color: #ff3b3b;
+    color: #00bfff;
     font-size: 18px;
-    text-shadow: 0 0 8px #ff3b3b;
-}
+    text-shadow:
+  0 0 4px #00bfff,
+  0 0 8px #00bfff,
+  }
 
 .reward-text { color: #ffd700; }
 
 .stage-text {
-    color: #ff4444;
-    font-size: 16px;
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  color: #00ff66;
+  font-size: 20px;
+  text-align: center;
+
+  z-index: 50;
 }
 
 @keyframes floatUp {
     0% { transform: translateY(0); opacity: 1; }
+    70% { transform: translateY(-10px); opacity: 1; }
     100% { transform: translateY(-20px); opacity: 0; }
 }
 
@@ -1079,4 +1098,41 @@ body {
   color: #00d4ff;
   font-size: 11px;
   margin-left: 6px;
+}
+
+.enemy-stunned {
+  animation: enemyStunFlash 0.15s linear infinite;
+  filter: brightness(1.8) saturate(0.4);
+}
+
+@keyframes enemyStunFlash {
+  0% { opacity: 1; }
+  50% { opacity: 0.45; }
+  100% { opacity: 1; }
+}
+
+#partner-tab {
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* 스크롤바 전체 */
+#partner-tab::-webkit-scrollbar {
+  width: 8px;
+}
+
+/* 스크롤 트랙 (배경) */
+#partner-tab::-webkit-scrollbar-track {
+  background: #111;
+}
+
+/* 스크롤 막대 */
+#partner-tab::-webkit-scrollbar-thumb {
+  background: #1e90ff; /* 🔵 파란색 */
+  border-radius: 4px;
+}
+
+/* 마우스 올렸을 때 */
+#partner-tab::-webkit-scrollbar-thumb:hover {
+  background: #4aa3ff;
 }

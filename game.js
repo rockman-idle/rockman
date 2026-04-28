@@ -95,6 +95,7 @@ let attackTimer = null;
 let chaseTimer = null;
 let enemyDead = false;
 let enemyAttacking = false;
+let enemyStunned = false;
 let playerDead = false;
 let isBossBattle = false;
 let currentBossType = null;
@@ -224,7 +225,7 @@ function startBluesAttack() {
   bluesAttackTimer = setInterval(() => {
     if (!gameData.bluesOwned || enemyDead || playerDead || bluesAttacking) return;
 
-    if (enemyX > 150) return;
+    if (enemyX > 180) return;
 
     bluesShieldCharge();
   }, gameData.partnerAtkSpd);
@@ -255,9 +256,37 @@ function bluesShieldCharge() {
       showDamageText(damage, false);
       playEnemyHit(enemy);
 
-      enemyX += 10;
-      if (enemyX > ENEMY_START_X) enemyX = ENEMY_START_X;
-      updateEnemyPosition();
+// 🔴 넉백 확률 적용
+const knockbackChance = 0.65;
+
+if (Math.random() < knockbackChance) {
+
+  // 넉백 성공
+  enemyX += 18;
+  if (enemyX > ENEMY_START_X) enemyX = ENEMY_START_X;
+  updateEnemyPosition();
+
+enemyStunned = true;
+enemy.classList.add('enemy-stunned');
+
+setTimeout(() => {
+  enemyStunned = false;
+  enemy.classList.remove('enemy-stunned');
+}, 500);
+
+} else {
+
+  // ❌ 넉백 실패 표시
+  showDamageText("MISS", false);
+
+}
+
+      // 🔴 스턴 0.5초
+      enemyStunned = true;
+
+      setTimeout(() => {
+        enemyStunned = false;
+      }, 500);
 
       if (enemyHp <= 0) {
         killEnemy();
@@ -282,7 +311,7 @@ function startChase() {
     if (chaseTimer) clearInterval(chaseTimer);
 
     chaseTimer = setInterval(() => {
-        if (enemyDead || playerDead) return;
+        if (enemyDead || playerDead || enemyStunned) return;
 
         if (enemyX > ENEMY_ATTACK_X) {
             enemyX -= enemySpeed;
@@ -618,7 +647,7 @@ function showDamageText(damage, isChargeShot) {
 
     if (isChargeShot) {
         dmg.classList.add('crit');
-        dmg.innerText = `CHARGE ${damage}`;
+        dmg.innerText = `${damage}`;
     } else {
         dmg.innerText = damage;
     }
@@ -628,7 +657,7 @@ function showDamageText(damage, isChargeShot) {
     dmg.style.bottom = "38px";
 
     screen.appendChild(dmg);
-    setTimeout(() => dmg.remove(), 600);
+    setTimeout(() => dmg.remove(), 1200);
 }
 
 function showPlayerDamageText(damage) {
@@ -1340,6 +1369,27 @@ const superRockGemEls = document.querySelectorAll('.super-rock-gem-count');
 superRockGemEls.forEach(el => {
     el.innerText = Math.floor(gameData.superRockGem || 0).toLocaleString();
 });
+
+const segContainer = document.getElementById('player-hp-segments');
+if (segContainer) {
+
+  const maxSeg = 10; // 칸 개수
+  const hpRatio = gameData.playerHp / gameData.maxHp;
+  const filledCount = Math.round(maxSeg * hpRatio);
+
+  segContainer.innerHTML = "";
+
+  for (let i = 0; i < maxSeg; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'hp-seg';
+
+    if (i < filledCount) {
+      seg.classList.add('filled');
+    }
+
+    segContainer.appendChild(seg);
+  }
+}
 
 }
 
