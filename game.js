@@ -19,8 +19,6 @@ const defaultData = {
     beatFragments: 0,
     beatOwned: false,
 
-    partnerAtkSpeedLevel: 0,
-
     bluesFragments: 0,
     bluesOwned: false,
 
@@ -301,13 +299,6 @@ setTimeout(() => {
   showDamageText("MISS", false);
 
 }
-
-      // 🔴 스턴 0.5초
-      enemyStunned = true;
-
-      setTimeout(() => {
-        enemyStunned = false;
-      }, 500);
 
       if (enemyHp <= 0) {
         killEnemy();
@@ -797,17 +788,6 @@ function buyUpgrade(type, amount) {
     saveData();
 }
 
-function upgradePartnerAttackSpeed() {
-  const cost = 50 + (gameData.partnerAtkSpeedLevel * 50);
-
-  if (gameData.crystals < cost) return;
-
-  gameData.crystals -= cost;
-  gameData.partnerAtkSpeedLevel++;
-
-  updateUI();
-  saveData();
-}
 
 function buyUpgradeMax(type) {
     while (gameData.screws >= gameData.costs[type]) {
@@ -890,56 +870,94 @@ function getSummonTextElement() {
     return document.getElementById('summon-text') || document.querySelector('.summon-text');
 }
 
+const SUMMON_JOIN_DATA = {
+    rush: {
+        text: 'RUSH JOIN!',
+        firstSrc: 'sprites/partner/rush/rush_01.png',
+        idleSrc: 'sprites/partner/rush/rush_01.png',
+        sizeClass: 'summon-size-normal'
+    },
+    beat: {
+        text: 'BEAT JOIN!',
+        firstSrc: 'sprites/partner/beat/beat_01.png',
+        idleSrc: 'sprites/partner/beat/beat_01.png',
+        sizeClass: 'summon-size-small'
+    },
+    blues: {
+        text: 'BLUES JOIN!',
+        firstSrc: 'sprites/partner/blues/blues_06.png',
+        idleSrc: 'sprites/partner/blues/blues_06.png',
+        sizeClass: 'summon-size-normal'
+    },
+    forte: {
+        text: 'FORTE JOIN!',
+        firstSrc: 'sprites/partner/forte/forte_01.png',
+        idleSrc: 'sprites/partner/forte/forte_01.png',
+        sizeClass: 'summon-size-normal'
+    }
+};
+
+function getPartnerJoinImage() {
+    let img = document.getElementById('partner-join-img') || document.getElementById('beat-join-img');
+
+    if (!img) {
+        img = document.createElement('img');
+        const box = document.querySelector('.summon-box');
+        if (box) box.appendChild(img);
+    }
+
+    img.id = 'partner-join-img';
+    img.className = 'rush-join-img summon-join-img';
+    img.style.display = 'none';
+
+    return img;
+}
+
+function resetJoinImage(img) {
+    if (!img) return;
+
+    img.classList.remove(
+        'rush-drop',
+        'join-drop',
+        'summon-size-small',
+        'summon-size-normal'
+    );
+
+    img.style.width = '';
+    img.style.height = '';
+    img.style.transform = 'translateX(-50%)';
+}
+
 function prepareSummonPopup(type) {
     const popup = document.getElementById('summon-popup');
     const text = getSummonTextElement();
-
     const rushImg = document.getElementById('rush-join-img');
-    let beatImg = document.getElementById('beat-join-img');
+    const partnerImg = getPartnerJoinImage();
+    const data = SUMMON_JOIN_DATA[type];
 
-    if (!popup || !text || !rushImg) return null;
+    if (!popup || !text || !rushImg || !partnerImg || !data) return null;
 
-    if (!beatImg) {
-        beatImg = document.createElement('img');
-        beatImg.id = 'beat-join-img';
-        beatImg.className = 'rush-join-img';
-        beatImg.style.display = 'none';
+    resetJoinImage(rushImg);
+    resetJoinImage(partnerImg);
 
-        const box = document.querySelector('.summon-box');
-        if (box) box.appendChild(beatImg);
-    }
+    text.innerText = data.text;
 
     if (type === 'rush') {
-        text.innerText = 'RUSH JOIN!';
-        rushImg.src = 'sprites/partner/rush/rush_02.png';
+        rushImg.src = data.firstSrc;
+        rushImg.classList.add(data.sizeClass);
         rushImg.style.display = 'block';
-        beatImg.style.display = 'none';
-    }
-
-    if (type === 'beat') {
-        text.innerText = 'BEAT JOIN!';
+        partnerImg.style.display = 'none';
+    } else {
         rushImg.style.display = 'none';
-        beatImg.src = 'sprites/partner/beat/beat_01.png';
-        beatImg.style.display = 'block';
-    }
-
-    if (type === 'blues') {
-        text.innerText = 'BLUES JOIN!';
-        rushImg.style.display = 'none';
-        beatImg.src = 'sprites/partner/blues/blues_06.png';
-        beatImg.style.display = 'block';
-    }
-
-    if (type === 'forte') {
-        text.innerText = 'FORTE JOIN!';
-        rushImg.style.display = 'none';
-        beatImg.src = 'sprites/partner/forte/forte_01.png';
-        beatImg.style.display = 'block';
+        partnerImg.src = data.firstSrc;
+        partnerImg.classList.add(data.sizeClass);
+        partnerImg.style.display = 'block';
     }
 
     popup.classList.add('active');
+    popup.onclick = closeSummonPopup;
 
-    return { popup, rushImg, beatImg };
+    return { popup, rushImg, partnerImg };
 }
 
 function summonRush() {
@@ -956,14 +974,14 @@ function summonRush() {
         return;
     }
 
-    const { popup, rushImg } = popupData;
+    const { rushImg } = popupData;
 
     rushJoinFrame = 1;
-    rushImg.src = `sprites/partner/rush/rush_01.png`;
+    rushImg.src = 'sprites/partner/rush/rush_01.png';
 
-rushImg.classList.remove('join-drop');
-void rushImg.offsetWidth;
-rushImg.classList.add('join-drop');
+    rushImg.classList.remove('join-drop');
+    void rushImg.offsetWidth;
+    rushImg.classList.add('join-drop');
 
     if (rushJoinTimer) clearInterval(rushJoinTimer);
 
@@ -976,13 +994,9 @@ rushImg.classList.add('join-drop');
             clearInterval(rushJoinTimer);
             rushJoinTimer = null;
             rushImg.classList.remove('join-drop');
-            rushImg.src = `sprites/partner/rush/rush_01.png`;
+            rushImg.src = 'sprites/partner/rush/rush_01.png';
         }
     }, 180);
-
-    popup.onclick = () => {
-        closeSummonPopup();
-    };
 
     updateUI();
     saveData();
@@ -1001,19 +1015,17 @@ function summonBeat() {
         return;
     }
 
-    const { beatImg } = popupData;
+    const { partnerImg } = popupData;
 
     beatFrame = 1;
     beatDir = 1;
     beatFloat = 0;
 
-    beatImg.src = 'sprites/partner/beat/beat_01.png';
-    beatImg.style.setProperty('width', '28px', 'important');
-    beatImg.style.setProperty('height', '28px', 'important');
+    partnerImg.src = 'sprites/partner/beat/beat_01.png';
 
-    beatImg.classList.remove('rush-drop');
-    void beatImg.offsetWidth;
-    beatImg.classList.add('rush-drop');
+    partnerImg.classList.remove('rush-drop');
+    void partnerImg.offsetWidth;
+    partnerImg.classList.add('rush-drop');
 
     if (beatJoinTimer) clearInterval(beatJoinTimer);
 
@@ -1024,8 +1036,8 @@ function summonBeat() {
         if (beatFrame <= 1) beatDir = 1;
 
         beatFloat += 1;
-        beatImg.src = `sprites/partner/beat/beat_0${beatFrame}.png`;
-        beatImg.style.transform = `translateX(-50%) translateY(${Math.sin(beatFloat / 2) * 4}px)`;
+        partnerImg.src = `sprites/partner/beat/beat_0${beatFrame}.png`;
+        partnerImg.style.transform = `translateX(-50%) translateY(${Math.sin(beatFloat / 2) * 4}px)`;
     }, 120);
 
     setTimeout(() => {
@@ -1048,28 +1060,28 @@ function summonBlues() {
         return;
     }
 
-    const { beatImg } = popupData;
+    const { partnerImg } = popupData;
 
-let bluesJoinFrame = 6;
-let bluesJoinDir = 1;
-let bluesJoinFloat = 0;
+    let bluesJoinFrame = 6;
+    let bluesJoinDir = 1;
+    let bluesJoinFloat = 0;
 
-beatImg.src = 'sprites/partner/blues/blues_06.png';
-    beatImg.classList.remove('rush-drop');
-    void beatImg.offsetWidth;
-    beatImg.classList.add('rush-drop');
+    partnerImg.src = 'sprites/partner/blues/blues_06.png';
+    partnerImg.classList.remove('rush-drop');
+    void partnerImg.offsetWidth;
+    partnerImg.classList.add('rush-drop');
 
     if (beatJoinTimer) clearInterval(beatJoinTimer);
 
     beatJoinTimer = setInterval(() => {
-bluesJoinFrame += bluesJoinDir;
+        bluesJoinFrame += bluesJoinDir;
 
-if (bluesJoinFrame >= 9) bluesJoinDir = -1;
-if (bluesJoinFrame <= 6) bluesJoinDir = 1;
+        if (bluesJoinFrame >= 9) bluesJoinDir = -1;
+        if (bluesJoinFrame <= 6) bluesJoinDir = 1;
 
-bluesJoinFloat += 1;
-beatImg.src = `sprites/partner/blues/blues_0${bluesJoinFrame}.png`;
-beatImg.style.transform = `translateY(${Math.sin(bluesJoinFloat / 2) * 4}px)`;
+        bluesJoinFloat += 1;
+        partnerImg.src = `sprites/partner/blues/blues_0${bluesJoinFrame}.png`;
+        partnerImg.style.transform = `translateX(-50%) translateY(${Math.sin(bluesJoinFloat / 2) * 4}px)`;
     }, 120);
 
     setTimeout(() => {
@@ -1092,13 +1104,12 @@ function summonForte() {
         return;
     }
 
-    const { beatImg } = popupData;
+    const { partnerImg } = popupData;
 
     let forteJoinFrame = 1;
 
-    beatImg.src = 'sprites/partner/forte/forte_join_01.png';
-    beatImg.classList.remove('rush-drop');
-    beatImg.classList.remove('join-drop');
+    partnerImg.src = 'sprites/partner/forte/forte_join_01.png';
+    partnerImg.classList.remove('rush-drop', 'join-drop');
 
     if (forteJoinTimer) clearInterval(forteJoinTimer);
 
@@ -1106,12 +1117,11 @@ function summonForte() {
         forteJoinFrame++;
 
         if (forteJoinFrame <= 8) {
-            beatImg.src = `sprites/partner/forte/forte_join_0${forteJoinFrame}.png`;
+            partnerImg.src = `sprites/partner/forte/forte_join_0${forteJoinFrame}.png`;
         } else {
             clearInterval(forteJoinTimer);
             forteJoinTimer = null;
-
-            beatImg.src = 'sprites/partner/forte/forte_join_08.png';
+            partnerImg.src = 'sprites/partner/forte/forte_join_08.png';
         }
     }, 120);
 
@@ -1125,7 +1135,7 @@ function summonForte() {
 function closeSummonPopup() {
     const popup = document.getElementById('summon-popup');
     const rushJoinImg = document.getElementById('rush-join-img');
-    const beatJoinImg = document.getElementById('beat-join-img');
+    const partnerJoinImg = document.getElementById('partner-join-img') || document.getElementById('beat-join-img');
 
     if (popup) {
         popup.classList.remove('active');
@@ -1142,25 +1152,24 @@ function closeSummonPopup() {
         beatJoinTimer = null;
     }
 
-if (rushJoinImg) {
-    rushJoinImg.classList.remove('rush-drop');
-    rushJoinImg.src = `sprites/partner/rush/rush_01.png`;
-    rushJoinImg.style.display = 'block';
-}
+    if (forteJoinTimer) {
+        clearInterval(forteJoinTimer);
+        forteJoinTimer = null;
+    }
 
-if (beatJoinImg) {
-    beatJoinImg.src = `sprites/partner/beat/beat_01.png`;
-    beatJoinImg.style.width = '';
-    beatJoinImg.style.height = '';
-    beatJoinImg.style.transform = 'translateX(-50%)';
-    beatJoinImg.style.display = 'none';
-}
+    if (rushJoinImg) {
+        resetJoinImage(rushJoinImg);
+        rushJoinImg.src = 'sprites/partner/rush/rush_01.png';
+        rushJoinImg.classList.add('summon-size-normal');
+        rushJoinImg.style.display = 'block';
+    }
 
-    if (beatJoinImg) {
-    beatJoinImg.classList.remove('join-drop');
-    beatJoinImg.src = `sprites/partner/beat/beat_01.png`;
-    beatJoinImg.style.display = 'none';
-}
+    if (partnerJoinImg) {
+        resetJoinImage(partnerJoinImg);
+        partnerJoinImg.id = 'partner-join-img';
+        partnerJoinImg.src = 'sprites/partner/beat/beat_01.png';
+        partnerJoinImg.style.display = 'none';
+    }
 
     showTab('battle');
     updateUI();
@@ -1182,8 +1191,19 @@ function showTab(tabName) {
     if (targetBtn) targetBtn.classList.add('active');
 }
 
+function setInnerTabActive(tabSelector, type) {
+    document.querySelectorAll(`${tabSelector} .inner-tab`).forEach(btn => {
+        btn.classList.remove('active');
+
+        const onClick = btn.getAttribute('onclick') || '';
+        if (onClick.includes(`'${type}'`) || onClick.includes(`"${type}"`)) {
+            btn.classList.add('active');
+        }
+    });
+}
+
 function showArmorTab(type) {
-    const armorImg = document.getElementById('armor-img');
+    const armorImg = document.getElementById('armor-img') || document.querySelector('#armor-tab .armor-main-image');
     const armorName = document.getElementById('armor-name');
 
     const armorData = {
@@ -1194,18 +1214,13 @@ function showArmorTab(type) {
         'fourth': { name: '포스아머', img: 'sprites/armor/super-r/super-r.png' }
     };
 
-    if (!armorData[type]) return;
+    const data = armorData[type];
+    if (!data) return;
 
-    armorImg.src = armorData[type].img;
-    armorName.innerText = armorData[type].name;
+    if (armorImg) armorImg.src = data.img;
+    if (armorName) armorName.innerText = data.name;
 
-    document.querySelectorAll('#armor-tab .inner-tab').forEach(btn => {
-        btn.classList.remove('active');
-    });
-
-    if (event && event.target) {
-        event.target.classList.add('active');
-    }
+    setInnerTabActive('#armor-tab', type);
 }
 
 function showBossTab(type) {
@@ -1220,18 +1235,13 @@ function showBossTab(type) {
         'fourth-boss': { name: '포스 보스전', img: 'sprites/boss/super-rboss/super-rboss.png' }
     };
 
-    if (!bossData[type]) return;
+    const data = bossData[type];
+    if (!data) return;
 
-    bossImg.src = bossData[type].img;
-    bossName.innerText = bossData[type].name;
+    if (bossImg) bossImg.src = data.img;
+    if (bossName) bossName.innerText = data.name;
 
-    document.querySelectorAll('#boss-tab .inner-tab').forEach(btn => {
-        btn.classList.remove('active');
-    });
-
-    if (event && event.target) {
-        event.target.classList.add('active');
-    }
+    setInnerTabActive('#boss-tab', type);
 }
 
 let isBossWarning = false;
@@ -1434,7 +1444,7 @@ if (forteCard && forteBadge) {
 
     const partnerArea = document.getElementById('partner-area');
     if (partnerArea) {
-        if (gameData.rushOwned || gameData.beatOwned) {
+        if (gameData.rushOwned || gameData.beatOwned || gameData.bluesOwned || gameData.forteOwned) {
             partnerArea.classList.add('active');
         } else {
             partnerArea.classList.remove('active');
