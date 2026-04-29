@@ -503,7 +503,6 @@ body {
 }
 
 .partner-card.complete {
-    opacity: 0.65;
     border-color: #555;
 }
 
@@ -1016,6 +1015,20 @@ body {
   animation: bossEnter 0.5s ease-out;
 }
 
+@keyframes bossEnter {
+  0% {
+    transform: translateY(-80px) scale(1.3);
+    opacity: 0;
+  }
+  70% {
+    transform: translateY(6px) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
 .game-screen.boss-mode {
   box-shadow:
     inset 0 0 35px rgba(255, 0, 0, 0.55),
@@ -1207,14 +1220,9 @@ body {
   gap: 6px;
 }
 
-.summon-join-img.summon-size-small {
-  width: 28px;
-  height: 28px;
-}
-
-.summon-join-img.summon-size-normal {
-  width: 54px;
-  height: 54px;
+#beat-join-img {
+  width: 28px !important;
+  height: 28px !important;
 }
 
 #beat-card .partner-icon {
@@ -1223,3 +1231,325 @@ body {
   transform: translateY(-1px);
 }
 
+
+
+.partner-bullet {
+    position: absolute;
+    width: 7px;
+    height: 5px;
+    border-radius: 3px;
+    z-index: 10;
+}
+
+.forte-bullet {
+    background: #ffd700;
+    box-shadow: 0 0 6px #fff, 0 0 10px #ffd700;
+}
+
+.forte-upgrade {
+    display: none;
+}
+
+.forte-upgrade.active {
+    display: flex;
+}
+
+.forte-upgrade-btn {
+    border-color: #9b4dff;
+    box-shadow: 0 0 5px rgba(155, 77, 255, 0.9);
+}
+
+.forte-lv-tag {
+    background: #9b4dff;
+    color: #fff;
+}
+
+.forte-up-btn.active {
+    color: #fff;
+    border-color: #9b4dff;
+    box-shadow: 0 0 6px #9b4dff;
+}
+
+.forte-up-btn.active:hover {
+    background: #9b4dff;
+    color: #fff;
+}
+
+.forte-up-btn.tooltip-btn:hover::after {
+    color: #c987ff;
+    border-color: #9b4dff;
+}
+
+.partner-damage-preview {
+    justify-content: flex-end;
+    margin: -4px 0 8px;
+    color: #c987ff;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.partner-top-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.enhance-btn {
+    border-color: #9b4dff;
+    color: #c987ff;
+}
+
+.enhance-btn.owned {
+    box-shadow: 0 0 6px #9b4dff;
+}
+
+.partner-upgrade-panel {
+    display: none;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid #333;
+}
+
+.partner-upgrade-panel.owned.active {
+    display: block;
+}
+
+.partner-card-upgrade-row {
+    margin: 0;
+    gap: 4px;
+}
+
+.partner-card-upgrade-row .upgrade-btn {
+    padding: 6px;
+    font-size: 11px;
+}
+
+.forte-upgrade.owned:not(.partner-upgrade-panel) {
+    display: inline-block;
+}
+
+.partner-charge-effect {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #00ff66;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #00ff66, inset 0 0 8px #00ff66;
+    animation: chargePulse 0.12s ease-out forwards;
+    z-index: 9;
+}
+
+.forte-charge-bullet {
+    width: 14px;
+    height: 10px;
+    background: #00ff66;
+    border-radius: 5px;
+    box-shadow: 0 0 6px #fff, 0 0 14px #00ff66, 0 0 22px #00ff66;
+}
+
+
+/* 동료 공격력 싱크로 강화 */
+.partner-attack-upgrade-box {
+    display: none;
+    margin: 8px 0 10px;
+    border: 1px solid #145c2e;
+    border-radius: 6px;
+    background: #061208;
+    overflow: hidden;
+}
+
+.partner-attack-upgrade-box.visible {
+    display: block;
+}
+
+.partner-attack-upgrade-header {
+    width: 100%;
+    padding: 8px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0a1d0f;
+    color: #00ff66;
+    border: none;
+    border-bottom: 1px solid #145c2e;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.partner-attack-upgrade-header.active {
+    box-shadow: inset 0 0 10px rgba(0, 255, 102, 0.25);
+}
+
+.partner-attack-cost {
+    color: #7dffb0;
+    font-size: 13px;
+}
+
+.partner-attack-upgrade-panel {
+    display: none;
+    padding: 8px;
+}
+
+.partner-attack-upgrade-panel.active {
+    display: block;
+}
+
+.partner-attack-help {
+    margin-bottom: 6px;
+    color: #9dffbf;
+    font-size: 11px;
+    text-align: left;
+}
+
+.partner-upgrade-result {
+    min-height: 14px;
+    margin-bottom: 4px;
+    color: #ffd700;
+    font-size: 11px;
+    font-weight: bold;
+    text-align: center;
+    opacity: 0;
+}
+
+.partner-upgrade-result.active {
+    animation: partnerUpgradeResult 0.9s ease-out;
+}
+
+@keyframes partnerUpgradeResult {
+    0% { opacity: 0; transform: translateY(4px); }
+    25% { opacity: 1; transform: translateY(0); }
+    75% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-4px); }
+}
+
+.partner-sync-row {
+    display: none;
+    padding: 7px;
+    margin-top: 6px;
+    border: 1px solid #1b4b2a;
+    border-radius: 5px;
+    background: #050b06;
+    opacity: 0.45;
+}
+
+.partner-sync-row.owned {
+    display: block;
+    opacity: 1;
+}
+
+.partner-sync-top,
+.partner-sync-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+}
+
+.partner-sync-name {
+    color: #fff;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.partner-sync-percent {
+    color: #00ff66;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.partner-sync-gauge-wrap {
+    margin: 5px 0;
+}
+
+.partner-sync-gauge-bg {
+    position: relative;
+    height: 13px;
+    background: #111;
+    border: 1px solid #145c2e;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.partner-sync-gauge-fill {
+    height: 100%;
+    width: 0%;
+    background:
+        repeating-linear-gradient(
+            to right,
+            #00ff66 0px,
+            #00ff66 8px,
+            #061208 8px,
+            #061208 10px
+        );
+    box-shadow: 0 0 8px #00ff66;
+    transition: width 0.2s;
+}
+
+
+.partner-sync-bottom {
+    color: #b8ffd1;
+    font-size: 15px;
+}
+
+.partner-sync-upgrade-btn {
+    padding: 4px 9px;
+    background: #111;
+    color: #00ff66;
+    border: 1px solid #145c2e;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.partner-sync-upgrade-btn.active {
+    color: #000;
+    background: #00ff66;
+    border-color: #00ff66;
+    box-shadow: 0 0 6px #00ff66;
+}
+
+.partner-sync-chance-label {
+    font-size: 15px;
+    font-weight: bold;
+}
+
+#battle-tab .partner-attack-upgrade-box {
+    margin-top: 10px;
+}
+
+.x-area {
+  position: absolute;
+  left: 55px;
+  bottom: 15px;
+  display: none;
+  z-index: 6;
+}
+
+.x-area.active {
+  display: block;
+}
+
+#x-img {
+  width: 40px;
+  image-rendering: pixelated;
+}
+
+.x-bullet {
+  background: #ffd700;
+  box-shadow: 0 0 6px #fff, 0 0 10px #ffd700;
+}
+
+.x-charge-effect {
+  border-color: #ff4fd8;
+  box-shadow: 0 0 8px #ff4fd8, inset 0 0 8px #ff4fd8;
+}
+
+.x-charge-bullet {
+  width: 14px;
+  height: 10px;
+  background: #ff4fd8;
+  border-radius: 5px;
+  box-shadow: 0 0 6px #fff, 0 0 14px #ff4fd8, 0 0 22px #ff4fd8;
+}

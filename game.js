@@ -19,13 +19,30 @@ const defaultData = {
     beatFragments: 0,
     beatOwned: false,
 
+    partnerAtkSpeedLevel: 0,
+
     bluesFragments: 0,
     bluesOwned: false,
 
     forteFragments: 0,
     forteOwned: false,
 
+    xFragments: 0,
+    xOwned: false,
+
+    // 추후 추가될 버스터형 파트너용 기본값
+    exeRockmanOwned: false,
+
     partnerAtkSpd: 2000,
+
+    // 동료 공격력 싱크로율(%) - 록맨 버스터 공격력 기준
+    partnerSync: {
+        forte: 10,
+        x: 10,
+        exeRockman: 10
+    },
+
+    partnerSyncStart10Migrated: true,
 
     lv: {
         atk: 1,
@@ -52,7 +69,8 @@ let gameData = {
     ...defaultData,
     ...savedData,
     lv: { ...defaultData.lv, ...(savedData.lv || {}) },
-    costs: { ...defaultData.costs, ...(savedData.costs || {}) }
+    costs: { ...defaultData.costs, ...(savedData.costs || {}) },
+    partnerSync: { ...defaultData.partnerSync, ...(savedData.partnerSync || {}) }
 };
 
 if (savedData.partnerFragments && !savedData.rushFragments) {
@@ -74,7 +92,23 @@ gameData.bluesFragments = Math.floor(gameData.bluesFragments || 0);
 gameData.bluesOwned = gameData.bluesOwned || false;
 gameData.forteFragments = Math.floor(gameData.forteFragments || 0);
 gameData.forteOwned = gameData.forteOwned || false;
+gameData.xFragments = Math.floor(gameData.xFragments || 0);
+gameData.xOwned = gameData.xOwned || false;
+gameData.exeRockmanOwned = gameData.exeRockmanOwned || false;
 gameData.partnerAtkSpd = gameData.partnerAtkSpd || 2000;
+gameData.partnerSync = { ...defaultData.partnerSync, ...(gameData.partnerSync || {}) };
+Object.keys(defaultData.partnerSync).forEach(key => {
+    const baseValue = defaultData.partnerSync[key];
+    gameData.partnerSync[key] = Math.max(0, Math.min(100, Math.floor(gameData.partnerSync[key] ?? baseValue)));
+});
+
+// 이전 빌드에서 잘못 저장된 시작 싱크로율(포르테 75%, X/EXE 60%)을 한 번만 10%로 보정
+if (!savedData.partnerSyncStart10Migrated) {
+    gameData.partnerSync = { ...defaultData.partnerSync };
+    gameData.partnerSyncStart10Migrated = true;
+    localStorage.setItem("rockmanSave", JSON.stringify(gameData));
+}
+
 gameData.playerHp = gameData.playerMaxHp;
 
 Object.keys(gameData.costs).forEach(key => {
@@ -85,9 +119,52 @@ const RUSH_REQUIRED_FRAGMENTS = 100;
 const BEAT_REQUIRED_FRAGMENTS = 100;
 const BLUES_REQUIRED_FRAGMENTS = 100;
 const FORTE_REQUIRED_FRAGMENTS = 100;
+const X_REQUIRED_FRAGMENTS = 100;
 const ENEMY_START_X = 460;
 const BOSS_START_X = 380; // 보스 등장 시작 위치: 숫자가 작을수록 왼쪽
 const ENEMY_ATTACK_X = 120;
+
+const PARTNER_ATTACK_DATA = {
+    forte: {
+        name: '포르테',
+        ownedKey: 'forteOwned',
+        syncKey: 'forte',
+        defaultSync: 10,
+        areaId: 'forte-area',
+        imgId: 'forte-img',
+        bulletClass: 'partner-bullet forte-bullet',
+        chargeBulletClass: 'partner-bullet forte-charge-bullet',
+        chargeEffectClass: 'partner-charge-effect forte-charge-effect',
+        attackFrame: 'sprites/partner/forte/forte_03.png',
+        idleFrame: 'sprites/partner/forte/forte_01.png',
+        busterOffsetX: 20,
+        busterOffsetY: 35,
+        shotDuration: 260
+    },
+    x: {
+        name: '엑스',
+        ownedKey: 'xOwned',
+        syncKey: 'x',
+        defaultSync: 10,
+        areaId: 'x-area',
+        imgId: 'x-img',
+        bulletClass: 'partner-bullet x-bullet',
+        chargeBulletClass: 'partner-bullet x-charge-bullet',
+        chargeEffectClass: 'partner-charge-effect x-charge-effect',
+        attackFrame: 'sprites/partner/x/x_03.png',
+        idleFrame: 'sprites/partner/x/x_01.png',
+        busterOffsetX: 23,
+        busterOffsetY: 32,
+        shotDuration: 250
+    },
+    exeRockman: {
+        name: '록맨.EXE',
+        ownedKey: 'exeRockmanOwned',
+        syncKey: 'exeRockman',
+        defaultSync: 10
+    }
+};
+
 
 let enemyMaxHp = 1000;
 let enemyHp = 1000;
@@ -125,6 +202,14 @@ let bluesAttacking = false;
 let forteFramePattern = [1, 2, 3, 2];
 let forteFrameIndex = 0;
 let forteJoinTimer = null;
+let forteAttackTimer = null;
+let forteAttacking = false;
+
+const xFramePattern = [1, 2, 3, 2];
+let xFrameIndex = 0;
+let xJoinTimer = null;
+let xAttackTimer = null;
+let xAttacking = false;
 
 setupStage();
 
@@ -186,7 +271,7 @@ function animate() {
     if (rockFrame === 3 || rockFrame === 1) rockDir *= -1;
     rImg.src = `sprites/rock/rock_0${rockFrame}.png`;
 
-    if (!enemyDead) {
+    if (!enemyDead && !isBossBattle) {
         metFrame = (metFrame % 2) + 1;
         eImg.src = `sprites/enemy/met/met_0${metFrame}.png`;
     }
@@ -195,6 +280,7 @@ function animate() {
     animateBeat();
     animateBlues();
     animateForte();
+    animateX();
 }
 
 function animateRush() {
@@ -236,6 +322,98 @@ function animateForte() {
   forteImg.src = `sprites/partner/forte/forte_0${frame}.png`;
 
   forteFrameIndex = (forteFrameIndex + 1) % forteFramePattern.length;
+}
+
+function animateX() {
+  const xImg = document.getElementById('x-img');
+  if (!xImg || !gameData.xOwned) return;
+
+  const frame = xFramePattern[xFrameIndex];
+  xImg.src = `sprites/partner/x/x_0${frame}.png`;
+
+  xFrameIndex = (xFrameIndex + 1) % xFramePattern.length;
+}
+
+const PARTNER_SYNC_UPGRADE_COST = 30;
+const PARTNER_SYNC_UPGRADE_MIN_GAIN = 2;
+const PARTNER_SYNC_UPGRADE_MAX_GAIN = 10;
+
+function getPartnerSyncPercent(type) {
+    const data = PARTNER_ATTACK_DATA[type];
+    if (!data) return 0;
+
+    const key = data.syncKey || type;
+    const value = gameData.partnerSync?.[key];
+    return Math.max(0, Math.min(100, Math.floor(value ?? data.defaultSync ?? 0)));
+}
+
+function getPartnerSyncChance(type) {
+    const sync = getPartnerSyncPercent(type);
+
+    // 싱크로율이 낮을 때는 높고, 올라갈수록 점차 낮아지는 확률
+    return Math.max(5, Math.min(90, Math.floor(90 - (sync * 0.75))));
+}
+
+function getPartnerDamage(type) {
+    const data = PARTNER_ATTACK_DATA[type];
+    if (!data) return 0;
+
+    const sync = getPartnerSyncPercent(type) / 100;
+    return Math.max(1, Math.floor(gameData.atk * sync));
+}
+
+function togglePartnerAttackUpgrade() {
+    const panel = document.getElementById('partner-attack-upgrade-panel');
+    const header = document.getElementById('partner-attack-upgrade-header');
+    if (!panel) return;
+
+    panel.classList.toggle('active');
+    if (header) header.classList.toggle('active', panel.classList.contains('active'));
+    updateUI();
+}
+
+function upgradePartnerSync(type) {
+    const data = PARTNER_ATTACK_DATA[type];
+    if (!data) return;
+    if (!gameData[data.ownedKey]) return;
+    if (gameData.crystals < PARTNER_SYNC_UPGRADE_COST) return;
+
+    const syncKey = data.syncKey || type;
+    const currentSync = getPartnerSyncPercent(type);
+    if (currentSync >= 100) return;
+
+    gameData.crystals -= PARTNER_SYNC_UPGRADE_COST;
+
+    const chance = getPartnerSyncChance(type);
+    const success = Math.random() * 100 < chance;
+
+    if (success) {
+        const gain = Math.floor(
+            Math.random() * (PARTNER_SYNC_UPGRADE_MAX_GAIN - PARTNER_SYNC_UPGRADE_MIN_GAIN + 1)
+        ) + PARTNER_SYNC_UPGRADE_MIN_GAIN;
+
+        gameData.partnerSync[syncKey] = Math.min(100, currentSync + gain);
+        showPartnerUpgradeResult(`${data.name} 싱크로 +${Math.min(gain, 100 - currentSync)}%`);
+    } else {
+        showPartnerUpgradeResult('강화 실패');
+    }
+
+    updateUI();
+    saveData();
+}
+
+function showPartnerUpgradeResult(message) {
+    const result = document.getElementById('partner-upgrade-result');
+    if (!result) return;
+
+    result.innerText = message;
+    result.classList.remove('active');
+    void result.offsetWidth;
+    result.classList.add('active');
+
+    setTimeout(() => {
+        result.classList.remove('active');
+    }, 900);
 }
 
 function startBluesAttack() {
@@ -300,6 +478,13 @@ setTimeout(() => {
 
 }
 
+      // 🔴 스턴 0.5초
+      enemyStunned = true;
+
+      setTimeout(() => {
+        enemyStunned = false;
+      }, 500);
+
       if (enemyHp <= 0) {
         killEnemy();
       }
@@ -315,6 +500,128 @@ setTimeout(() => {
       }, 250);
     }
   }, 90);
+}
+
+function startForteAttack() {
+  if (forteAttackTimer) clearInterval(forteAttackTimer);
+
+  forteAttackTimer = setInterval(() => {
+    if (!gameData.forteOwned || enemyDead || playerDead || forteAttacking) return;
+
+    firePartnerBuster('forte');
+  }, gameData.partnerAtkSpd);
+}
+
+function startXAttack() {
+  if (xAttackTimer) clearInterval(xAttackTimer);
+
+  xAttackTimer = setInterval(() => {
+    if (!gameData.xOwned || enemyDead || playerDead || xAttacking) return;
+
+    firePartnerBuster('x');
+  }, gameData.partnerAtkSpd);
+}
+
+function getPartnerBusterPosition(type) {
+    const data = PARTNER_ATTACK_DATA[type];
+    const screen = document.querySelector('.game-screen');
+    const img = document.getElementById(data?.imgId);
+
+    if (!data || !screen || !img) return null;
+
+    const screenRect = screen.getBoundingClientRect();
+    const imgRect = img.getBoundingClientRect();
+
+    return {
+        x: imgRect.left - screenRect.left + data.busterOffsetX,
+        y: screenRect.bottom - imgRect.top - data.busterOffsetY
+    };
+}
+
+function firePartnerBuster(type) {
+    const data = PARTNER_ATTACK_DATA[type];
+    const screen = document.querySelector('.game-screen');
+    const enemy = document.getElementById('enemy-img');
+
+    if (!data || !screen || !enemy) return;
+
+    // 공격 중복만 막고, 스프라이트 프레임은 건드리지 않습니다.
+    // img.src를 공격/대기 프레임으로 바꾸면 발사 타이밍마다 애니메이션이 멈칫거립니다.
+    if (type === 'forte') forteAttacking = true;
+    if (type === 'x') xAttacking = true;
+
+    const isChargeShot = Math.random() * 100 < gameData.critChance;
+    const pos = getPartnerBusterPosition(type);
+    if (!pos) {
+        if (type === 'forte') forteAttacking = false;
+        if (type === 'x') xAttacking = false;
+        return;
+    }
+
+    const finishAttack = () => {
+        if (type === 'forte') forteAttacking = false;
+        if (type === 'x') xAttacking = false;
+    };
+
+    const shoot = () => {
+        const bullet = document.createElement('div');
+        bullet.className = isChargeShot ? (data.chargeBulletClass || data.bulletClass) : data.bulletClass;
+        bullet.style.left = pos.x + 'px';
+        bullet.style.bottom = pos.y + 'px';
+        screen.appendChild(bullet);
+
+        const travel = getBulletTravel(pos.x);
+        const duration = isChargeShot ? Math.max(150, data.shotDuration - 90) : data.shotDuration;
+
+        bullet.animate(
+            [{ transform: 'translateX(0)' }, { transform: `translateX(${travel}px)` }],
+            { duration, easing: 'linear' }
+        );
+
+        setTimeout(() => {
+            if (!enemyDead && !playerDead) {
+                applyPartnerDamage(type, isChargeShot);
+                if (!enemyDead) playEnemyHit(enemy);
+            }
+
+            bullet.remove();
+            finishAttack();
+        }, duration);
+    };
+
+    if (isChargeShot) {
+        const charge = document.createElement('div');
+        charge.className = data.chargeEffectClass || 'partner-charge-effect';
+        charge.style.left = (pos.x - 8) + 'px';
+        charge.style.bottom = (pos.y - 8) + 'px';
+        screen.appendChild(charge);
+
+        setTimeout(() => {
+            charge.remove();
+            shoot();
+        }, 110);
+    } else {
+        shoot();
+    }
+}
+
+function applyPartnerDamage(type, isChargeShot = false) {
+    if (enemyDead || playerDead) return;
+
+    let damage = getPartnerDamage(type);
+    if (isChargeShot) {
+        damage = Math.floor(damage * gameData.critMultiplier);
+    }
+
+    enemyHp -= damage;
+    showDamageText(damage, isChargeShot);
+
+    if (enemyHp <= 0) {
+        killEnemy();
+    }
+
+    updateUI();
+    saveData();
 }
 
 setInterval(animate, 200);
@@ -776,11 +1083,13 @@ function buyUpgrade(type, amount) {
         if (type === 'critDmg') gameData.critMultiplier += 0.25;
 
         if (type === 'partnerSpd') {
-        if (gameData.partnerAtkSpd > 400) {
-            gameData.partnerAtkSpd -= 120;
-            startBluesAttack();
+            if (gameData.partnerAtkSpd > 400) {
+                gameData.partnerAtkSpd -= 120;
+                startBluesAttack();
+                startForteAttack();
+                startXAttack();
+            }
         }
-}
         gameData.costs[type] = getNextCost(type, gameData.costs[type]);
     }
 
@@ -788,6 +1097,17 @@ function buyUpgrade(type, amount) {
     saveData();
 }
 
+function upgradePartnerAttackSpeed() {
+  const cost = 50 + (gameData.partnerAtkSpeedLevel * 50);
+
+  if (gameData.crystals < cost) return;
+
+  gameData.crystals -= cost;
+  gameData.partnerAtkSpeedLevel++;
+
+  updateUI();
+  saveData();
+}
 
 function buyUpgradeMax(type) {
     while (gameData.screws >= gameData.costs[type]) {
@@ -866,98 +1186,86 @@ function buyForteFragment(amount) {
   saveData();
 }
 
+function buyXFragment(amount) {
+  if (gameData.xOwned) return;
+  if (gameData.crystals < amount) return;
+
+  gameData.crystals -= amount;
+  gameData.xFragments += amount;
+
+  if (gameData.xFragments > X_REQUIRED_FRAGMENTS) {
+    gameData.xFragments = X_REQUIRED_FRAGMENTS;
+  }
+
+  updateUI();
+  saveData();
+}
+
 function getSummonTextElement() {
     return document.getElementById('summon-text') || document.querySelector('.summon-text');
-}
-
-const SUMMON_JOIN_DATA = {
-    rush: {
-        text: 'RUSH JOIN!',
-        firstSrc: 'sprites/partner/rush/rush_01.png',
-        idleSrc: 'sprites/partner/rush/rush_01.png',
-        sizeClass: 'summon-size-normal'
-    },
-    beat: {
-        text: 'BEAT JOIN!',
-        firstSrc: 'sprites/partner/beat/beat_01.png',
-        idleSrc: 'sprites/partner/beat/beat_01.png',
-        sizeClass: 'summon-size-small'
-    },
-    blues: {
-        text: 'BLUES JOIN!',
-        firstSrc: 'sprites/partner/blues/blues_06.png',
-        idleSrc: 'sprites/partner/blues/blues_06.png',
-        sizeClass: 'summon-size-normal'
-    },
-    forte: {
-        text: 'FORTE JOIN!',
-        firstSrc: 'sprites/partner/forte/forte_01.png',
-        idleSrc: 'sprites/partner/forte/forte_01.png',
-        sizeClass: 'summon-size-normal'
-    }
-};
-
-function getPartnerJoinImage() {
-    let img = document.getElementById('partner-join-img') || document.getElementById('beat-join-img');
-
-    if (!img) {
-        img = document.createElement('img');
-        const box = document.querySelector('.summon-box');
-        if (box) box.appendChild(img);
-    }
-
-    img.id = 'partner-join-img';
-    img.className = 'rush-join-img summon-join-img';
-    img.style.display = 'none';
-
-    return img;
-}
-
-function resetJoinImage(img) {
-    if (!img) return;
-
-    img.classList.remove(
-        'rush-drop',
-        'join-drop',
-        'summon-size-small',
-        'summon-size-normal'
-    );
-
-    img.style.width = '';
-    img.style.height = '';
-    img.style.transform = 'translateX(-50%)';
 }
 
 function prepareSummonPopup(type) {
     const popup = document.getElementById('summon-popup');
     const text = getSummonTextElement();
+
     const rushImg = document.getElementById('rush-join-img');
-    const partnerImg = getPartnerJoinImage();
-    const data = SUMMON_JOIN_DATA[type];
+    let beatImg = document.getElementById('beat-join-img');
 
-    if (!popup || !text || !rushImg || !partnerImg || !data) return null;
+    if (!popup || !text || !rushImg) return null;
 
-    resetJoinImage(rushImg);
-    resetJoinImage(partnerImg);
+    if (!beatImg) {
+        beatImg = document.createElement('img');
+        beatImg.id = 'beat-join-img';
+        beatImg.className = 'rush-join-img';
+        beatImg.style.display = 'none';
 
-    text.innerText = data.text;
+        const box = document.querySelector('.summon-box');
+        if (box) box.appendChild(beatImg);
+    }
 
     if (type === 'rush') {
-        rushImg.src = data.firstSrc;
-        rushImg.classList.add(data.sizeClass);
+        text.innerText = 'RUSH JOIN!';
+        rushImg.src = 'sprites/partner/rush/rush_02.png';
         rushImg.style.display = 'block';
-        partnerImg.style.display = 'none';
-    } else {
+        beatImg.style.display = 'none';
+    }
+
+    if (type === 'beat') {
+        text.innerText = 'BEAT JOIN!';
         rushImg.style.display = 'none';
-        partnerImg.src = data.firstSrc;
-        partnerImg.classList.add(data.sizeClass);
-        partnerImg.style.display = 'block';
+        beatImg.src = 'sprites/partner/beat/beat_01.png';
+        beatImg.style.display = 'block';
+    }
+
+    if (type === 'blues') {
+        text.innerText = 'BLUES JOIN!';
+        rushImg.style.display = 'none';
+        beatImg.src = 'sprites/partner/blues/blues_06.png';
+        beatImg.style.display = 'block';
+    }
+
+    if (type === 'forte') {
+        text.innerText = 'FORTE JOIN!';
+        rushImg.style.display = 'none';
+        beatImg.src = 'sprites/partner/forte/forte_01.png';
+        beatImg.style.setProperty('width', '54px', 'important');
+        beatImg.style.setProperty('height', '54px', 'important');
+        beatImg.style.display = 'block';
+    }
+
+    if (type === 'x') {
+        text.innerText = 'X JOIN!';
+        rushImg.style.display = 'none';
+        beatImg.src = 'sprites/partner/x/x_join_01.png';
+        beatImg.style.setProperty('width', '54px', 'important');
+        beatImg.style.setProperty('height', '54px', 'important');
+        beatImg.style.display = 'block';
     }
 
     popup.classList.add('active');
-    popup.onclick = closeSummonPopup;
 
-    return { popup, rushImg, partnerImg };
+    return { popup, rushImg, beatImg };
 }
 
 function summonRush() {
@@ -974,14 +1282,14 @@ function summonRush() {
         return;
     }
 
-    const { rushImg } = popupData;
+    const { popup, rushImg } = popupData;
 
     rushJoinFrame = 1;
-    rushImg.src = 'sprites/partner/rush/rush_01.png';
+    rushImg.src = `sprites/partner/rush/rush_01.png`;
 
-    rushImg.classList.remove('join-drop');
-    void rushImg.offsetWidth;
-    rushImg.classList.add('join-drop');
+rushImg.classList.remove('join-drop');
+void rushImg.offsetWidth;
+rushImg.classList.add('join-drop');
 
     if (rushJoinTimer) clearInterval(rushJoinTimer);
 
@@ -994,9 +1302,13 @@ function summonRush() {
             clearInterval(rushJoinTimer);
             rushJoinTimer = null;
             rushImg.classList.remove('join-drop');
-            rushImg.src = 'sprites/partner/rush/rush_01.png';
+            rushImg.src = `sprites/partner/rush/rush_01.png`;
         }
     }, 180);
+
+    popup.onclick = () => {
+        closeSummonPopup();
+    };
 
     updateUI();
     saveData();
@@ -1015,17 +1327,19 @@ function summonBeat() {
         return;
     }
 
-    const { partnerImg } = popupData;
+    const { beatImg } = popupData;
 
     beatFrame = 1;
     beatDir = 1;
     beatFloat = 0;
 
-    partnerImg.src = 'sprites/partner/beat/beat_01.png';
+    beatImg.src = 'sprites/partner/beat/beat_01.png';
+    beatImg.style.setProperty('width', '28px', 'important');
+    beatImg.style.setProperty('height', '28px', 'important');
 
-    partnerImg.classList.remove('rush-drop');
-    void partnerImg.offsetWidth;
-    partnerImg.classList.add('rush-drop');
+    beatImg.classList.remove('rush-drop');
+    void beatImg.offsetWidth;
+    beatImg.classList.add('rush-drop');
 
     if (beatJoinTimer) clearInterval(beatJoinTimer);
 
@@ -1036,8 +1350,8 @@ function summonBeat() {
         if (beatFrame <= 1) beatDir = 1;
 
         beatFloat += 1;
-        partnerImg.src = `sprites/partner/beat/beat_0${beatFrame}.png`;
-        partnerImg.style.transform = `translateX(-50%) translateY(${Math.sin(beatFloat / 2) * 4}px)`;
+        beatImg.src = `sprites/partner/beat/beat_0${beatFrame}.png`;
+        beatImg.style.transform = `translateX(-50%) translateY(${Math.sin(beatFloat / 2) * 4}px)`;
     }, 120);
 
     setTimeout(() => {
@@ -1060,28 +1374,28 @@ function summonBlues() {
         return;
     }
 
-    const { partnerImg } = popupData;
+    const { beatImg } = popupData;
 
-    let bluesJoinFrame = 6;
-    let bluesJoinDir = 1;
-    let bluesJoinFloat = 0;
+let bluesJoinFrame = 6;
+let bluesJoinDir = 1;
+let bluesJoinFloat = 0;
 
-    partnerImg.src = 'sprites/partner/blues/blues_06.png';
-    partnerImg.classList.remove('rush-drop');
-    void partnerImg.offsetWidth;
-    partnerImg.classList.add('rush-drop');
+beatImg.src = 'sprites/partner/blues/blues_06.png';
+    beatImg.classList.remove('rush-drop');
+    void beatImg.offsetWidth;
+    beatImg.classList.add('rush-drop');
 
     if (beatJoinTimer) clearInterval(beatJoinTimer);
 
     beatJoinTimer = setInterval(() => {
-        bluesJoinFrame += bluesJoinDir;
+bluesJoinFrame += bluesJoinDir;
 
-        if (bluesJoinFrame >= 9) bluesJoinDir = -1;
-        if (bluesJoinFrame <= 6) bluesJoinDir = 1;
+if (bluesJoinFrame >= 9) bluesJoinDir = -1;
+if (bluesJoinFrame <= 6) bluesJoinDir = 1;
 
-        bluesJoinFloat += 1;
-        partnerImg.src = `sprites/partner/blues/blues_0${bluesJoinFrame}.png`;
-        partnerImg.style.transform = `translateX(-50%) translateY(${Math.sin(bluesJoinFloat / 2) * 4}px)`;
+bluesJoinFloat += 1;
+beatImg.src = `sprites/partner/blues/blues_0${bluesJoinFrame}.png`;
+beatImg.style.transform = `translateY(${Math.sin(bluesJoinFloat / 2) * 4}px)`;
     }, 120);
 
     setTimeout(() => {
@@ -1104,12 +1418,13 @@ function summonForte() {
         return;
     }
 
-    const { partnerImg } = popupData;
+    const { beatImg } = popupData;
 
     let forteJoinFrame = 1;
 
-    partnerImg.src = 'sprites/partner/forte/forte_join_01.png';
-    partnerImg.classList.remove('rush-drop', 'join-drop');
+    beatImg.src = 'sprites/partner/forte/forte_join_01.png';
+    beatImg.classList.remove('rush-drop');
+    beatImg.classList.remove('join-drop');
 
     if (forteJoinTimer) clearInterval(forteJoinTimer);
 
@@ -1117,11 +1432,12 @@ function summonForte() {
         forteJoinFrame++;
 
         if (forteJoinFrame <= 8) {
-            partnerImg.src = `sprites/partner/forte/forte_join_0${forteJoinFrame}.png`;
+            beatImg.src = `sprites/partner/forte/forte_join_0${forteJoinFrame}.png`;
         } else {
             clearInterval(forteJoinTimer);
             forteJoinTimer = null;
-            partnerImg.src = 'sprites/partner/forte/forte_join_08.png';
+
+            beatImg.src = 'sprites/partner/forte/forte_join_08.png';
         }
     }, 120);
 
@@ -1132,10 +1448,48 @@ function summonForte() {
     }, 1600);
 }
 
+function summonX() {
+    if (gameData.xOwned) return;
+    if (gameData.xFragments < X_REQUIRED_FRAGMENTS) return;
+
+    gameData.xOwned = true;
+
+    const popupData = prepareSummonPopup('x');
+    if (!popupData) {
+        updateUI();
+        saveData();
+        return;
+    }
+
+    const { beatImg } = popupData;
+
+    const xJoinPattern = [1, 2, 3, 2];
+    let xJoinIndex = 0;
+
+    beatImg.src = 'sprites/partner/x/x_join_01.png';
+    beatImg.style.setProperty('width', '54px', 'important');
+    beatImg.style.setProperty('height', '54px', 'important');
+    beatImg.classList.remove('rush-drop', 'join-drop');
+
+    if (xJoinTimer) clearInterval(xJoinTimer);
+
+    xJoinTimer = setInterval(() => {
+        const frame = xJoinPattern[xJoinIndex];
+        beatImg.src = `sprites/partner/x/x_join_0${frame}.png`;
+        xJoinIndex = (xJoinIndex + 1) % xJoinPattern.length;
+    }, 160);
+
+    setTimeout(() => {
+        closeSummonPopup();
+        updateUI();
+        saveData();
+    }, 1800);
+}
+
 function closeSummonPopup() {
     const popup = document.getElementById('summon-popup');
     const rushJoinImg = document.getElementById('rush-join-img');
-    const partnerJoinImg = document.getElementById('partner-join-img') || document.getElementById('beat-join-img');
+    const beatJoinImg = document.getElementById('beat-join-img');
 
     if (popup) {
         popup.classList.remove('active');
@@ -1152,26 +1506,40 @@ function closeSummonPopup() {
         beatJoinTimer = null;
     }
 
-    if (forteJoinTimer) {
-        clearInterval(forteJoinTimer);
-        forteJoinTimer = null;
+    if (xJoinTimer) {
+        clearInterval(xJoinTimer);
+        xJoinTimer = null;
     }
 
-    if (rushJoinImg) {
-        resetJoinImage(rushJoinImg);
-        rushJoinImg.src = 'sprites/partner/rush/rush_01.png';
-        rushJoinImg.classList.add('summon-size-normal');
-        rushJoinImg.style.display = 'block';
-    }
+if (rushJoinImg) {
+    rushJoinImg.classList.remove('rush-drop');
+    rushJoinImg.src = `sprites/partner/rush/rush_01.png`;
+    rushJoinImg.style.display = 'block';
+}
 
-    if (partnerJoinImg) {
-        resetJoinImage(partnerJoinImg);
-        partnerJoinImg.id = 'partner-join-img';
-        partnerJoinImg.src = 'sprites/partner/beat/beat_01.png';
-        partnerJoinImg.style.display = 'none';
-    }
+if (beatJoinImg) {
+    beatJoinImg.src = `sprites/partner/beat/beat_01.png`;
+    beatJoinImg.style.width = '';
+    beatJoinImg.style.height = '';
+    beatJoinImg.style.transform = 'translateX(-50%)';
+    beatJoinImg.style.display = 'none';
+}
+
+    if (beatJoinImg) {
+    beatJoinImg.classList.remove('join-drop');
+    beatJoinImg.src = `sprites/partner/beat/beat_01.png`;
+    beatJoinImg.style.display = 'none';
+}
 
     showTab('battle');
+    updateUI();
+}
+
+function togglePartnerUpgrade(type) {
+    const panel = document.getElementById(`${type}-upgrade-panel`);
+    if (!panel) return;
+
+    panel.classList.toggle('active');
     updateUI();
 }
 
@@ -1191,19 +1559,8 @@ function showTab(tabName) {
     if (targetBtn) targetBtn.classList.add('active');
 }
 
-function setInnerTabActive(tabSelector, type) {
-    document.querySelectorAll(`${tabSelector} .inner-tab`).forEach(btn => {
-        btn.classList.remove('active');
-
-        const onClick = btn.getAttribute('onclick') || '';
-        if (onClick.includes(`'${type}'`) || onClick.includes(`"${type}"`)) {
-            btn.classList.add('active');
-        }
-    });
-}
-
 function showArmorTab(type) {
-    const armorImg = document.getElementById('armor-img') || document.querySelector('#armor-tab .armor-main-image');
+    const armorImg = document.getElementById('armor-img');
     const armorName = document.getElementById('armor-name');
 
     const armorData = {
@@ -1214,13 +1571,18 @@ function showArmorTab(type) {
         'fourth': { name: '포스아머', img: 'sprites/armor/super-r/super-r.png' }
     };
 
-    const data = armorData[type];
-    if (!data) return;
+    if (!armorData[type]) return;
 
-    if (armorImg) armorImg.src = data.img;
-    if (armorName) armorName.innerText = data.name;
+    armorImg.src = armorData[type].img;
+    armorName.innerText = armorData[type].name;
 
-    setInnerTabActive('#armor-tab', type);
+    document.querySelectorAll('#armor-tab .inner-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
 }
 
 function showBossTab(type) {
@@ -1235,13 +1597,18 @@ function showBossTab(type) {
         'fourth-boss': { name: '포스 보스전', img: 'sprites/boss/super-rboss/super-rboss.png' }
     };
 
-    const data = bossData[type];
-    if (!data) return;
+    if (!bossData[type]) return;
 
-    if (bossImg) bossImg.src = data.img;
-    if (bossName) bossName.innerText = data.name;
+    bossImg.src = bossData[type].img;
+    bossName.innerText = bossData[type].name;
 
-    setInnerTabActive('#boss-tab', type);
+    document.querySelectorAll('#boss-tab .inner-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
 }
 
 let isBossWarning = false;
@@ -1402,6 +1769,14 @@ setButtonActive(document.getElementById('forte-buy10'), !gameData.forteOwned && 
 setButtonActive(document.getElementById('forte-buy100'), !gameData.forteOwned && gameData.crystals >= 100 && gameData.forteFragments === 0);
 setButtonActive(document.getElementById('forte-summon-btn'), !gameData.forteOwned && gameData.forteFragments >= 100);
 
+const xFragmentsEl = document.getElementById('x-fragments');
+if (xFragmentsEl) xFragmentsEl.innerText = gameData.xFragments;
+
+setButtonActive(document.getElementById('x-buy1'), !gameData.xOwned && gameData.crystals >= 1 && gameData.xFragments < 100);
+setButtonActive(document.getElementById('x-buy10'), !gameData.xOwned && gameData.crystals >= 10 && gameData.xFragments <= 90);
+setButtonActive(document.getElementById('x-buy100'), !gameData.xOwned && gameData.crystals >= 100 && gameData.xFragments === 0);
+setButtonActive(document.getElementById('x-summon-btn'), !gameData.xOwned && gameData.xFragments >= 100);
+
     const beatCard = document.getElementById('beat-card');
     const beatBadge = document.getElementById('beat-complete-badge');
     const beatArea = document.getElementById('beat-area');
@@ -1431,6 +1806,19 @@ if (forteCard && forteBadge) {
   }
 }
 
+const xCard = document.getElementById('x-card');
+const xBadge = document.getElementById('x-complete-badge');
+
+if (xCard && xBadge) {
+  if (gameData.xOwned) {
+    xCard.classList.add('complete');
+    xBadge.classList.add('active');
+  } else {
+    xCard.classList.remove('complete');
+    xBadge.classList.remove('active');
+  }
+}
+
     if (beatCard && beatBadge) {
         if (gameData.beatOwned) {
             beatCard.classList.add('complete');
@@ -1444,7 +1832,7 @@ if (forteCard && forteBadge) {
 
     const partnerArea = document.getElementById('partner-area');
     if (partnerArea) {
-        if (gameData.rushOwned || gameData.beatOwned || gameData.bluesOwned || gameData.forteOwned) {
+        if (gameData.rushOwned || gameData.beatOwned) {
             partnerArea.classList.add('active');
         } else {
             partnerArea.classList.remove('active');
@@ -1486,6 +1874,18 @@ if (forteImg) {
   forteImg.style.display = gameData.forteOwned ? 'block' : 'none';
 }
 
+const xArea = document.getElementById('x-area');
+const xImg = document.getElementById('x-img');
+
+if (xArea) {
+  if (gameData.xOwned) xArea.classList.add('active');
+  else xArea.classList.remove('active');
+}
+
+if (xImg) {
+  xImg.style.display = gameData.xOwned ? 'block' : 'none';
+}
+
     const rushUpgrade = document.querySelector('.rush-upgrade');
     if (rushUpgrade) {
         if (gameData.rushOwned) rushUpgrade.classList.add('active');
@@ -1501,11 +1901,66 @@ if (partnerUpgrade) {
     partnerUpgrade.classList.remove('active');
   }
 }
+const forteUpgradeEls = document.querySelectorAll('.forte-upgrade');
+forteUpgradeEls.forEach(el => {
+  if (gameData.forteOwned) el.classList.add('owned');
+  else el.classList.remove('owned', 'active');
+});
+
+updatePartnerAttackUpgradeUI();
+
 const superRockGemEls = document.querySelectorAll('.super-rock-gem-count');
 superRockGemEls.forEach(el => {
     el.innerText = Math.floor(gameData.superRockGem || 0).toLocaleString();
 });
 
+}
+
+
+function hasOwnedBusterPartner() {
+    return Object.values(PARTNER_ATTACK_DATA).some(data => gameData[data.ownedKey]);
+}
+
+function updatePartnerAttackUpgradeUI() {
+    const box = document.querySelector('.partner-attack-upgrade-box');
+    const panel = document.getElementById('partner-attack-upgrade-panel');
+    const header = document.getElementById('partner-attack-upgrade-header');
+    const hasOwnedPartner = hasOwnedBusterPartner();
+
+    if (box) {
+        box.classList.toggle('visible', hasOwnedPartner);
+    }
+
+    if (!hasOwnedPartner) {
+        if (panel) panel.classList.remove('active');
+        if (header) header.classList.remove('active');
+    }
+
+    Object.keys(PARTNER_ATTACK_DATA).forEach(type => {
+        const data = PARTNER_ATTACK_DATA[type];
+        const row = document.getElementById(`${type}-sync-row`);
+        const percent = document.getElementById(`${type}-sync-percent`);
+        const gauge = document.getElementById(`${type}-sync-gauge-fill`);
+        const chance = document.getElementById(`${type}-sync-chance`);
+        const btn = document.getElementById(`${type}-sync-upgrade-btn`);
+
+        const owned = !!gameData[data.ownedKey];
+        const sync = getPartnerSyncPercent(type);
+        const chanceValue = getPartnerSyncChance(type);
+
+        if (percent) percent.innerText = `${sync}%`;
+        if (gauge) gauge.style.width = `${sync}%`;
+        if (chance) chance.innerText = `${chanceValue}%`;
+
+        if (row) {
+            row.classList.toggle('owned', owned);
+        }
+
+        setButtonActive(
+            btn,
+            owned && gameData.crystals >= PARTNER_SYNC_UPGRADE_COST && sync < 100
+        );
+    });
 }
 
 function setButtonActive(button, isActive) {
@@ -1521,8 +1976,10 @@ function saveData() {
 
 function resetGame() {
     if (confirm("초기화 하시겠습니까?")) {
+        localStorage.removeItem('rockmanSave');
         localStorage.clear();
-        location.reload();
+        sessionStorage.clear();
+        location.replace(location.pathname + '?reset=' + Date.now());
     }
 }
 
@@ -1540,3 +1997,5 @@ updateUI();
 startAutoAttack();
 startChase();
 startBluesAttack();
+startForteAttack();
+startXAttack();
