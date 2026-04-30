@@ -33,6 +33,20 @@
     <img src="sprites/partner/x/x_join_03.png">
     <img src="sprites/armor/super-r/super-r.png">
     <img src="sprites/boss/super-rboss/super-rboss.png">
+    <img src="sprites/mine/pickelman_01.png">
+    <img src="sprites/mine/pickelman_02.png">
+    <img src="sprites/mine/pickelman_03.png">
+    <img src="sprites/mine/stone.png">
+    <img src="sprites/mine/pickaxe/pickaxe_01.png">
+    <img src="sprites/mine/pickaxe/pickaxe_02.png">
+    <img src="sprites/mine/pickaxe/pickaxe_03.png">
+    <img src="sprites/mine/pickaxe/pickaxe_04.png">
+    <img src="sprites/mine/pickaxe/pickaxe_05.png">
+    <img src="sprites/mine/pickaxe/pickaxe_06.png">
+    <img src="sprites/mine/pickaxe/pickaxe_07.png">
+    <img src="sprites/mine/pickaxe/pickaxe_08.png">
+    <img src="sprites/mine/pickaxe/pickaxe_09.png">
+    <img src="sprites/mine/pickaxe/pickaxe_10.png">
 </div>
 
 <div id="summon-popup" class="summon-popup">
@@ -44,15 +58,15 @@
 </div>
 
 <div class="container">
-<div class="tab-bookmark">
-    <button id="battle-tab-btn" class="tab-btn active" onclick="showTab('battle')">전투</button>
-    <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">파트너</button>
-    <button id="armor-tab-btn" class="tab-btn" onclick="showTab('armor')">아머</button>
+<div class="tab-bookmark-left">
+    <button id="battle-tab-btn" class="tab-btn left-tab-btn active" onclick="showTab('battle')">전투</button>
+    <button id="mine-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('mine')">광산</button>
 </div>
 
-<div class="tab-bookmark-left">
-    <button id="boss-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('boss')">보스전</button>
-    <button id="mine-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('mine')">광산</button>
+<div class="tab-bookmark">
+    <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">파트너</button>
+    <button id="armor-tab-btn" class="tab-btn" onclick="showTab('armor')">아머</button>
+    <button id="boss-tab-btn" class="tab-btn" onclick="showTab('boss')">보스전</button>
 </div>
 
    <img class="title-logo" src="sprites/title/title.png" alt="ROCKMAN IDLE">
@@ -111,7 +125,7 @@
         <div class="resource-panel">
             <div class="resource-box">🔩 <span id="screws">0</span></div>
             <div class="resource-box">💎 <span id="crystals">0</span></div>
-            <div class="resource-box">🪨 <span id="stones">0</span></div>
+            <div class="resource-box"><img src="sprites/mine/stone.png" class="resource-icon stone-resource-icon" alt="돌"> <span id="stones">0</span></div>
         </div>
 
 <button class="reset-btn" onclick="devCheat()">[DEV 치트]</button>
@@ -505,29 +519,22 @@
 
     <div class="mine-resource-row">
       <div class="resource-box">🔩 <span id="mine-screws-display">나사는 상단 공용</span></div>
-      <div class="resource-box">🪨 <span class="stone-count">0</span></div>
+      <div class="resource-box"><img src="sprites/mine/stone.png" class="resource-icon stone-resource-icon" alt="돌"> <span class="stone-count">0</span></div>
     </div>
 
     <div class="mine-screen">
-      <div class="mine-sprite-slot mine-deco-left">
-        <img src="sprites/enemy/met/met_01.png" class="mine-deco-img" alt="임시 광산 장식">
-      </div>
-
       <div id="miner-area" class="miner-area">
-        <img id="miner-img" src="sprites/rock/rock_01.png" class="miner-img" alt="광부">
+        <img id="miner-img" src="sprites/mine/pickelman_01.png" class="miner-img" alt="피켈맨">
       </div>
 
       <div id="mine-rock-area" class="mine-rock-area">
-        <div class="mine-rock-hp-bg"><div id="mine-rock-hp-fill"></div></div>
-        <img id="mine-rock-img" src="sprites/boss/super-rboss/super-rboss.png" class="mine-rock-img" alt="돌">
+        <img id="mine-rock-img" src="sprites/mine/stone.png" class="mine-rock-img" alt="돌">
       </div>
 
-      <div class="mine-sprite-slot mine-deco-right">
-        <img src="sprites/partner/rush/rush_02.png" class="mine-deco-img" alt="임시 광산 장식">
-      </div>
+      <div class="mine-rock-hp-bg"><div id="mine-rock-hp-fill"></div></div>
+
     </div>
 
-    <div class="mine-rock-info">돌 HP <span id="mine-rock-hp-text">80 / 80</span></div>
     <div id="mine-result-text" class="mine-result-text"></div>
 
     <div class="mine-enhance-layout">
@@ -545,7 +552,7 @@
       <div class="mine-enhance-side">
         <div class="mine-status-card">
           <div class="mine-status-line"><span>강화 확률</span><b><span id="mine-enhance-chance">95%</span> <span id="mine-destroy-chance-note" class="mine-destroy-chance-note"></span></b></div>
-          <div class="mine-status-line"><span>강화 비용</span><b><span id="mine-enhance-cost">8</span> 🪨</b></div>
+          <div class="mine-status-line"><span>강화 비용</span><b><span id="mine-enhance-cost">8</span> <img src="sprites/mine/stone.png" class="resource-icon stone-resource-icon" alt="돌"></b></div>
         </div>
 
         <div class="mine-actions">

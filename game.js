@@ -229,6 +229,7 @@ let xAttacking = false;
 
 let mineTimer = null;
 let minerFrame = 1;
+let mineAttackAnimating = false;
 let mineEnhancing = false;
 
 setupStage();
@@ -426,7 +427,7 @@ function showPartnerUpgradeResult(message) {
     const result = document.getElementById('partner-upgrade-result');
     if (!result) return;
 
-    result.innerText = message;
+    result.innerHTML = message;
     result.classList.remove('active');
     void result.offsetWidth;
     result.classList.add('active');
@@ -1708,20 +1709,35 @@ function startAutoAttack() {
     attackTimer = setInterval(attack, gameData.atkSpd);
 }
 
-const PICKAXE_NAMES = ['돌 곡괭이', '청동 곡괭이', '철 곡괭이', '강철 곡괭이', '티타늄 곡괭이'];
+const STONE_ICON_HTML = '<img src="sprites/mine/stone.png" class="result-resource-icon stone-resource-icon" alt="돌">';
+
+const PICKAXE_NAMES = ['록괭이', '록괭이X', '록괭이.EXE', '록괭대시', '퍼스트괭이', '기가괭이', '맥스괭이', '포스괭이', '팔콘괭이', '얼티밋괭이'];
+
+// 다음 단계 0강이 이전 단계 10강보다 반드시 강하도록 기본 데미지를 고정 테이블로 관리합니다.
+// 각 단계 기본 데미지 차이는 36, 강화 10강 총 증가량은 30입니다.
+const PICKAXE_BASE_DAMAGES = [8, 44, 80, 116, 152, 188, 224, 260, 296, 332];
+const PICKAXE_ENHANCE_DAMAGE = 3;
+const PICKAXE_MAX_TIER = PICKAXE_NAMES.length - 1;
+
+function getPickaxeTierIndex() {
+    return Math.min(gameData.minePickaxeTier, PICKAXE_NAMES.length - 1);
+}
 
 function getPickaxeName() {
-    return PICKAXE_NAMES[Math.min(gameData.minePickaxeTier, PICKAXE_NAMES.length - 1)] || '돌 곡괭이';
+    return PICKAXE_NAMES[getPickaxeTierIndex()] || '록괭이';
 }
 
 function getPickaxeSprite() {
-    const spriteIndex = Math.min(gameData.minePickaxeTier, PICKAXE_NAMES.length - 1) + 1;
-    return `sprites/mine/pickaxe/pickaxe_0${spriteIndex}.png`;
+    const spriteIndex = String(getPickaxeTierIndex() + 1).padStart(2, '0');
+    return `sprites/mine/pickaxe/pickaxe_${spriteIndex}.png`;
 }
 
 function getMiningDamage() {
     if (!gameData.minePickaxeOwned) return 0;
-    return Math.floor(8 + gameData.minePickaxeTier * 12 + gameData.minePickaxeEnhance * 3);
+
+    const tierIndex = getPickaxeTierIndex();
+    const baseDamage = PICKAXE_BASE_DAMAGES[tierIndex] || PICKAXE_BASE_DAMAGES[0];
+    return Math.floor(baseDamage + gameData.minePickaxeEnhance * PICKAXE_ENHANCE_DAMAGE);
 }
 
 function getMineRockMaxHp() {
@@ -1756,7 +1772,7 @@ function craftPickaxe() {
     gameData.mineRockHp = gameData.mineRockMaxHp;
 
     showMineBigResult('제작 완료', 'success');
-    showMineResult('돌 곡괭이 제작 완료');
+    showMineResult(`${getPickaxeName()} 제작 완료`);
     updateUI();
     saveData();
 }
@@ -1773,7 +1789,7 @@ function enhancePickaxe() {
     const cost = getMineEnhanceCost();
     if (gameData.stones < cost) {
         showMineBigResult('재료 부족', 'fail');
-        showMineResult('돌이 부족합니다');
+        showMineResult(`${STONE_ICON_HTML} 재료가 부족합니다`);
         return;
     }
 
@@ -1841,6 +1857,14 @@ function upgradePickaxeTier() {
     if (!gameData.minePickaxeOwned) return;
     if (gameData.minePickaxeEnhance < 10) return;
 
+    if (gameData.minePickaxeTier >= PICKAXE_MAX_TIER) {
+        showMineBigResult('최종 단계', 'success');
+        showMineResult(`${getPickaxeName()} 최종 단계입니다`);
+        updateUI();
+        saveData();
+        return;
+    }
+
     gameData.minePickaxeTier += 1;
     gameData.minePickaxeFloorTier = gameData.minePickaxeTier;
     gameData.minePickaxeEnhance = 0;
@@ -1855,28 +1879,42 @@ function upgradePickaxeTier() {
 
 function mineAttack() {
     if (!gameData.minePickaxeOwned) return;
+    if (mineAttackAnimating) return;
 
     const rock = document.getElementById('mine-rock-img');
     const miner = document.getElementById('miner-img');
     if (!rock || !miner) return;
 
-    minerFrame = minerFrame === 1 ? 2 : 1;
-    miner.src = minerFrame === 1 ? 'sprites/rock/rock_01.png' : 'sprites/rock/rock_03.png';
+    mineAttackAnimating = true;
+    miner.src = 'sprites/mine/pickelman_01.png';
 
-    const damage = getMiningDamage();
-    gameData.mineRockHp -= damage;
-    showMineDamageText(damage);
+    setTimeout(() => {
+        miner.src = 'sprites/mine/pickelman_02.png';
 
-    rock.classList.remove('mine-rock-hit');
-    void rock.offsetWidth;
-    rock.classList.add('mine-rock-hit');
+        setTimeout(() => {
+            miner.src = 'sprites/mine/pickelman_03.png';
 
-    if (gameData.mineRockHp <= 0) {
-        clearMineRock();
-    }
+            const damage = getMiningDamage();
+            gameData.mineRockHp -= damage;
+            showMineDamageText(damage);
 
-    updateUI();
-    saveData();
+            rock.classList.remove('mine-rock-hit');
+            void rock.offsetWidth;
+            rock.classList.add('mine-rock-hit');
+
+            if (gameData.mineRockHp <= 0) {
+                clearMineRock();
+            }
+
+            updateUI();
+            saveData();
+
+            setTimeout(() => {
+                miner.src = 'sprites/mine/pickelman_01.png';
+                mineAttackAnimating = false;
+            }, 250);
+        }, 30);
+    }, 30);
 }
 
 function clearMineRock() {
@@ -1888,7 +1926,7 @@ function clearMineRock() {
     gameData.mineRockMaxHp = getMineRockMaxHp();
     gameData.mineRockHp = gameData.mineRockMaxHp;
 
-    showMineResult(`+${screwReward}🔩 / +${stoneReward}🪨`);
+    showMineResult(`+${screwReward}🔩 / +${stoneReward}${STONE_ICON_HTML}`);
 }
 
 function showMineDamageText(damage) {
@@ -1898,8 +1936,8 @@ function showMineDamageText(damage) {
     const text = document.createElement('div');
     text.className = 'mine-damage-text';
     text.innerText = damage;
-    text.style.left = '270px';
-    text.style.bottom = '60px';
+    text.style.left = '250px';
+    text.style.bottom = '62px';
     screen.appendChild(text);
 
     setTimeout(() => text.remove(), 700);
@@ -1909,7 +1947,7 @@ function showMineResult(message) {
     const result = document.getElementById('mine-result-text');
     if (!result) return;
 
-    result.innerText = message;
+    result.innerHTML = message;
     result.classList.remove('active');
     void result.offsetWidth;
     result.classList.add('active');
@@ -1942,7 +1980,7 @@ function showMineBigResult(message, type = 'success') {
     const result = document.getElementById('mine-enhance-big-result');
     if (!result) return;
 
-    result.innerText = message;
+    result.innerHTML = message;
     result.className = `mine-enhance-big-result ${type}`;
     void result.offsetWidth;
     result.classList.add('active');
@@ -2230,7 +2268,7 @@ if (mineHpFill) mineHpFill.style.width = Math.max(0, (gameData.mineRockHp / game
 
 setButtonActive(document.getElementById('craft-pickaxe-btn'), !gameData.minePickaxeOwned && gameData.screws >= 100);
 setButtonActive(document.getElementById('mine-enhance-btn'), !mineEnhancing && gameData.minePickaxeOwned && gameData.minePickaxeEnhance < 10 && gameData.stones >= getMineEnhanceCost());
-setButtonActive(document.getElementById('mine-tier-up-btn'), !mineEnhancing && gameData.minePickaxeOwned && gameData.minePickaxeEnhance >= 10);
+setButtonActive(document.getElementById('mine-tier-up-btn'), !mineEnhancing && gameData.minePickaxeOwned && gameData.minePickaxeEnhance >= 10 && gameData.minePickaxeTier < PICKAXE_MAX_TIER);
 
 }
 

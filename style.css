@@ -1582,11 +1582,14 @@ body {
   position: relative;
   height: 120px;
   margin-bottom: 8px;
-  border: 2px solid #333;
+  border: 2px solid #7a5b00;
   border-radius: 8px;
   overflow: hidden;
-  background:
-    linear-gradient(to bottom, #1a160f 0%, #090705 100%);
+  background-image: url("sprites/background/mine_bg.png");
+  background-size: cover;
+  background-position: center 70%;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 18px rgba(255, 215, 0, 0.18);
 }
 
 .mine-screen::before {
@@ -1594,35 +1597,49 @@ body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 20% 75%, rgba(255, 215, 0, 0.12), transparent 22%),
-    radial-gradient(circle at 75% 30%, rgba(0, 212, 255, 0.08), transparent 20%);
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.45)),
+    radial-gradient(circle at 25% 80%, rgba(255, 215, 0, 0.16), transparent 24%),
+    radial-gradient(circle at 75% 30%, rgba(0, 212, 255, 0.12), transparent 22%);
   pointer-events: none;
+  z-index: 1;
+}
+
+.mine-screen::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 24px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.45), transparent);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .miner-area {
   position: absolute;
-  left: 70px;
-  bottom: 24px;
+  left: 170px;
+  bottom: 25px;
   z-index: 5;
 }
 
 .miner-img {
-  width: 45px;
-  height: 45px;
+  width: 54px;
+  height: 54px;
   image-rendering: pixelated;
   object-fit: contain;
 }
 
 .mine-rock-area {
   position: absolute;
-  right: 85px;
-  bottom: 21px;
-  z-index: 5;
+  left: 190px;
+  bottom: 8px;
+  z-index: 4;
 }
 
 .mine-rock-img {
-  width: 54px;
-  height: 54px;
+  width: 110px;
+  height: 80px;
   image-rendering: pixelated;
   object-fit: contain;
   filter: grayscale(0.9) brightness(0.8);
@@ -1638,17 +1655,7 @@ body {
   70% { transform: translateX(-4px); }
 }
 
-.mine-rock-hp-bg {
-  position: absolute;
-  top: -9px;
-  left: -4px;
-  width: 62px;
-  height: 6px;
-  background: #333;
-  border: 1px solid #555;
-  border-radius: 3px;
-  overflow: hidden;
-}
+
 
 #mine-rock-hp-fill {
   height: 100%;
@@ -1657,22 +1664,10 @@ body {
   transition: width 0.12s;
 }
 
-.mine-sprite-slot {
-  position: absolute;
-  bottom: 18px;
-  opacity: 0.7;
-  z-index: 3;
-}
-
-.mine-deco-left { left: 18px; }
-.mine-deco-right { right: 18px; }
-
+/* 임시 멧토/러쉬 광산 장식 제거됨 */
+.mine-sprite-slot,
 .mine-deco-img {
-  width: 28px;
-  height: 28px;
-  image-rendering: pixelated;
-  object-fit: contain;
-  filter: brightness(0.7);
+  display: none;
 }
 
 .mine-damage-text {
@@ -1691,11 +1686,6 @@ body {
   100% { transform: translateY(-18px); opacity: 0; }
 }
 
-.mine-rock-info {
-  color: #aaa;
-  font-size: 12px;
-  margin-bottom: 4px;
-}
 
 .mine-result-text {
   min-height: 16px;
@@ -1952,4 +1942,56 @@ body {
 .mine-help-box div {
   margin: 2px 0;
   line-height: 1.35;
+}
+
+
+/* 광산 돌 HP바: 돌 이미지와 분리하여 광산 카드 하단 고정 */
+.mine-screen .mine-rock-hp-bg {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 6px;
+  width: auto;
+  height: 6px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 3px;
+  overflow: hidden;
+  z-index: 20;
+}
+
+.mine-screen #mine-rock-hp-fill {
+  height: 100%;
+  width: 100%;
+  background: #ffd700;
+  transition: width 0.12s;
+}
+
+
+/* 공용 리소스 아이콘: PC 환경별 이모지 깨짐 방지용 이미지 아이콘 */
+.resource-icon {
+  width: 18px;
+  height: 18px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 3px;
+  filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.45));
+}
+
+.result-resource-icon {
+  width: 15px;
+  height: 15px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  vertical-align: -2px;
+  margin-left: 2px;
+  filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.45));
+}
+
+.mine-status-line .resource-icon {
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+  margin-right: 0;
 }
