@@ -1553,3 +1553,403 @@ body {
   border-radius: 5px;
   box-shadow: 0 0 6px #fff, 0 0 14px #ff4fd8, 0 0 22px #ff4fd8;
 }
+
+
+/* 광산 탭 */
+.mine-panel h2 {
+  color: #ffd700;
+  text-shadow: 0 0 8px #ffd700;
+}
+
+.mine-guide-text {
+  margin: 8px 0 10px;
+  padding: 8px;
+  color: #ffd700;
+  background: #120f00;
+  border: 1px solid #7a5b00;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.mine-resource-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mine-screen {
+  position: relative;
+  height: 120px;
+  margin-bottom: 8px;
+  border: 2px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+  background:
+    linear-gradient(to bottom, #1a160f 0%, #090705 100%);
+}
+
+.mine-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 75%, rgba(255, 215, 0, 0.12), transparent 22%),
+    radial-gradient(circle at 75% 30%, rgba(0, 212, 255, 0.08), transparent 20%);
+  pointer-events: none;
+}
+
+.miner-area {
+  position: absolute;
+  left: 70px;
+  bottom: 24px;
+  z-index: 5;
+}
+
+.miner-img {
+  width: 45px;
+  height: 45px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.mine-rock-area {
+  position: absolute;
+  right: 85px;
+  bottom: 21px;
+  z-index: 5;
+}
+
+.mine-rock-img {
+  width: 54px;
+  height: 54px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  filter: grayscale(0.9) brightness(0.8);
+}
+
+.mine-rock-hit {
+  animation: mineRockHit 0.16s ease-in-out;
+}
+
+@keyframes mineRockHit {
+  0%, 100% { transform: translateX(0); filter: grayscale(0.9) brightness(0.8); }
+  35% { transform: translateX(5px); filter: brightness(1.8); }
+  70% { transform: translateX(-4px); }
+}
+
+.mine-rock-hp-bg {
+  position: absolute;
+  top: -9px;
+  left: -4px;
+  width: 62px;
+  height: 6px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+#mine-rock-hp-fill {
+  height: 100%;
+  width: 100%;
+  background: #ffd700;
+  transition: width 0.12s;
+}
+
+.mine-sprite-slot {
+  position: absolute;
+  bottom: 18px;
+  opacity: 0.7;
+  z-index: 3;
+}
+
+.mine-deco-left { left: 18px; }
+.mine-deco-right { right: 18px; }
+
+.mine-deco-img {
+  width: 28px;
+  height: 28px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  filter: brightness(0.7);
+}
+
+.mine-damage-text {
+  position: absolute;
+  color: #ffd700;
+  font-size: 15px;
+  font-weight: bold;
+  pointer-events: none;
+  animation: mineFloatUp 0.7s ease-out forwards;
+  text-shadow: 0 0 6px #000, 0 0 8px #ffd700;
+  z-index: 30;
+}
+
+@keyframes mineFloatUp {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-18px); opacity: 0; }
+}
+
+.mine-rock-info {
+  color: #aaa;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.mine-result-text {
+  min-height: 16px;
+  color: #ffd700;
+  font-size: 12px;
+  font-weight: bold;
+  opacity: 0;
+}
+
+.mine-result-text.active {
+  animation: mineResultPop 1s ease-out;
+}
+
+@keyframes mineResultPop {
+  0% { opacity: 0; transform: translateY(4px); }
+  20%, 75% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+
+.mine-status-card {
+  margin: 8px 0;
+  padding: 8px;
+  background: #080808;
+  border: 1px solid #333;
+  border-radius: 6px;
+}
+
+.mine-status-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+  color: #aaa;
+  font-size: 12px;
+}
+
+.mine-status-line b {
+  color: #ffd700;
+}
+
+.mine-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.mine-btn {
+  padding: 7px 5px;
+  background: #111;
+  color: #ffd700;
+  border: 1px solid #333;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.mine-btn.active {
+  color: #000;
+  background: #ffd700;
+  border-color: #ffd700;
+  box-shadow: 0 0 7px #ffd700;
+}
+
+.mine-help-box {
+  margin-top: 8px;
+  padding: 7px;
+  color: #888;
+  background: #050505;
+  border: 1px solid #222;
+  border-radius: 5px;
+  font-size: 10px;
+  text-align: left;
+}
+
+
+/* 광산 강화 UI 정리 */
+.mine-enhance-layout {
+  display: grid;
+  grid-template-columns: 145px 1fr;
+  gap: 10px;
+  align-items: stretch;
+  margin-top: 8px;
+}
+
+.mine-pickaxe-box {
+  position: relative;
+  padding: 8px;
+  background: #080808;
+  border: 2px solid #7a5b00;
+  border-radius: 8px;
+  box-shadow: inset 0 0 12px rgba(255, 215, 0, 0.08);
+}
+
+.mine-pickaxe-title {
+  margin-bottom: 5px;
+  color: #ffd700;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.mine-pickaxe-stage {
+  position: relative;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #050505;
+  border: 1px solid #333;
+  border-radius: 6px;
+}
+
+.mine-pickaxe-img {
+  width: 76px;
+  height: 76px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.45));
+}
+
+.mine-pickaxe-enhance-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  min-width: 28px;
+  padding: 2px 5px;
+  color: #000;
+  background: #ffd700;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: bold;
+  box-shadow: 0 0 7px #ffd700;
+}
+
+.mine-pickaxe-damage {
+  margin-top: 6px;
+  color: #aaa;
+  font-size: 11px;
+}
+
+.mine-pickaxe-damage b {
+  color: #ffd700;
+}
+
+.mine-enhance-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mine-enhance-side .mine-status-card {
+  margin: 0;
+}
+
+.mine-enhance-side .mine-actions {
+  grid-template-columns: 1fr;
+  margin-top: 0;
+}
+
+
+/* 광산 강화 결과 연출 */
+.mine-destroy-chance-note {
+  color: #ff5555;
+  font-size: 10px;
+  margin-left: 3px;
+  white-space: nowrap;
+}
+
+.mine-pickaxe-stage.enhancing {
+  box-shadow: inset 0 0 18px rgba(255, 215, 0, 0.35), 0 0 12px rgba(255, 215, 0, 0.35);
+}
+
+.mine-pickaxe-img.enhancing {
+  animation: minePickaxeChargeShake 0.85s ease-in-out;
+}
+
+@keyframes minePickaxeChargeShake {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  20% { transform: scale(1.05) rotate(-3deg); }
+  40% { transform: scale(1.08) rotate(3deg); }
+  60% { transform: scale(1.1) rotate(-2deg); }
+  80% { transform: scale(1.04) rotate(2deg); }
+}
+
+.mine-enhance-charge-effect {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ffd700;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0.4);
+  opacity: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.mine-enhance-charge-effect.active {
+  animation: mineEnhanceCharge 0.85s ease-out forwards;
+}
+
+@keyframes mineEnhanceCharge {
+  0% {
+    opacity: 0.2;
+    transform: translate(-50%, -50%) scale(0.35);
+    box-shadow: 0 0 4px #ffd700, inset 0 0 4px #ffd700;
+  }
+  55% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(2.2);
+    box-shadow: 0 0 14px #ffd700, inset 0 0 12px #ffd700;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(3.1);
+    box-shadow: 0 0 24px #fff2a0, inset 0 0 18px #fff2a0;
+  }
+}
+
+.mine-enhance-big-result {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.7);
+  min-width: 110px;
+  padding: 4px 6px;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  opacity: 0;
+  z-index: 10;
+  pointer-events: none;
+  text-shadow: 0 0 6px #000, 0 0 12px currentColor;
+}
+
+.mine-enhance-big-result.success { color: #00ff66; }
+.mine-enhance-big-result.fail { color: #ff5555; }
+.mine-enhance-big-result.break { color: #ff2222; }
+
+.mine-enhance-big-result.active {
+  animation: mineEnhanceBigResult 1.1s ease-out forwards;
+}
+
+@keyframes mineEnhanceBigResult {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.65); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  75% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -65%) scale(0.95); }
+}
+
+.mine-help-box div {
+  margin: 2px 0;
+  line-height: 1.35;
+}

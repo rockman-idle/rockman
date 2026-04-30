@@ -2,6 +2,14 @@ const defaultData = {
     screws: 0,
     crystals: 0,
     superRockGem: 0,
+    stones: 0,
+
+    minePickaxeOwned: false,
+    minePickaxeTier: 0,
+    minePickaxeFloorTier: 0,
+    minePickaxeEnhance: 0,
+    mineRockMaxHp: 80,
+    mineRockHp: 80,
 
     stage: 1,
 
@@ -84,6 +92,14 @@ if (savedData.gold && !savedData.screws) {
 gameData.screws = Math.floor(gameData.screws || 0);
 gameData.crystals = Math.floor(gameData.crystals || 0);
 gameData.superRockGem = Math.floor(gameData.superRockGem || 0);
+gameData.stones = Math.floor(gameData.stones || 0);
+gameData.minePickaxeOwned = gameData.minePickaxeOwned || false;
+gameData.minePickaxeTier = Math.max(0, Math.floor(gameData.minePickaxeTier || 0));
+gameData.minePickaxeFloorTier = Math.max(0, Math.floor(gameData.minePickaxeFloorTier || 0));
+if (gameData.minePickaxeTier < gameData.minePickaxeFloorTier) gameData.minePickaxeTier = gameData.minePickaxeFloorTier;
+gameData.minePickaxeEnhance = Math.max(0, Math.floor(gameData.minePickaxeEnhance || 0));
+gameData.mineRockMaxHp = Math.max(1, Math.floor(gameData.mineRockMaxHp || 80));
+gameData.mineRockHp = Math.max(1, Math.floor(gameData.mineRockHp || gameData.mineRockMaxHp));
 gameData.rushFragments = Math.floor(gameData.rushFragments || 0);
 gameData.beatFragments = Math.floor(gameData.beatFragments || 0);
 gameData.rushOwned = gameData.rushOwned || false;
@@ -211,12 +227,16 @@ let xJoinTimer = null;
 let xAttackTimer = null;
 let xAttacking = false;
 
+let mineTimer = null;
+let minerFrame = 1;
+let mineEnhancing = false;
+
 setupStage();
 
 function setupStage() {
     const s = gameData.stage;
 
-    enemyMaxHp = Math.floor((120 + s * 75 + Math.pow(s, 1.35) * 25) * 0.33);
+    enemyMaxHp = Math.floor((120 + s * 75 + Math.pow(s, 1.35) * 25) * 0.66);
     enemyHp = enemyMaxHp;
 
     enemySpeed = 0.22 + s * 0.025;
@@ -912,7 +932,7 @@ function killEnemy() {
         return;
     }
 
-    const reward = Math.floor((80 + gameData.stage * 20) * 1.3);
+    const reward = Math.floor(80 + gameData.stage * 20);
     gameData.screws += reward;
 
     playEnemyDeathEffect();
@@ -1088,6 +1108,7 @@ function buyUpgrade(type, amount) {
                 startBluesAttack();
                 startForteAttack();
                 startXAttack();
+startMining();
             }
         }
         gameData.costs[type] = getNextCost(type, gameData.costs[type]);
@@ -1544,7 +1565,7 @@ function togglePartnerUpgrade(type) {
 }
 
 function showTab(tabName) {
-    ['battle', 'partner', 'armor', 'boss'].forEach(name => {
+    ['battle', 'partner', 'armor', 'boss', 'mine'].forEach(name => {
         const tab = document.getElementById(name + '-tab');
         const btn = document.getElementById(name + '-tab-btn');
 
@@ -1687,6 +1708,255 @@ function startAutoAttack() {
     attackTimer = setInterval(attack, gameData.atkSpd);
 }
 
+const PICKAXE_NAMES = ['돌 곡괭이', '청동 곡괭이', '철 곡괭이', '강철 곡괭이', '티타늄 곡괭이'];
+
+function getPickaxeName() {
+    return PICKAXE_NAMES[Math.min(gameData.minePickaxeTier, PICKAXE_NAMES.length - 1)] || '돌 곡괭이';
+}
+
+function getPickaxeSprite() {
+    const spriteIndex = Math.min(gameData.minePickaxeTier, PICKAXE_NAMES.length - 1) + 1;
+    return `sprites/mine/pickaxe/pickaxe_0${spriteIndex}.png`;
+}
+
+function getMiningDamage() {
+    if (!gameData.minePickaxeOwned) return 0;
+    return Math.floor(8 + gameData.minePickaxeTier * 12 + gameData.minePickaxeEnhance * 3);
+}
+
+function getMineRockMaxHp() {
+    return Math.floor(80 + gameData.minePickaxeTier * 80 + gameData.minePickaxeEnhance * 18);
+}
+
+function getMineEnhanceCost() {
+    return Math.floor(8 + gameData.minePickaxeTier * 20 + gameData.minePickaxeEnhance * 6);
+}
+
+function getMineEnhanceChance() {
+    return Math.max(20, 95 - gameData.minePickaxeEnhance * 6 - gameData.minePickaxeTier * 4);
+}
+
+function getMineDestroyChance() {
+    return gameData.minePickaxeEnhance >= 7 ? 5 : 0;
+}
+
+function getMineProtectedLevel(level = gameData.minePickaxeEnhance) {
+    return Math.floor(level / 5) * 5;
+}
+
+function craftPickaxe() {
+    if (gameData.minePickaxeOwned) return;
+    if (gameData.screws < 100) return;
+
+    gameData.screws -= 100;
+    gameData.minePickaxeOwned = true;
+    gameData.minePickaxeTier = Math.max(0, gameData.minePickaxeFloorTier || 0);
+    gameData.minePickaxeEnhance = 0;
+    gameData.mineRockMaxHp = getMineRockMaxHp();
+    gameData.mineRockHp = gameData.mineRockMaxHp;
+
+    showMineBigResult('제작 완료', 'success');
+    showMineResult('돌 곡괭이 제작 완료');
+    updateUI();
+    saveData();
+}
+
+function enhancePickaxe() {
+    if (mineEnhancing) return;
+    if (!gameData.minePickaxeOwned) return;
+    if (gameData.minePickaxeEnhance >= 10) {
+        showMineBigResult('업그레이드 가능', 'success');
+        showMineResult('10강 달성! 업그레이드 가능');
+        return;
+    }
+
+    const cost = getMineEnhanceCost();
+    if (gameData.stones < cost) {
+        showMineBigResult('재료 부족', 'fail');
+        showMineResult('돌이 부족합니다');
+        return;
+    }
+
+    gameData.stones -= cost;
+    mineEnhancing = true;
+    updateUI();
+    playMineEnhanceCharge();
+
+    setTimeout(() => {
+        const chance = getMineEnhanceChance();
+        const success = Math.random() * 100 < chance;
+
+        if (success) {
+            gameData.minePickaxeEnhance += 1;
+            showMineBigResult('강화 성공', 'success');
+            showMineResult(`강화 성공! +${gameData.minePickaxeEnhance}`);
+        } else {
+            const destroyChance = getMineDestroyChance();
+            const destroyed = destroyChance > 0 && Math.random() * 100 < destroyChance;
+
+            if (destroyed) {
+                breakPickaxe();
+            } else {
+                const before = gameData.minePickaxeEnhance;
+                const protectLevel = getMineProtectedLevel(before);
+                gameData.minePickaxeEnhance = Math.max(protectLevel, before - 1);
+
+                showMineBigResult('강화 실패', 'fail');
+                if (before === gameData.minePickaxeEnhance) {
+                    showMineResult(`강화 실패 / ${protectLevel}강 보호`);
+                } else {
+                    showMineResult(`강화 실패... +${gameData.minePickaxeEnhance}`);
+                }
+            }
+        }
+
+        mineEnhancing = false;
+        updateUI();
+        saveData();
+    }, 850);
+}
+
+function breakPickaxe() {
+    if ((gameData.minePickaxeFloorTier || 0) > 0) {
+        gameData.minePickaxeTier = gameData.minePickaxeFloorTier;
+        gameData.minePickaxeEnhance = 0;
+        gameData.minePickaxeOwned = true;
+        gameData.mineRockMaxHp = getMineRockMaxHp();
+        gameData.mineRockHp = gameData.mineRockMaxHp;
+        showMineBigResult('파괴 방지', 'break');
+        showMineResult(`${getPickaxeName()} 파괴 방지 / +0으로 복구`);
+        return;
+    }
+
+    gameData.minePickaxeOwned = false;
+    gameData.minePickaxeTier = 0;
+    gameData.minePickaxeEnhance = 0;
+    gameData.mineRockMaxHp = getMineRockMaxHp();
+    gameData.mineRockHp = gameData.mineRockMaxHp;
+    showMineBigResult('파괴됨', 'break');
+    showMineResult('곡괭이 파괴... 다시 제작 필요');
+}
+
+function upgradePickaxeTier() {
+    if (!gameData.minePickaxeOwned) return;
+    if (gameData.minePickaxeEnhance < 10) return;
+
+    gameData.minePickaxeTier += 1;
+    gameData.minePickaxeFloorTier = gameData.minePickaxeTier;
+    gameData.minePickaxeEnhance = 0;
+    gameData.mineRockMaxHp = getMineRockMaxHp();
+    gameData.mineRockHp = gameData.mineRockMaxHp;
+
+    showMineBigResult('업그레이드', 'success');
+    showMineResult(`${getPickaxeName()} 업그레이드 완료`);
+    updateUI();
+    saveData();
+}
+
+function mineAttack() {
+    if (!gameData.minePickaxeOwned) return;
+
+    const rock = document.getElementById('mine-rock-img');
+    const miner = document.getElementById('miner-img');
+    if (!rock || !miner) return;
+
+    minerFrame = minerFrame === 1 ? 2 : 1;
+    miner.src = minerFrame === 1 ? 'sprites/rock/rock_01.png' : 'sprites/rock/rock_03.png';
+
+    const damage = getMiningDamage();
+    gameData.mineRockHp -= damage;
+    showMineDamageText(damage);
+
+    rock.classList.remove('mine-rock-hit');
+    void rock.offsetWidth;
+    rock.classList.add('mine-rock-hit');
+
+    if (gameData.mineRockHp <= 0) {
+        clearMineRock();
+    }
+
+    updateUI();
+    saveData();
+}
+
+function clearMineRock() {
+    const screwReward = Math.floor(8 + gameData.minePickaxeTier * 5 + gameData.minePickaxeEnhance * 1.5);
+    const stoneReward = Math.floor(3 + gameData.minePickaxeTier * 3 + Math.max(1, Math.floor(gameData.minePickaxeEnhance / 2)));
+
+    gameData.screws += screwReward;
+    gameData.stones += stoneReward;
+    gameData.mineRockMaxHp = getMineRockMaxHp();
+    gameData.mineRockHp = gameData.mineRockMaxHp;
+
+    showMineResult(`+${screwReward}🔩 / +${stoneReward}🪨`);
+}
+
+function showMineDamageText(damage) {
+    const screen = document.querySelector('.mine-screen');
+    if (!screen) return;
+
+    const text = document.createElement('div');
+    text.className = 'mine-damage-text';
+    text.innerText = damage;
+    text.style.left = '270px';
+    text.style.bottom = '60px';
+    screen.appendChild(text);
+
+    setTimeout(() => text.remove(), 700);
+}
+
+function showMineResult(message) {
+    const result = document.getElementById('mine-result-text');
+    if (!result) return;
+
+    result.innerText = message;
+    result.classList.remove('active');
+    void result.offsetWidth;
+    result.classList.add('active');
+
+    setTimeout(() => result.classList.remove('active'), 1000);
+}
+
+function playMineEnhanceCharge() {
+    const stage = document.querySelector('.mine-pickaxe-stage');
+    const effect = document.getElementById('mine-enhance-charge-effect');
+    const img = document.getElementById('mine-pickaxe-img');
+    if (!stage || !effect || !img) return;
+
+    stage.classList.remove('enhancing');
+    effect.classList.remove('active');
+    img.classList.remove('enhancing');
+    void stage.offsetWidth;
+    stage.classList.add('enhancing');
+    effect.classList.add('active');
+    img.classList.add('enhancing');
+
+    setTimeout(() => {
+        stage.classList.remove('enhancing');
+        effect.classList.remove('active');
+        img.classList.remove('enhancing');
+    }, 850);
+}
+
+function showMineBigResult(message, type = 'success') {
+    const result = document.getElementById('mine-enhance-big-result');
+    if (!result) return;
+
+    result.innerText = message;
+    result.className = `mine-enhance-big-result ${type}`;
+    void result.offsetWidth;
+    result.classList.add('active');
+
+    setTimeout(() => {
+        result.classList.remove('active');
+    }, 1100);
+}
+
+function startMining() {
+    if (mineTimer) clearInterval(mineTimer);
+    mineTimer = setInterval(mineAttack, 1200);
+}
+
 function updateUI() {
     document.getElementById('stage').innerText = gameData.stage;
     document.getElementById('player-hp-text').innerText = Math.floor(gameData.playerHp);
@@ -1697,6 +1967,12 @@ function updateUI() {
 
     document.getElementById('screws').innerText = Math.floor(gameData.screws).toLocaleString();
     document.getElementById('crystals').innerText = Math.floor(gameData.crystals).toLocaleString();
+
+    const stonesEl = document.getElementById('stones');
+    if (stonesEl) stonesEl.innerText = Math.floor(gameData.stones || 0).toLocaleString();
+
+    const mineScrewsDisplay = document.getElementById('mine-screws-display');
+    if (mineScrewsDisplay) mineScrewsDisplay.innerText = Math.floor(gameData.screws || 0).toLocaleString();
 
     document.getElementById('hp-bar-fill').style.width =
         Math.max(0, (enemyHp / enemyMaxHp) * 100) + "%";
@@ -1914,6 +2190,48 @@ superRockGemEls.forEach(el => {
     el.innerText = Math.floor(gameData.superRockGem || 0).toLocaleString();
 });
 
+const mineStoneEls = document.querySelectorAll('.stone-count');
+mineStoneEls.forEach(el => {
+    el.innerText = Math.floor(gameData.stones || 0).toLocaleString();
+});
+
+const minePickaxeName = document.getElementById('mine-pickaxe-name');
+if (minePickaxeName) minePickaxeName.innerText = gameData.minePickaxeOwned ? getPickaxeName() : '미제작';
+
+const mineEnhance = document.getElementById('mine-pickaxe-enhance');
+if (mineEnhance) mineEnhance.innerText = gameData.minePickaxeOwned ? `+${gameData.minePickaxeEnhance}` : '+0';
+
+const mineEnhanceBadge = document.getElementById('mine-pickaxe-enhance-badge');
+if (mineEnhanceBadge) mineEnhanceBadge.innerText = gameData.minePickaxeOwned ? `+${gameData.minePickaxeEnhance}` : '+0';
+
+const minePickaxeImg = document.getElementById('mine-pickaxe-img');
+if (minePickaxeImg) minePickaxeImg.src = getPickaxeSprite();
+
+const mineDamage = document.getElementById('mine-damage');
+if (mineDamage) mineDamage.innerText = getMiningDamage().toLocaleString();
+
+const mineChance = document.getElementById('mine-enhance-chance');
+if (mineChance) mineChance.innerText = `${getMineEnhanceChance()}%`;
+
+const mineDestroyChanceNote = document.getElementById('mine-destroy-chance-note');
+if (mineDestroyChanceNote) {
+    const destroyChance = getMineDestroyChance();
+    mineDestroyChanceNote.innerText = destroyChance > 0 ? `(실패 시 파괴 확률 ${destroyChance}%)` : '';
+}
+
+const mineCost = document.getElementById('mine-enhance-cost');
+if (mineCost) mineCost.innerText = getMineEnhanceCost().toLocaleString();
+
+const mineHpText = document.getElementById('mine-rock-hp-text');
+if (mineHpText) mineHpText.innerText = `${Math.max(0, Math.floor(gameData.mineRockHp)).toLocaleString()} / ${Math.floor(gameData.mineRockMaxHp).toLocaleString()}`;
+
+const mineHpFill = document.getElementById('mine-rock-hp-fill');
+if (mineHpFill) mineHpFill.style.width = Math.max(0, (gameData.mineRockHp / gameData.mineRockMaxHp) * 100) + '%';
+
+setButtonActive(document.getElementById('craft-pickaxe-btn'), !gameData.minePickaxeOwned && gameData.screws >= 100);
+setButtonActive(document.getElementById('mine-enhance-btn'), !mineEnhancing && gameData.minePickaxeOwned && gameData.minePickaxeEnhance < 10 && gameData.stones >= getMineEnhanceCost());
+setButtonActive(document.getElementById('mine-tier-up-btn'), !mineEnhancing && gameData.minePickaxeOwned && gameData.minePickaxeEnhance >= 10);
+
 }
 
 
@@ -1986,6 +2304,7 @@ function resetGame() {
 function devCheat() {
     gameData.screws += 100000;
     gameData.crystals += 1000;
+    gameData.stones += 1000;
 
     updateUI();
     saveData();
@@ -1999,3 +2318,4 @@ startChase();
 startBluesAttack();
 startForteAttack();
 startXAttack();
+startMining();

@@ -52,6 +52,7 @@
 
 <div class="tab-bookmark-left">
     <button id="boss-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('boss')">보스전</button>
+    <button id="mine-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('mine')">광산</button>
 </div>
 
    <img class="title-logo" src="sprites/title/title.png" alt="ROCKMAN IDLE">
@@ -110,6 +111,7 @@
         <div class="resource-panel">
             <div class="resource-box">🔩 <span id="screws">0</span></div>
             <div class="resource-box">💎 <span id="crystals">0</span></div>
+            <div class="resource-box">🪨 <span id="stones">0</span></div>
         </div>
 
 <button class="reset-btn" onclick="devCheat()">[DEV 치트]</button>
@@ -495,6 +497,73 @@
     </div> <!-- system-panel -->
 </div> <!-- boss-tab -->
 
+
+<div id="mine-tab" class="tab-content">
+  <div class="system-panel mine-panel">
+    <h2>MINE</h2>
+    <div class="mine-guide-text">피켈맨 : 여기는 야근 수당이 어떻게 돼요?</div>
+
+    <div class="mine-resource-row">
+      <div class="resource-box">🔩 <span id="mine-screws-display">나사는 상단 공용</span></div>
+      <div class="resource-box">🪨 <span class="stone-count">0</span></div>
+    </div>
+
+    <div class="mine-screen">
+      <div class="mine-sprite-slot mine-deco-left">
+        <img src="sprites/enemy/met/met_01.png" class="mine-deco-img" alt="임시 광산 장식">
+      </div>
+
+      <div id="miner-area" class="miner-area">
+        <img id="miner-img" src="sprites/rock/rock_01.png" class="miner-img" alt="광부">
+      </div>
+
+      <div id="mine-rock-area" class="mine-rock-area">
+        <div class="mine-rock-hp-bg"><div id="mine-rock-hp-fill"></div></div>
+        <img id="mine-rock-img" src="sprites/boss/super-rboss/super-rboss.png" class="mine-rock-img" alt="돌">
+      </div>
+
+      <div class="mine-sprite-slot mine-deco-right">
+        <img src="sprites/partner/rush/rush_02.png" class="mine-deco-img" alt="임시 광산 장식">
+      </div>
+    </div>
+
+    <div class="mine-rock-info">돌 HP <span id="mine-rock-hp-text">80 / 80</span></div>
+    <div id="mine-result-text" class="mine-result-text"></div>
+
+    <div class="mine-enhance-layout">
+      <div class="mine-pickaxe-box">
+        <div class="mine-pickaxe-title" id="mine-pickaxe-name">미제작</div>
+        <div class="mine-pickaxe-stage">
+          <div id="mine-enhance-charge-effect" class="mine-enhance-charge-effect"></div>
+          <div id="mine-enhance-big-result" class="mine-enhance-big-result"></div>
+          <img id="mine-pickaxe-img" src="sprites/mine/pickaxe/pickaxe_01.png" class="mine-pickaxe-img" alt="곡괭이">
+          <span id="mine-pickaxe-enhance-badge" class="mine-pickaxe-enhance-badge">+0</span>
+        </div>
+        <div class="mine-pickaxe-damage">광질 데미지 <b id="mine-damage">0</b></div>
+      </div>
+
+      <div class="mine-enhance-side">
+        <div class="mine-status-card">
+          <div class="mine-status-line"><span>강화 확률</span><b><span id="mine-enhance-chance">95%</span> <span id="mine-destroy-chance-note" class="mine-destroy-chance-note"></span></b></div>
+          <div class="mine-status-line"><span>강화 비용</span><b><span id="mine-enhance-cost">8</span> 🪨</b></div>
+        </div>
+
+        <div class="mine-actions">
+          <button id="craft-pickaxe-btn" class="mine-btn" onclick="craftPickaxe()">곡괭이 제작 🔩100</button>
+          <button id="mine-enhance-btn" class="mine-btn" onclick="enhancePickaxe()">+1강</button>
+          <button id="mine-tier-up-btn" class="mine-btn" onclick="upgradePickaxeTier()">10강 업그레이드</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mine-help-box">
+      <div>- 강화 실패 시 강화가 1단계 하락합니다.</div>
+      <div>- 5강 단위는 보호선이라 5강 아래로 떨어지지 않습니다.</div>
+      <div>- +7강부터 실패 시 5% 확률로 곡괭이가 파괴됩니다.</div>
+      <div>- 다음 곡괭이로 업그레이드한 뒤에는 파괴되어도 마지막 업그레이드 곡괭이로 복구됩니다.</div>
+    </div>
+  </div>
+</div>
 
 <div class="footer-row">
             <button class="reset-btn" onclick="resetGame()">[데이터 초기화]</button>
