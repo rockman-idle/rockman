@@ -216,7 +216,7 @@ setupStage();
 function setupStage() {
     const s = gameData.stage;
 
-    enemyMaxHp = Math.floor((120 + s * 75 + Math.pow(s, 1.35) * 25) * 0.66);
+    enemyMaxHp = Math.floor((120 + s * 75 + Math.pow(s, 1.35) * 25) * 0.33);
     enemyHp = enemyMaxHp;
 
     enemySpeed = 0.22 + s * 0.025;
@@ -912,7 +912,7 @@ function killEnemy() {
         return;
     }
 
-    const reward = Math.floor(80 + gameData.stage * 20);
+    const reward = Math.floor(80 + gameData.stage * 20) * 1.3);
     gameData.screws += reward;
 
     playEnemyDeathEffect();
