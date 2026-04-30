@@ -912,7 +912,7 @@ function killEnemy() {
         return;
     }
 
-    const reward = Math.floor(80 + gameData.stage * 20) * 1.3);
+    const reward = Math.floor((80 + gameData.stage * 20) * 1.3);
     gameData.screws += reward;
 
     playEnemyDeathEffect();
