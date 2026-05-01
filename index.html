@@ -50,6 +50,37 @@
     <img src="sprites/partner/x/x_join_01.png">
     <img src="sprites/partner/x/x_join_02.png">
     <img src="sprites/partner/x/x_join_03.png">
+    <img src="sprites/partner/zero/zero_01.png">
+    <img src="sprites/partner/zero/zero_02.png">
+    <img src="sprites/partner/zero/zero_03.png">
+    <img src="sprites/partner/zero/zero_st.png">
+    <img src="sprites/partner/zero/zero_join_01.png">
+    <img src="sprites/partner/zero/zero_join_02.png">
+    <img src="sprites/partner/zero/zero_join_03.png">
+    <img src="sprites/partner/zero/zero_join_04.png">
+    <img src="sprites/partner/zero/zero_join_05.png">
+    <img src="sprites/partner/zero/zero_join_06.png">
+    <img src="sprites/partner/zero/zero_join_07.png">
+    <img src="sprites/partner/zero/zero_join_08.png">
+    <img src="sprites/partner/zero/zero_at_01.png">
+    <img src="sprites/partner/zero/zero_at_02.png">
+    <img src="sprites/partner/zero/zero_at_03.png">
+    <img src="sprites/partner/zero/zero_at_04.png">
+    <img src="sprites/partner/zero/zero_at_05.png">
+    <img src="sprites/partner/zero/zero_at_06.png">
+    <img src="sprites/partner/zero/zero_at_07.png">
+    <img src="sprites/partner/zero/zero_at_08.png">
+    <img src="sprites/partner/zero/zero_at_09.png">
+    <img src="sprites/partner/zero/zero_at_10.png">
+    <img src="sprites/partner/zero/zero_at_11.png">
+    <img src="sprites/partner/zero/zero_at_12.png">
+    <img src="sprites/partner/zero/zero_at_13.png">
+    <img src="sprites/partner/zero/zero_at_14.png">
+    <img src="sprites/partner/zero/zero_at_15.png">
+    <img src="sprites/partner/blues/blues_portrait.png">
+    <img src="sprites/partner/forte/forte_portrait.png">
+    <img src="sprites/partner/x/x_portrait.png">
+    <img src="sprites/partner/zero/zero_portrait.png">
     <img src="sprites/armor/super-r/super-r.png">
     <img src="sprites/boss/super-rboss/super-rboss.png">
     <img src="sprites/mine/pickelman_01.png">
@@ -88,12 +119,85 @@
 <div class="tab-bookmark-left">
     <button id="battle-tab-btn" class="tab-btn left-tab-btn active" onclick="showTab('battle')">전투</button>
     <button id="mine-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('mine')">광산</button>
+    <button id="armor-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('armor')">개발실</button>
+    <button id="boss-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('boss')">보스전</button>
 </div>
 
 <div class="tab-bookmark">
-    <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">파트너</button>
-    <button id="armor-tab-btn" class="tab-btn" onclick="showTab('armor')">아머</button>
-    <button id="boss-tab-btn" class="tab-btn" onclick="showTab('boss')">보스전</button>
+    <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">동료</button>
+</div>
+
+<div id="partner-sync-wing" class="partner-sync-wing">
+    <button id="partner-sync-wing-btn" class="partner-sync-wing-btn" onclick="togglePartnerAttackUpgrade()">
+        동료<br>공격력
+    </button>
+
+    <div id="partner-sync-wing-panel" class="partner-sync-wing-panel">
+        <div class="partner-attack-upgrade-box visible">
+            <div id="partner-attack-upgrade-header" class="partner-attack-upgrade-header active">
+                <span>동료 공격력</span>
+                <span class="partner-attack-cost">💎 30</span>
+            </div>
+
+            <div id="partner-attack-upgrade-panel" class="partner-attack-upgrade-panel active">
+                <div class="partner-attack-help">
+                    록맨의 버스터 공격력과 싱크로됩니다.<br>
+                    <span class="partner-attack-help-sub">강화 성공 시 +2~10%</span>
+                </div>
+                <div id="partner-upgrade-result" class="partner-upgrade-result"></div>
+
+                <div class="partner-sync-card-grid">
+                    <div id="blues-sync-row" class="partner-sync-card">
+                        <div class="sync-card-name">블루스</div>
+                        <div class="sync-portrait-frame" style="--sync:10%;">
+                            <img src="sprites/partner/blues/blues_portrait.png" class="sync-portrait-img" alt="블루스">
+                            <span id="blues-sync-percent" class="sync-percent-text">10%</span>
+                        </div>
+                        <div class="sync-card-footer">
+                            <span class="sync-chance-small">강화확률<br><b id="blues-sync-chance">82%</b></span>
+                            <button id="blues-sync-upgrade-btn" class="partner-sync-upgrade-btn" onclick="upgradePartnerSync('blues')">강화</button>
+                        </div>
+                    </div>
+
+                    <div id="forte-sync-row" class="partner-sync-card">
+                        <div class="sync-card-name">포르테</div>
+                        <div class="sync-portrait-frame" style="--sync:10%;">
+                            <img src="sprites/partner/forte/forte_portrait.png" class="sync-portrait-img" alt="포르테">
+                            <span id="forte-sync-percent" class="sync-percent-text">10%</span>
+                        </div>
+                        <div class="sync-card-footer">
+                            <span class="sync-chance-small">강화확률<br><b id="forte-sync-chance">82%</b></span>
+                            <button id="forte-sync-upgrade-btn" class="partner-sync-upgrade-btn" onclick="upgradePartnerSync('forte')">강화</button>
+                        </div>
+                    </div>
+
+                    <div id="x-sync-row" class="partner-sync-card">
+                        <div class="sync-card-name">엑스</div>
+                        <div class="sync-portrait-frame" style="--sync:10%;">
+                            <img src="sprites/partner/x/x_portrait.png" class="sync-portrait-img" alt="엑스">
+                            <span id="x-sync-percent" class="sync-percent-text">10%</span>
+                        </div>
+                        <div class="sync-card-footer">
+                            <span class="sync-chance-small">강화확률<br><b id="x-sync-chance">82%</b></span>
+                            <button id="x-sync-upgrade-btn" class="partner-sync-upgrade-btn" onclick="upgradePartnerSync('x')">강화</button>
+                        </div>
+                    </div>
+
+                    <div id="zero-sync-row" class="partner-sync-card">
+                        <div class="sync-card-name">제로</div>
+                        <div class="sync-portrait-frame" style="--sync:10%;">
+                            <img src="sprites/partner/zero/zero_portrait.png" class="sync-portrait-img" alt="제로">
+                            <span id="zero-sync-percent" class="sync-percent-text">10%</span>
+                        </div>
+                        <div class="sync-card-footer">
+                            <span class="sync-chance-small">강화확률<br><b id="zero-sync-chance">82%</b></span>
+                            <button id="zero-sync-upgrade-btn" class="partner-sync-upgrade-btn" onclick="upgradePartnerSync('zero')">강화</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
    <img class="title-logo" src="sprites/title/title.png" alt="ROCKMAN IDLE">
@@ -141,6 +245,10 @@
   <img id="x-img" src="sprites/partner/x/x_01.png">
 </div>
 
+<div id="zero-area" class="zero-area">
+  <img id="zero-img" src="sprites/partner/zero/zero_01.png">
+</div>
+
 <div id="enemy-area">
                 <div class="boss-hp-container">
                     <div class="hp-bar-bg"><div id="hp-bar-fill"></div></div>
@@ -163,6 +271,7 @@
             <div class="exchange-title">나사 → 크리스탈 교환 (🔩100 : 💎1)</div>
             <button id="exchange-btn1" class="exchange-btn" onclick="exchangeScrewsToCrystals(1)">💎 1개</button>
             <button id="exchange-btn10" class="exchange-btn" onclick="exchangeScrewsToCrystals(10)">💎 10개</button>
+            <button id="exchange-btn100" class="exchange-btn" onclick="exchangeScrewsToCrystals(100)">💎 100개</button>
         </div>
 
         <div class="upgrade-row">
@@ -209,81 +318,15 @@
     <button id="partnerSpd-btn10" class="up-btn partner-up-btn tooltip-btn" onclick="buyUpgrade('partnerSpd',10)">+10</button>
     <button id="partnerSpd-btnMax" class="up-btn partner-up-btn" onclick="buyUpgradeMax('partnerSpd')">+MAX</button>
 </div>
-<div class="partner-attack-upgrade-box">
-  <button id="partner-attack-upgrade-header" class="partner-attack-upgrade-header" onclick="togglePartnerAttackUpgrade()">
-    <span>동료 공격력</span>
-    <span class="partner-attack-cost">💎 30</span>
-  </button>
 
-  <div id="partner-attack-upgrade-panel" class="partner-attack-upgrade-panel">
-    <div class="partner-attack-help">
-      록맨의 버스터 공격력과 싱크로됩니다. 강화 성공 시 +2~10%
-    </div>
-    <div id="partner-upgrade-result" class="partner-upgrade-result"></div>
-
-    <div id="forte-sync-row" class="partner-sync-row">
-      <div class="partner-sync-top">
-        <span class="partner-sync-name">포르테 싱크로율</span>
-        <span id="forte-sync-percent" class="partner-sync-percent">10%</span>
-      </div>
-
-      <div class="partner-sync-gauge-wrap">
-        <div class="partner-sync-gauge-bg">
-          <div id="forte-sync-gauge-fill" class="partner-sync-gauge-fill"></div>
-        </div>
-      </div>
-
-      <div class="partner-sync-bottom">
-        <span class="partner-sync-chance-label">강화확률 : <span id="forte-sync-chance">82%</span></span>
-        <button id="forte-sync-upgrade-btn" class="partner-sync-upgrade-btn" onclick="upgradePartnerSync('forte')">강화</button>
-      </div>
-    </div>
-
-    <div id="x-sync-row" class="partner-sync-row">
-      <div class="partner-sync-top">
-        <span class="partner-sync-name">엑스 싱크로율</span>
-        <span id="x-sync-percent" class="partner-sync-percent">10%</span>
-      </div>
-
-      <div class="partner-sync-gauge-wrap">
-        <div class="partner-sync-gauge-bg">
-          <div id="x-sync-gauge-fill" class="partner-sync-gauge-fill"></div>
-        </div>
-      </div>
-
-      <div class="partner-sync-bottom">
-        <span class="partner-sync-chance-label">강화확률 : <span id="x-sync-chance">82%</span></span>
-        <button id="x-sync-upgrade-btn" class="partner-sync-upgrade-btn" onclick="upgradePartnerSync('x')">강화</button>
-      </div>
-    </div>
-
-    <div id="exeRockman-sync-row" class="partner-sync-row">
-      <div class="partner-sync-top">
-        <span class="partner-sync-name">록맨.EXE 싱크로율</span>
-        <span id="exeRockman-sync-percent" class="partner-sync-percent">10%</span>
-      </div>
-
-      <div class="partner-sync-gauge-wrap">
-        <div class="partner-sync-gauge-bg">
-          <div id="exeRockman-sync-gauge-fill" class="partner-sync-gauge-fill"></div>
-        </div>
-      </div>
-
-      <div class="partner-sync-bottom">
-        <span class="partner-sync-chance-label">강화확률 : <span id="exeRockman-sync-chance">82%</span></span>
-        <button id="exeRockman-sync-upgrade-btn" class="partner-sync-upgrade-btn" onclick="upgradePartnerSync('exeRockman')">강화</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 
     </div>
 
     <div id="partner-tab" class="tab-content">
         <div class="partner-panel">
-            <h2>PARTNER</h2>
-            <p class="partner-desc">크리스탈로 동료 조각을 구매하고 파트너를 소환할 수 있습니다.</p>
+            <h2>동료</h2>
+            <p class="partner-desc">크리스탈로 동료 조각을 구매하고 동료를 소환할 수 있습니다.</p>
 
 <div id="rush-card" class="partner-card">
 
@@ -351,7 +394,7 @@
 
   <div class="partner-top">
     <div class="partner-left">
-      <img src="sprites/partner/blues/blues_06.png" class="partner-icon">
+      <img src="sprites/partner/blues/blues_portrait.png" class="partner-icon">
       <span class="partner-title">
         블루스 (<span id="blues-fragments">0</span> / 100)
       </span>
@@ -378,7 +421,7 @@
 
   <div class="partner-top">
     <div class="partner-left">
-      <img src="sprites/partner/forte/forte_01.png" class="partner-icon">
+      <img src="sprites/partner/forte/forte_portrait.png" class="partner-icon">
       <span class="partner-title">
         포르테 (<span id="forte-fragments">0</span> / 100)
       </span>
@@ -405,7 +448,7 @@
 
   <div class="partner-top">
     <div class="partner-left">
-      <img src="sprites/partner/x/x_01.png" class="partner-icon">
+      <img src="sprites/partner/x/x_portrait.png" class="partner-icon">
       <span class="partner-title">
         엑스 (<span id="x-fragments">0</span> / 100)
       </span>
@@ -428,12 +471,39 @@
 
 </div>
 
+<div id="zero-card" class="partner-card">
+
+  <div class="partner-top">
+    <div class="partner-left">
+      <img src="sprites/partner/zero/zero_portrait.png" class="partner-icon">
+      <span class="partner-title">
+        제로 (<span id="zero-fragments">0</span> / 100)
+      </span>
+    </div>
+
+    <button id="zero-summon-btn" class="summon-btn" onclick="summonZero()">소환</button>
+  </div>
+
+  <div class="partner-desc">
+    - 적 위치까지 접근해 제트세이버 근접 공격
+  </div>
+
+  <div class="partner-actions">
+    <button id="zero-buy1" class="partner-buy-btn" onclick="buyZeroFragment(1)">조각 1개</button>
+    <button id="zero-buy10" class="partner-buy-btn" onclick="buyZeroFragment(10)">조각 10개</button>
+    <button id="zero-buy100" class="partner-buy-btn" onclick="buyZeroFragment(100)">조각 100개</button>
+  </div>
+
+  <div id="zero-complete-badge" class="complete-badge">COMPLETE</div>
+
+</div>
+
         </div>
     </div>
 
     <div id="armor-tab" class="tab-content">
     <div class="system-panel">
-        <h2>ARMOR</h2>
+        <h2>개발실</h2>
 
         <div class="inner-tabs">
             <button class="inner-tab active" onclick="showArmorTab('super-r')">슈퍼록맨</button>

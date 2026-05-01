@@ -38,6 +38,9 @@ const defaultData = {
     xFragments: 0,
     xOwned: false,
 
+    zeroFragments: 0,
+    zeroOwned: false,
+
     // 추후 추가될 버스터형 파트너용 기본값
     exeRockmanOwned: false,
 
@@ -45,8 +48,10 @@ const defaultData = {
 
     // 동료 공격력 싱크로율(%) - 록맨 버스터 공격력 기준
     partnerSync: {
+        blues: 10,
         forte: 10,
         x: 10,
+        zero: 10,
         exeRockman: 10
     },
 
@@ -110,6 +115,8 @@ gameData.forteFragments = Math.floor(gameData.forteFragments || 0);
 gameData.forteOwned = gameData.forteOwned || false;
 gameData.xFragments = Math.floor(gameData.xFragments || 0);
 gameData.xOwned = gameData.xOwned || false;
+gameData.zeroFragments = Math.floor(gameData.zeroFragments || 0);
+gameData.zeroOwned = gameData.zeroOwned || false;
 gameData.exeRockmanOwned = gameData.exeRockmanOwned || false;
 gameData.partnerAtkSpd = gameData.partnerAtkSpd || 2000;
 gameData.partnerSync = { ...defaultData.partnerSync, ...(gameData.partnerSync || {}) };
@@ -136,6 +143,7 @@ const BEAT_REQUIRED_FRAGMENTS = 100;
 const BLUES_REQUIRED_FRAGMENTS = 100;
 const FORTE_REQUIRED_FRAGMENTS = 100;
 const X_REQUIRED_FRAGMENTS = 100;
+const ZERO_REQUIRED_FRAGMENTS = 100;
 const ENEMY_START_X = 460;
 const BOSS_START_X = 380; // 보스 등장 시작 위치: 숫자가 작을수록 왼쪽
 const ENEMY_ATTACK_X = 120;
@@ -160,11 +168,19 @@ const ENEMY_TYPE_DATA = {
 };
 
 const PARTNER_ATTACK_DATA = {
+    blues: {
+        name: '블루스',
+        ownedKey: 'bluesOwned',
+        syncKey: 'blues',
+        defaultSync: 10,
+        portrait: 'sprites/partner/blues/blues_portrait.png'
+    },
     forte: {
         name: '포르테',
         ownedKey: 'forteOwned',
         syncKey: 'forte',
         defaultSync: 10,
+        portrait: 'sprites/partner/forte/forte_portrait.png',
         areaId: 'forte-area',
         imgId: 'forte-img',
         bulletClass: 'partner-bullet forte-bullet',
@@ -181,6 +197,7 @@ const PARTNER_ATTACK_DATA = {
         ownedKey: 'xOwned',
         syncKey: 'x',
         defaultSync: 10,
+        portrait: 'sprites/partner/x/x_portrait.png',
         areaId: 'x-area',
         imgId: 'x-img',
         bulletClass: 'partner-bullet x-bullet',
@@ -191,6 +208,18 @@ const PARTNER_ATTACK_DATA = {
         busterOffsetX: 23,
         busterOffsetY: 32,
         shotDuration: 250
+    },
+    zero: {
+        name: '제로',
+        ownedKey: 'zeroOwned',
+        syncKey: 'zero',
+        defaultSync: 10,
+        portrait: 'sprites/partner/zero/zero_portrait.png',
+        areaId: 'zero-area',
+        imgId: 'zero-img',
+        idleFrame: 'sprites/partner/zero/zero_01.png',
+        standFrame: 'sprites/partner/zero/zero_st.png',
+        melee: true
     },
     exeRockman: {
         name: '록맨.EXE',
@@ -252,6 +281,14 @@ let xJoinTimer = null;
 let xAttackTimer = null;
 let xAttacking = false;
 
+const zeroFramePattern = [1, 2, 3, 2];
+let zeroFrameIndex = 0;
+let zeroJoinTimer = null;
+let zeroAttackTimer = null;
+let zeroAttacking = false;
+const ZERO_ATTACK_INTERVAL_MULTIPLIER = 1.8;
+const ZERO_ATTACK_TARGET_Y = 10;
+
 let mineTimer = null;
 let minerFrame = 1;
 let mineAttackAnimating = false;
@@ -269,6 +306,7 @@ const BATTLE_TIPS = [
 ];
 let battleTipIndex = 0;
 let battleTipTimer = null;
+let partnerSyncEnhancing = false;
 
 setupStage();
 
@@ -375,11 +413,13 @@ function applyStillBattleFrames() {
     const rushImg = document.getElementById('rush-img');
     const forteImg = document.getElementById('forte-img');
     const xImg = document.getElementById('x-img');
+    const zeroImg = document.getElementById('zero-img');
 
     if (rockman) rockman.src = 'sprites/rock/rock_st.png';
     if (rushImg && gameData.rushOwned) rushImg.src = 'sprites/partner/rush/rush_st.png';
     if (forteImg && gameData.forteOwned && !forteAttacking) forteImg.src = 'sprites/partner/forte/forte_st.png';
     if (xImg && gameData.xOwned && !xAttacking) xImg.src = 'sprites/partner/x/x_st.png';
+    if (zeroImg && gameData.zeroOwned && !zeroAttacking) zeroImg.src = 'sprites/partner/zero/zero_st.png';
 }
 
 function stopSniperJoeActions() {
@@ -501,6 +541,7 @@ function animate() {
         }
         animateBeat();
         animateBlues();
+        animateZero();
         return;
     }
 
@@ -518,6 +559,7 @@ function animate() {
     animateBlues();
     animateForte();
     animateX();
+    animateZero();
 }
 
 
@@ -595,6 +637,20 @@ function animateX() {
   xFrameIndex = (xFrameIndex + 1) % xFramePattern.length;
 }
 
+function animateZero() {
+  const zeroImg = document.getElementById('zero-img');
+  if (!zeroImg || !gameData.zeroOwned || zeroAttacking) return;
+
+  if (isSniperJoeBattle()) {
+    zeroImg.src = 'sprites/partner/zero/zero_st.png';
+    return;
+  }
+
+  const frame = zeroFramePattern[zeroFrameIndex];
+  zeroImg.src = `sprites/partner/zero/zero_0${frame}.png`;
+  zeroFrameIndex = (zeroFrameIndex + 1) % zeroFramePattern.length;
+}
+
 
 const PARTNER_SYNC_UPGRADE_COST = 30;
 const PARTNER_SYNC_UPGRADE_MIN_GAIN = 2;
@@ -625,16 +681,16 @@ function getPartnerDamage(type) {
 }
 
 function togglePartnerAttackUpgrade() {
-    const panel = document.getElementById('partner-attack-upgrade-panel');
-    const header = document.getElementById('partner-attack-upgrade-header');
-    if (!panel) return;
+    const wing = document.getElementById('partner-sync-wing');
+    if (!wing) return;
 
-    panel.classList.toggle('active');
-    if (header) header.classList.toggle('active', panel.classList.contains('active'));
+    wing.classList.toggle('open');
     updateUI();
 }
 
 function upgradePartnerSync(type) {
+    if (partnerSyncEnhancing) return;
+
     const data = PARTNER_ATTACK_DATA[type];
     if (!data) return;
     if (!gameData[data.ownedKey]) return;
@@ -645,37 +701,69 @@ function upgradePartnerSync(type) {
     if (currentSync >= 100) return;
 
     gameData.crystals -= PARTNER_SYNC_UPGRADE_COST;
+    partnerSyncEnhancing = true;
 
-    const chance = getPartnerSyncChance(type);
-    const success = Math.random() * 100 < chance;
-
-    if (success) {
-        const gain = Math.floor(
-            Math.random() * (PARTNER_SYNC_UPGRADE_MAX_GAIN - PARTNER_SYNC_UPGRADE_MIN_GAIN + 1)
-        ) + PARTNER_SYNC_UPGRADE_MIN_GAIN;
-
-        gameData.partnerSync[syncKey] = Math.min(100, currentSync + gain);
-        showPartnerUpgradeResult(`${data.name} 싱크로 +${Math.min(gain, 100 - currentSync)}%`);
-    } else {
-        showPartnerUpgradeResult('강화 실패');
-    }
-
+    playPartnerSyncChargeEffect(type);
     updateUI();
     saveData();
+
+    setTimeout(() => {
+        const latestSync = getPartnerSyncPercent(type);
+        const chance = getPartnerSyncChance(type);
+        const success = Math.random() * 100 < chance;
+
+        if (success) {
+            const gain = Math.floor(
+                Math.random() * (PARTNER_SYNC_UPGRADE_MAX_GAIN - PARTNER_SYNC_UPGRADE_MIN_GAIN + 1)
+            ) + PARTNER_SYNC_UPGRADE_MIN_GAIN;
+
+            gameData.partnerSync[syncKey] = Math.min(100, latestSync + gain);
+        }
+
+        partnerSyncEnhancing = false;
+        updateUI();
+        playPartnerSyncUpgradeEffect(type, success);
+        saveData();
+    }, 850);
+}
+
+function playPartnerSyncChargeEffect(type) {
+    const card = document.getElementById(`${type}-sync-row`);
+    if (!card) return;
+
+    card.classList.remove('sync-charging', 'sync-upgraded', 'sync-failed');
+    void card.offsetWidth;
+    card.classList.add('sync-charging');
+
+    setTimeout(() => {
+        card.classList.remove('sync-charging');
+    }, 850);
+}
+
+function playPartnerSyncUpgradeEffect(type, success) {
+    const card = document.getElementById(`${type}-sync-row`);
+    if (!card) return;
+
+    card.classList.remove('sync-upgraded', 'sync-failed');
+    void card.offsetWidth;
+    card.classList.add(success ? 'sync-upgraded' : 'sync-failed');
+
+    const percent = document.getElementById(`${type}-sync-percent`);
+    if (percent) {
+        percent.classList.remove('sync-rise');
+        void percent.offsetWidth;
+        if (success) percent.classList.add('sync-rise');
+    }
+
+    setTimeout(() => {
+        card.classList.remove('sync-upgraded', 'sync-failed');
+        if (percent) percent.classList.remove('sync-rise');
+    }, 820);
 }
 
 function showPartnerUpgradeResult(message) {
-    const result = document.getElementById('partner-upgrade-result');
-    if (!result) return;
-
-    result.innerHTML = message;
-    result.classList.remove('active');
-    void result.offsetWidth;
-    result.classList.add('active');
-
-    setTimeout(() => {
-        result.classList.remove('active');
-    }, 900);
+    // 동료 공격력 강화 결과는 카드 연출로만 표시합니다.
+    // 문구 출력은 사용하지 않습니다.
 }
 
 function startBluesAttack() {
@@ -709,7 +797,7 @@ function bluesShieldCharge() {
     if (frame > 5) {
       clearInterval(chargeAnim);
 
-      const damage = Math.floor(gameData.atk * 1.8);
+      const damage = Math.floor(getPartnerDamage('blues') * 1.8);
       const hit = applyEnemyDamage(damage, false, false);
 
       if (hit && !enemyDead) playEnemyHit(enemy);
@@ -781,6 +869,88 @@ function startXAttack() {
 
     firePartnerBuster('x');
   }, gameData.partnerAtkSpd);
+}
+
+function startZeroAttack() {
+  if (zeroAttackTimer) clearInterval(zeroAttackTimer);
+
+  zeroAttackTimer = setInterval(() => {
+    if (!gameData.zeroOwned || enemyDead || playerDead || zeroAttacking) return;
+
+    zeroMeleeAttack();
+  }, Math.floor(gameData.partnerAtkSpd * ZERO_ATTACK_INTERVAL_MULTIPLIER));
+}
+
+function zeroMeleeAttack() {
+    const zeroArea = document.getElementById('zero-area');
+    const zeroImg = document.getElementById('zero-img');
+    const enemyImg = document.getElementById('enemy-img');
+    const screen = document.querySelector('.game-screen');
+
+    if (!zeroArea || !zeroImg || !enemyImg || !screen) return;
+
+    zeroAttacking = true;
+    zeroArea.classList.remove('zero-return-jump');
+    zeroArea.style.transition = 'none';
+    zeroArea.style.transform = 'translate(0px, 0px)';
+
+    const screenRect = screen.getBoundingClientRect();
+    const zeroRect = zeroArea.getBoundingClientRect();
+    const enemyRect = enemyImg.getBoundingClientRect();
+    const targetX = Math.max(35, enemyRect.left - zeroRect.left - 34);
+
+    let approachFrame = 1;
+    const approachTimer = setInterval(() => {
+        zeroImg.src = `sprites/partner/zero/zero_at_0${approachFrame}.png`;
+        approachFrame++;
+        if (approachFrame > 4) clearInterval(approachTimer);
+    }, 90);
+
+    setTimeout(() => {
+        zeroArea.style.transition = 'transform 0.36s ease-out';
+        zeroArea.style.transform = `translate(${targetX}px, ${ZERO_ATTACK_TARGET_Y}px)`;
+    }, 20);
+
+    setTimeout(() => {
+        let attackFrame = 5;
+        const attackTimer = setInterval(() => {
+            const frameText = String(attackFrame).padStart(2, '0');
+            zeroImg.src = `sprites/partner/zero/zero_at_${frameText}.png`;
+            attackFrame++;
+
+            if (attackFrame > 10) {
+                clearInterval(attackTimer);
+                const damage = getPartnerDamage('zero');
+                // 제로의 근접 공격은 버스터 공격이 아니므로 스나이퍼 죠의 방패 반감을 받지 않습니다.
+                const hit = applyEnemyDamage(damage, false, false);
+                if (hit && !enemyDead) playEnemyHit(enemyImg);
+            }
+        }, 95);
+    }, 420);
+
+    setTimeout(() => {
+        let returnFrame = 11;
+        zeroArea.classList.add('zero-return-jump');
+        zeroArea.style.transition = 'transform 0.48s ease-in-out';
+        zeroArea.style.transform = 'translate(0px, 0px)';
+
+        const returnTimer = setInterval(() => {
+            zeroImg.src = `sprites/partner/zero/zero_at_${returnFrame}.png`;
+            returnFrame++;
+
+            if (returnFrame > 15) {
+                clearInterval(returnTimer);
+            }
+        }, 85);
+    }, 1010);
+
+    setTimeout(() => {
+        zeroArea.classList.remove('zero-return-jump');
+        zeroArea.style.transition = '';
+        zeroArea.style.transform = '';
+        zeroImg.src = isSniperJoeBattle() ? 'sprites/partner/zero/zero_st.png' : 'sprites/partner/zero/zero_01.png';
+        zeroAttacking = false;
+    }, 1600);
 }
 
 function getPartnerBusterPosition(type) {
@@ -936,6 +1106,7 @@ function playPlayerHitEffect() {
     flashAllyCharacter('blues-img', gameData.bluesOwned);
     flashAllyCharacter('forte-img', gameData.forteOwned);
     flashAllyCharacter('x-img', gameData.xOwned);
+    flashAllyCharacter('zero-img', gameData.zeroOwned);
 }
 
 function flashAllyCharacter(elementId, shouldFlash = true) {
@@ -1376,6 +1547,7 @@ function buyUpgrade(type, amount) {
                 startBluesAttack();
                 startForteAttack();
                 startXAttack();
+                startZeroAttack();
 startMining();
             }
         }
@@ -1490,6 +1662,21 @@ function buyXFragment(amount) {
   saveData();
 }
 
+function buyZeroFragment(amount) {
+  if (gameData.zeroOwned) return;
+  if (gameData.crystals < amount) return;
+
+  gameData.crystals -= amount;
+  gameData.zeroFragments += amount;
+
+  if (gameData.zeroFragments > ZERO_REQUIRED_FRAGMENTS) {
+    gameData.zeroFragments = ZERO_REQUIRED_FRAGMENTS;
+  }
+
+  updateUI();
+  saveData();
+}
+
 function getSummonTextElement() {
     return document.getElementById('summon-text') || document.querySelector('.summon-text');
 }
@@ -1549,6 +1736,15 @@ function prepareSummonPopup(type) {
         text.innerText = 'X JOIN!';
         rushImg.style.display = 'none';
         beatImg.src = 'sprites/partner/x/x_join_01.png';
+        beatImg.style.setProperty('width', '54px', 'important');
+        beatImg.style.setProperty('height', '54px', 'important');
+        beatImg.style.display = 'block';
+    }
+
+    if (type === 'zero') {
+        text.innerText = 'ZERO JOIN!';
+        rushImg.style.display = 'none';
+        beatImg.src = 'sprites/partner/zero/zero_join_01.png';
         beatImg.style.setProperty('width', '54px', 'important');
         beatImg.style.setProperty('height', '54px', 'important');
         beatImg.style.display = 'block';
@@ -1758,6 +1954,43 @@ function summonX() {
 
 }
 
+function summonZero() {
+    if (gameData.zeroOwned) return;
+    if (gameData.zeroFragments < ZERO_REQUIRED_FRAGMENTS) return;
+
+    gameData.zeroOwned = true;
+
+    const popupData = prepareSummonPopup('zero');
+    if (!popupData) {
+        updateUI();
+        saveData();
+        return;
+    }
+
+    const { beatImg } = popupData;
+    let zeroJoinFrame = 1;
+
+    beatImg.src = 'sprites/partner/zero/zero_join_01.png';
+    beatImg.style.setProperty('width', '54px', 'important');
+    beatImg.style.setProperty('height', '54px', 'important');
+    beatImg.style.transform = 'translateX(-50%)';
+    beatImg.classList.remove('rush-drop', 'join-drop');
+
+    if (zeroJoinTimer) clearInterval(zeroJoinTimer);
+
+    zeroJoinTimer = setInterval(() => {
+        zeroJoinFrame++;
+
+        if (zeroJoinFrame <= 8) {
+            beatImg.src = `sprites/partner/zero/zero_join_0${zeroJoinFrame}.png`;
+        } else {
+            clearInterval(zeroJoinTimer);
+            zeroJoinTimer = null;
+            beatImg.src = 'sprites/partner/zero/zero_join_08.png';
+        }
+    }, 120);
+}
+
 function closeSummonPopup() {
     const popup = document.getElementById('summon-popup');
     const rushJoinImg = document.getElementById('rush-join-img');
@@ -1786,6 +2019,11 @@ function closeSummonPopup() {
     if (xJoinTimer) {
         clearInterval(xJoinTimer);
         xJoinTimer = null;
+    }
+
+    if (zeroJoinTimer) {
+        clearInterval(zeroJoinTimer);
+        zeroJoinTimer = null;
     }
 
 if (rushJoinImg) {
@@ -1821,6 +2059,13 @@ function togglePartnerUpgrade(type) {
 }
 
 function showTab(tabName) {
+    const currentTab = document.getElementById(tabName + '-tab');
+
+    // 전투 탭이 아닌 다른 탭을 다시 누르면 전투 탭으로 복귀합니다.
+    if (tabName !== 'battle' && currentTab && currentTab.classList.contains('active')) {
+        tabName = 'battle';
+    }
+
     ['battle', 'partner', 'armor', 'boss', 'mine'].forEach(name => {
         const tab = document.getElementById(name + '-tab');
         const btn = document.getElementById(name + '-tab-btn');
@@ -2316,6 +2561,7 @@ function updateUI() {
 
     setButtonActive(document.getElementById('exchange-btn1'), gameData.screws >= 100);
     setButtonActive(document.getElementById('exchange-btn10'), gameData.screws >= 1000);
+    setButtonActive(document.getElementById('exchange-btn100'), gameData.screws >= 10000);
 
     const rushFragmentsEl = document.getElementById('rush-fragments');
     if (rushFragmentsEl) rushFragmentsEl.innerText = gameData.rushFragments;
@@ -2369,6 +2615,14 @@ setButtonActive(document.getElementById('x-buy10'), !gameData.xOwned && gameData
 setButtonActive(document.getElementById('x-buy100'), !gameData.xOwned && gameData.crystals >= 100 && gameData.xFragments === 0);
 setButtonActive(document.getElementById('x-summon-btn'), !gameData.xOwned && gameData.xFragments >= 100);
 
+const zeroFragmentsEl = document.getElementById('zero-fragments');
+if (zeroFragmentsEl) zeroFragmentsEl.innerText = gameData.zeroFragments;
+
+setButtonActive(document.getElementById('zero-buy1'), !gameData.zeroOwned && gameData.crystals >= 1 && gameData.zeroFragments < 100);
+setButtonActive(document.getElementById('zero-buy10'), !gameData.zeroOwned && gameData.crystals >= 10 && gameData.zeroFragments <= 90);
+setButtonActive(document.getElementById('zero-buy100'), !gameData.zeroOwned && gameData.crystals >= 100 && gameData.zeroFragments === 0);
+setButtonActive(document.getElementById('zero-summon-btn'), !gameData.zeroOwned && gameData.zeroFragments >= 100);
+
     const beatCard = document.getElementById('beat-card');
     const beatBadge = document.getElementById('beat-complete-badge');
     const beatArea = document.getElementById('beat-area');
@@ -2408,6 +2662,19 @@ if (xCard && xBadge) {
   } else {
     xCard.classList.remove('complete');
     xBadge.classList.remove('active');
+  }
+}
+
+const zeroCard = document.getElementById('zero-card');
+const zeroBadge = document.getElementById('zero-complete-badge');
+
+if (zeroCard && zeroBadge) {
+  if (gameData.zeroOwned) {
+    zeroCard.classList.add('complete');
+    zeroBadge.classList.add('active');
+  } else {
+    zeroCard.classList.remove('complete');
+    zeroBadge.classList.remove('active');
   }
 }
 
@@ -2476,6 +2743,18 @@ if (xArea) {
 
 if (xImg) {
   xImg.style.display = gameData.xOwned ? 'block' : 'none';
+}
+
+const zeroArea = document.getElementById('zero-area');
+const zeroImg = document.getElementById('zero-img');
+
+if (zeroArea) {
+  if (gameData.zeroOwned) zeroArea.classList.add('active');
+  else zeroArea.classList.remove('active');
+}
+
+if (zeroImg) {
+  zeroImg.style.display = gameData.zeroOwned ? 'block' : 'none';
 }
 
     const rushUpgrade = document.querySelector('.rush-upgrade');
@@ -2552,31 +2831,34 @@ setButtonActive(document.getElementById('mine-tier-up-btn'), !mineEnhancing && g
 
 
 function hasOwnedBusterPartner() {
-    return Object.values(PARTNER_ATTACK_DATA).some(data => gameData[data.ownedKey]);
+    return ['blues', 'forte', 'x', 'zero'].some(type => {
+        const data = PARTNER_ATTACK_DATA[type];
+        return data && gameData[data.ownedKey];
+    });
 }
 
 function updatePartnerAttackUpgradeUI() {
-    const box = document.querySelector('.partner-attack-upgrade-box');
-    const panel = document.getElementById('partner-attack-upgrade-panel');
-    const header = document.getElementById('partner-attack-upgrade-header');
+    const wing = document.getElementById('partner-sync-wing');
+    const btn = document.getElementById('partner-sync-wing-btn');
     const hasOwnedPartner = hasOwnedBusterPartner();
 
-    if (box) {
-        box.classList.toggle('visible', hasOwnedPartner);
+    if (wing) {
+        wing.classList.toggle('has-owned-partner', hasOwnedPartner);
     }
 
-    if (!hasOwnedPartner) {
-        if (panel) panel.classList.remove('active');
-        if (header) header.classList.remove('active');
+    if (btn) {
+        btn.classList.toggle('active', wing && wing.classList.contains('open'));
     }
 
-    Object.keys(PARTNER_ATTACK_DATA).forEach(type => {
+    ['blues', 'forte', 'x', 'zero'].forEach(type => {
         const data = PARTNER_ATTACK_DATA[type];
         const row = document.getElementById(`${type}-sync-row`);
         const percent = document.getElementById(`${type}-sync-percent`);
         const gauge = document.getElementById(`${type}-sync-gauge-fill`);
         const chance = document.getElementById(`${type}-sync-chance`);
         const btn = document.getElementById(`${type}-sync-upgrade-btn`);
+
+        if (!data) return;
 
         const owned = !!gameData[data.ownedKey];
         const sync = getPartnerSyncPercent(type);
@@ -2588,11 +2870,15 @@ function updatePartnerAttackUpgradeUI() {
 
         if (row) {
             row.classList.toggle('owned', owned);
+            row.classList.toggle('max-sync', sync >= 100);
+            row.style.setProperty('--sync', `${sync}%`);
+            const frame = row.querySelector('.sync-portrait-frame');
+            if (frame) frame.style.setProperty('--sync', `${sync}%`);
         }
 
         setButtonActive(
             btn,
-            owned && gameData.crystals >= PARTNER_SYNC_UPGRADE_COST && sync < 100
+            !partnerSyncEnhancing && owned && gameData.crystals >= PARTNER_SYNC_UPGRADE_COST && sync < 100
         );
     });
 }
@@ -2634,5 +2920,6 @@ startChase();
 startBluesAttack();
 startForteAttack();
 startXAttack();
+startZeroAttack();
 startMining();
 startBattleTips();

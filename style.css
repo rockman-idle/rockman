@@ -1754,13 +1754,14 @@ body {
 
 .mine-help-box {
   margin-top: 8px;
-  padding: 7px;
-  color: #888;
+  padding: 8px;
+  color: #a6a6a6;
   background: #050505;
   border: 1px solid #222;
   border-radius: 5px;
-  font-size: 10px;
+  font-size: 11px;
   text-align: left;
+  line-height: 1.45;
 }
 
 
@@ -1941,8 +1942,8 @@ body {
 }
 
 .mine-help-box div {
-  margin: 2px 0;
-  line-height: 1.35;
+  margin: 3px 0;
+  line-height: 1.45;
 }
 
 
@@ -2119,4 +2120,484 @@ body {
   65% { bottom: 12px; opacity: 1; }
   82% { bottom: 22px; opacity: 1; }
   100% { bottom: 17px; opacity: 1; }
+}
+
+/* 제로 파트너: 근접 공격 캐릭터 */
+.zero-area {
+  position: absolute;
+  left: 80px;
+  bottom: 30px;
+  display: none;
+  z-index: 3;
+  will-change: transform;
+}
+
+.zero-area.active {
+  display: block;
+}
+
+#zero-img {
+  width: 48px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.zero-area.zero-return-jump {
+  animation: zeroReturnJump 0.48s ease-in-out;
+}
+
+@keyframes zeroReturnJump {
+  0% { margin-bottom: 0; }
+  45% { margin-bottom: 24px; }
+  100% { margin-bottom: 0; }
+}
+
+#zero-card .partner-icon {
+  width: 40px;
+  height: 40px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+
+/* 좌측 메뉴 재배치: 전투 / 광산 / 개발실 / 보스전 */
+.tab-bookmark-left {
+  left: -67px;
+  top: 55px;
+}
+
+
+@property --sync {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+/* 우측 메뉴: 동료 + 동료 공격력 날개 패널 */
+.tab-bookmark {
+  right: -67px;
+  top: 55px;
+}
+
+/* 우측 날개 버튼이 기존 탭 버튼과 정확히 줄 맞도록 고정 */
+.tab-btn {
+  box-sizing: border-box;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.partner-sync-wing {
+  position: absolute;
+  right: -388px;
+  top: 105px;
+  width: 388px;
+  min-height: 0;
+  z-index: 80;
+  pointer-events: none;
+  display: block;
+}
+
+.partner-sync-wing-btn {
+  position: absolute;
+  left: 2px;
+  top: 0;
+  width: 65px;
+  min-height: 56px;
+  padding: 7px 3px;
+  background: #111;
+  color: #777;
+  border: 2px solid #333;
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: bold;
+  line-height: 1.25;
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.partner-sync-wing.open .partner-sync-wing-btn,
+.partner-sync-wing-btn.active {
+  color: #000;
+  background: #00ff66;
+  border-color: #00ff66;
+  box-shadow: 0 0 8px #00ff66;
+}
+
+.partner-sync-wing-panel {
+  position: absolute;
+  left: 2px;
+  top: 62px;
+  width: 320px;
+  min-height: 0;
+  padding: 0;
+  background: #061208;
+  border: 2px solid #145c2e;
+  box-shadow: 0 0 18px rgba(0, 255, 102, 0.2);
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.partner-sync-wing.open .partner-sync-wing-panel {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.partner-sync-wing .partner-attack-upgrade-box {
+  display: block;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: #061208;
+  overflow: visible;
+}
+
+.partner-sync-wing .partner-attack-upgrade-header {
+  padding: 6px 9px;
+  background: linear-gradient(to right, #063b16, #041209);
+  color: #00ff66;
+  border-bottom: 1px solid #7dffb0;
+  font-size: 12px;
+  cursor: default;
+}
+
+.partner-sync-wing .partner-attack-upgrade-panel {
+  display: block;
+  padding: 7px 8px 8px;
+}
+
+.partner-sync-wing .partner-attack-help {
+  margin: 0 0 7px;
+  color: #d8ffe3;
+  font-size: 11px;
+  line-height: 1.55;
+  text-align: center;
+  font-weight: bold;
+  letter-spacing: -0.3px;
+}
+
+.partner-attack-help-sub {
+  display: inline-block;
+  margin-top: 3px;
+  color: #9dffbf;
+}
+
+.partner-sync-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 10px;
+  justify-items: center;
+  align-items: start;
+}
+
+.partner-sync-card {
+  position: relative;
+  overflow: hidden;
+  display: none;
+  width: 116px;
+  min-height: 150px;
+  padding: 5px;
+  border: 2px solid #34d86b;
+  border-radius: 8px;
+  background: #07130a;
+  box-shadow: inset 0 0 9px rgba(0, 255, 102, 0.16);
+  text-align: center;
+  opacity: 1;
+  box-sizing: border-box;
+}
+
+.partner-sync-card.owned {
+  display: block;
+}
+
+.sync-card-name {
+  margin-bottom: 3px;
+  color: #d6d6d6;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1.1;
+}
+
+.sync-portrait-frame {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 5px;
+  padding: 7px;
+  box-sizing: border-box;
+  background:
+    conic-gradient(#73d35d 0 var(--sync), #d4d4d4 var(--sync) 100%);
+  image-rendering: pixelated;
+  transition: --sync 0.65s ease-out, filter 0.2s ease-out;
+}
+
+.sync-portrait-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-conic-gradient(
+      from -90deg,
+      transparent 0deg,
+      transparent 7deg,
+      #061208 7deg,
+      #061208 10deg
+    );
+  z-index: 1;
+  pointer-events: none;
+}
+
+.sync-portrait-frame::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid #145c2e;
+  background: #111;
+  z-index: 2;
+}
+
+.sync-portrait-img {
+  position: relative;
+  z-index: 3;
+  width: 82px;
+  height: 82px;
+  object-fit: cover;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.sync-percent-text {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  z-index: 4;
+  color: #ffffff;
+  font-family: 'Arial Black', 'Trebuchet MS', 'Courier New', monospace;
+  font-size: 23px;
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  line-height: 1;
+  text-shadow:
+    2px 2px 0 #2f9e38,
+    -1px -1px 0 #2f9e38,
+    1px -1px 0 #2f9e38,
+    -1px 1px 0 #2f9e38,
+    0 0 6px #000;
+  pointer-events: none;
+}
+
+.sync-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 4px;
+  color: #cfe8d5;
+  font-size: 9.5px;
+  line-height: 1.2;
+  text-align: left;
+  font-weight: bold;
+}
+
+.sync-chance-small b {
+  color: #e9fff0;
+  font-size: 12px;
+  text-shadow: 0 0 5px rgba(0, 255, 102, 0.65);
+}
+
+.partner-sync-card .partner-sync-upgrade-btn {
+  min-width: 36px;
+  padding: 3px 5px;
+  border-radius: 7px;
+  font-size: 9px;
+  line-height: 1.2;
+}
+
+.partner-sync-card .partner-sync-upgrade-btn.active {
+  color: #061208;
+  background: #73d35d;
+  border-color: #73d35d;
+  box-shadow: 0 0 7px #73d35d;
+}
+
+#partner-upgrade-result {
+  min-height: 14px;
+  margin-bottom: 5px;
+  font-size: 10px;
+}
+
+
+/* 동료 공격력 강화 대기 연출 */
+.partner-sync-card.sync-charging {
+  animation: syncCardCharging 0.85s ease-in-out;
+  border-color: #fff2a0;
+  box-shadow:
+    0 0 7px rgba(255, 242, 160, 0.9),
+    0 0 16px rgba(0, 255, 102, 0.55),
+    inset 0 0 15px rgba(255, 242, 160, 0.35);
+}
+
+.partner-sync-card.sync-charging .sync-portrait-frame {
+  animation: syncFrameCharging 0.85s ease-in-out;
+}
+
+.partner-sync-card.sync-charging::before {
+  content: "";
+  position: absolute;
+  inset: -25%;
+  z-index: 8;
+  pointer-events: none;
+  background: conic-gradient(from 0deg, transparent, rgba(255, 242, 160, 0.75), transparent 38%);
+  animation: syncChargeSpin 0.85s linear forwards;
+}
+
+@keyframes syncCardCharging {
+  0% { transform: scale(1); filter: brightness(1); }
+  18% { transform: scale(1.015); filter: brightness(1.25); }
+  38% { transform: scale(1); filter: brightness(1); }
+  58% { transform: scale(1.025); filter: brightness(1.45); }
+  78% { transform: scale(1.005); filter: brightness(1.1); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes syncFrameCharging {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.7) saturate(1.25); }
+}
+
+@keyframes syncChargeSpin {
+  0% { opacity: 0; transform: rotate(0deg) scale(0.7); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(280deg) scale(1.18); }
+}
+
+/* 동료 공격력 강화 연출 */
+.partner-sync-card.sync-upgraded {
+  animation: syncCardUpgradePop 0.95s ease-out;
+  border-color: #baff8d;
+  box-shadow:
+    0 0 8px #73d35d,
+    0 0 18px rgba(0, 255, 102, 0.85),
+    inset 0 0 16px rgba(115, 211, 93, 0.65);
+}
+
+.partner-sync-card.sync-upgraded::after,
+.partner-sync-card.sync-failed::after {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  pointer-events: none;
+  z-index: 9;
+}
+
+.partner-sync-card.sync-upgraded::after {
+  background:
+    radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(115,211,93,0.55) 24%, transparent 58%);
+  animation: syncCardGlowSweep 0.95s ease-out forwards;
+}
+
+.partner-sync-card.sync-upgraded .sync-portrait-frame {
+  filter: brightness(1.55) saturate(1.25);
+  box-shadow:
+    0 0 10px #ffffff,
+    0 0 18px #73d35d,
+    inset 0 0 10px rgba(115, 211, 93, 0.75);
+}
+
+.partner-sync-card.sync-failed {
+  animation: syncCardFailShake 0.55s ease-in-out;
+  border-color: #ff6b6b;
+  box-shadow:
+    0 0 8px #ff5555,
+    0 0 15px rgba(255, 85, 85, 0.75),
+    inset 0 0 14px rgba(255, 85, 85, 0.35);
+}
+
+.partner-sync-card.sync-failed::after {
+  background:
+    radial-gradient(circle, rgba(255,255,255,0.75) 0%, rgba(255,85,85,0.5) 22%, transparent 56%);
+  animation: syncCardFailFlash 0.55s ease-out forwards;
+}
+
+.sync-percent-text.sync-rise {
+  animation: syncPercentRise 0.85s ease-out;
+}
+
+@keyframes syncCardUpgradePop {
+  0% { transform: translateY(0) scale(1); filter: brightness(1); }
+  18% { transform: translateY(-2px) scale(1.02); filter: brightness(1.45); }
+  42% { transform: translateY(-8px) scale(1.065); filter: brightness(1.75); }
+  72% { transform: translateY(-2px) scale(1.025); filter: brightness(1.2); }
+  100% { transform: translateY(0) scale(1); filter: brightness(1); }
+}
+
+@keyframes syncCardGlowSweep {
+  0% { opacity: 0; transform: scale(0.15) rotate(0deg); }
+  25% { opacity: 0.95; transform: scale(0.55) rotate(10deg); }
+  65% { opacity: 0.5; transform: scale(1.05) rotate(20deg); }
+  100% { opacity: 0; transform: scale(1.45) rotate(30deg); }
+}
+
+@keyframes syncCardFailShake {
+  0%, 100% { transform: translateX(0); filter: brightness(1); }
+  18% { transform: translateX(-4px); filter: brightness(1.55); }
+  36% { transform: translateX(4px); filter: brightness(1.2); }
+  54% { transform: translateX(-3px); filter: brightness(1.45); }
+  72% { transform: translateX(2px); filter: brightness(1.1); }
+}
+
+@keyframes syncCardFailFlash {
+  0% { opacity: 0; transform: scale(0.35); }
+  32% { opacity: 0.85; transform: scale(0.85); }
+  100% { opacity: 0; transform: scale(1.35); }
+}
+
+@keyframes syncPercentRise {
+  0% { transform: translateY(8px) scale(0.9); opacity: 0.55; filter: brightness(1); }
+  32% { transform: translateY(-5px) scale(1.18); opacity: 1; filter: brightness(1.8); }
+  65% { transform: translateY(-2px) scale(1.08); opacity: 1; filter: brightness(1.25); }
+  100% { transform: translateY(0) scale(1); opacity: 1; filter: brightness(1); }
+}
+
+
+/* 동료 공격력 결과 문구 제거: 성공/실패는 카드 연출만 사용 */
+#partner-upgrade-result {
+  display: none !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* 결과 문구 제거 후 싱크로 카드 영역을 위로 당겨 여백 정리 */
+.partner-sync-card-grid {
+  margin-top: -3px;
+}
+
+/* 100% 싱크로 완료 카드: 더 이상 강화확률과 강화 버튼을 보여주지 않음 */
+.partner-sync-card.max-sync .sync-chance-small,
+.partner-sync-card.max-sync .partner-sync-upgrade-btn {
+  display: none !important;
+}
+
+.partner-sync-card.max-sync .sync-card-footer {
+  min-height: 20px;
+  justify-content: center;
+}
+
+.partner-sync-card.max-sync .sync-card-footer::after {
+  content: "SYNC MAX";
+  color: #baff8d;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 7px rgba(115, 211, 93, 0.9);
 }
