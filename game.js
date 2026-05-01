@@ -139,6 +139,25 @@ const X_REQUIRED_FRAGMENTS = 100;
 const ENEMY_START_X = 460;
 const BOSS_START_X = 380; // 보스 등장 시작 위치: 숫자가 작을수록 왼쪽
 const ENEMY_ATTACK_X = 120;
+const SNIPERJOE_START_X = 335;
+const SNIPERJOE_BUSTER_DAMAGE_RATE = 0.5;
+const SNIPERJOE_DODGE_CHANCE = 0.22;
+
+const ENEMY_TYPE_DATA = {
+    met: {
+        name: '멧톨',
+        idleFrame: 'sprites/enemy/met/met_01.png'
+    },
+    sniperjoe: {
+        name: '스나이퍼죠',
+        idleFrame: 'sprites/enemy/sniperjoe/sniperjoe_01.png',
+        attackFrames: [
+            'sprites/enemy/sniperjoe/sniperjoe_02.png',
+            'sprites/enemy/sniperjoe/sniperjoe_03.png'
+        ],
+        jumpFrame: 'sprites/enemy/sniperjoe/sniperjoe_04.png'
+    }
+};
 
 const PARTNER_ATTACK_DATA = {
     forte: {
@@ -196,6 +215,10 @@ let enemyStunned = false;
 let playerDead = false;
 let isBossBattle = false;
 let currentBossType = null;
+let currentEnemyType = 'met';
+let sniperJoeActionTimer = null;
+let sniperJoeJumping = false;
+let sniperJoeAttacking = false;
 
 let rockFrame = 1;
 let rockDir = 1;
@@ -214,6 +237,8 @@ let beatJoinTimer = null;
 let bluesFrame = 6;
 let bluesAttackTimer = null;
 let bluesAttacking = false;
+let bluesStandPattern = [1, 2, 3, 2];
+let bluesStandIndex = 0;
 
 let forteFramePattern = [1, 2, 3, 2];
 let forteFrameIndex = 0;
@@ -232,61 +257,252 @@ let minerFrame = 1;
 let mineAttackAnimating = false;
 let mineEnhancing = false;
 
+const BATTLE_TIPS = [
+    'TIP. 스나이퍼 죠는 10스테이지마다 등장합니다.',
+    'TIP. 스나이퍼 죠에게는 버스터 데미지가 반감됩니다.',
+    'TIP. 광산은 일찍 개방할수록 좋아요.',
+    'TIP. 크리스탈은 파트너 소환뿐만 아니라 여러 곳에 쓰입니다.',
+    'TIP. 파트너를 소환하면 전투가 훨씬 수월해집니다.',
+    'TIP. 동료들은 록맨과의 싱크로율에 따라 강해집니다.',
+    'TIP. 보스전에서 다양한 아이템을 얻을 수 있습니다.',
+    'TIP. 피켈맨의 야근수당은 연봉에 포함되어 있습니다.'
+];
+let battleTipIndex = 0;
+let battleTipTimer = null;
+
 setupStage();
 
 function setupStage() {
     const s = gameData.stage;
 
-    enemyMaxHp = Math.floor((120 + s * 75 + Math.pow(s, 1.35) * 25) * 0.66);
-    enemyHp = enemyMaxHp;
+    stopSniperJoeActions();
 
+    currentEnemyType = getStageEnemyType(s);
+
+    enemyMaxHp = Math.floor((120 + s * 75 + Math.pow(s, 1.35) * 25) * 0.66);
     enemySpeed = 0.22 + s * 0.025;
     enemyAtk = Math.floor(4 + s * 1.6);
+    enemyX = ENEMY_START_X;
+
+    if (currentEnemyType === 'sniperjoe') {
+        enemyMaxHp = Math.floor(enemyMaxHp * 1.25);
+        enemySpeed = 0;
+        enemyAtk = Math.floor(enemyAtk * 1.15 + 4);
+        enemyX = SNIPERJOE_START_X;
+    }
+
+    enemyHp = enemyMaxHp;
 
     gameData.playerMaxHp = Math.floor(100 + (gameData.lv.hp - 1) * 20);
     gameData.playerHp = gameData.playerMaxHp;
 
-    enemyX = ENEMY_START_X;
     enemyDead = false;
     enemyAttacking = false;
+    enemyStunned = false;
+    sniperJoeJumping = false;
+    sniperJoeAttacking = false;
     playerDead = false;
 
-const rockman = document.getElementById('rockman-img');
-if (rockman) rockman.classList.remove('rockman-death-hide');
+    const rockman = document.getElementById('rockman-img');
+    if (rockman) rockman.classList.remove('rockman-death-hide');
 
-const enemyImg = document.getElementById('enemy-img');
-if (enemyImg) {
-    enemyImg.style.width = '';
-    enemyImg.style.height = '';
-    enemyImg.style.transform = '';
-    enemyImg.style.marginTop = '18px';
+    const enemyImg = document.getElementById('enemy-img');
+    if (enemyImg) {
+        enemyImg.style.width = '';
+        enemyImg.style.height = '';
+        enemyImg.style.transform = '';
+        enemyImg.style.marginTop = '18px';
+        enemyImg.classList.remove('boss-enter');
 
-    // 🔴 추가
-    enemyImg.classList.remove('boss-enter');
-}
+        if (currentEnemyType === 'sniperjoe') {
+            enemyImg.src = ENEMY_TYPE_DATA.sniperjoe.idleFrame;
+            enemyImg.style.width = '44px';
+            enemyImg.style.height = '44px';
+            enemyImg.style.marginTop = '0px';
+        } else {
+            enemyImg.src = ENEMY_TYPE_DATA.met.idleFrame;
+        }
+    }
 
-const enemyArea = document.getElementById('enemy-area');
-if (enemyArea) {
-  enemyArea.classList.remove('boss-enter-area');
-  enemyArea.style.bottom = '19px';
-}
+    const enemyArea = document.getElementById('enemy-area');
+    if (enemyArea) {
+        enemyArea.classList.remove('boss-enter-area', 'sniperjoe-enter-area');
+        enemyArea.style.bottom = currentEnemyType === 'sniperjoe' ? '17px' : '19px';
 
-const screen = document.querySelector('.game-screen');
-if (screen) {
-    screen.classList.remove('boss-mode');
-}
+        if (currentEnemyType === 'sniperjoe') {
+            void enemyArea.offsetWidth;
+            enemyArea.classList.add('sniperjoe-enter-area');
+        }
+    }
 
-isBossBattle = false;
-currentBossType = null;
+    const screen = document.querySelector('.game-screen');
+    if (screen) {
+        screen.classList.remove('boss-mode');
+        screen.classList.toggle('sniperjoe-mode', currentEnemyType === 'sniperjoe');
+    }
+
+    const bg = document.getElementById('scroll-bg');
+    if (bg) bg.classList.toggle('paused', currentEnemyType === 'sniperjoe');
+
+    isBossBattle = false;
+    currentBossType = null;
 
     updateEnemyPosition();
+    applyStillBattleFrames();
+
+    if (isSniperJoeBattle()) {
+        setTimeout(() => {
+            if (!enemyDead && !playerDead && isSniperJoeBattle()) {
+                startSniperJoeActions();
+            }
+        }, 650);
+    }
 }
+
+function getStageEnemyType(stage) {
+    // 기존 멧톨과 새 스나이퍼죠를 번갈아 등장시킵니다.
+    return stage % 10 === 0 ? 'sniperjoe' : 'met';
+}
+
+function isSniperJoeBattle() {
+    return !isBossBattle && currentEnemyType === 'sniperjoe';
+}
+
+function applyStillBattleFrames() {
+    if (!isSniperJoeBattle()) return;
+
+    const rockman = document.getElementById('rockman-img');
+    const rushImg = document.getElementById('rush-img');
+    const forteImg = document.getElementById('forte-img');
+    const xImg = document.getElementById('x-img');
+
+    if (rockman) rockman.src = 'sprites/rock/rock_st.png';
+    if (rushImg && gameData.rushOwned) rushImg.src = 'sprites/partner/rush/rush_st.png';
+    if (forteImg && gameData.forteOwned && !forteAttacking) forteImg.src = 'sprites/partner/forte/forte_st.png';
+    if (xImg && gameData.xOwned && !xAttacking) xImg.src = 'sprites/partner/x/x_st.png';
+}
+
+function stopSniperJoeActions() {
+    if (sniperJoeActionTimer) {
+        clearInterval(sniperJoeActionTimer);
+        sniperJoeActionTimer = null;
+    }
+}
+
+function startSniperJoeActions() {
+    stopSniperJoeActions();
+    if (!isSniperJoeBattle()) return;
+
+    sniperJoeActionTimer = setInterval(() => {
+        if (!isSniperJoeBattle() || enemyDead || playerDead || sniperJoeJumping || sniperJoeAttacking) return;
+
+        if (Math.random() < 0.78) fireSniperJoeBullet();
+        else playSniperJoeJump();
+    }, 1650);
+}
+
+function playSniperJoeJump() {
+    if (!isSniperJoeBattle() || enemyDead || playerDead || sniperJoeJumping) return;
+
+    const enemyImg = document.getElementById('enemy-img');
+    if (!enemyImg) return;
+
+    sniperJoeJumping = true;
+    enemyImg.src = ENEMY_TYPE_DATA.sniperjoe.jumpFrame;
+    enemyImg.classList.remove('sniperjoe-jump');
+    void enemyImg.offsetWidth;
+    enemyImg.classList.add('sniperjoe-jump');
+
+    setTimeout(() => {
+        sniperJoeJumping = false;
+        enemyImg.classList.remove('sniperjoe-jump');
+        if (isSniperJoeBattle() && !enemyDead) enemyImg.src = ENEMY_TYPE_DATA.sniperjoe.idleFrame;
+    }, 520);
+}
+
+function fireSniperJoeBullet() {
+    if (!isSniperJoeBattle() || enemyDead || playerDead || sniperJoeAttacking) return;
+
+    const screen = document.querySelector('.game-screen');
+    const enemyImg = document.getElementById('enemy-img');
+    const rockmanArea = document.getElementById('rockman-area');
+    if (!screen || !enemyImg || !rockmanArea) return;
+
+    sniperJoeAttacking = true;
+    enemyImg.src = ENEMY_TYPE_DATA.sniperjoe.attackFrames[0];
+
+    setTimeout(() => {
+        if (!isSniperJoeBattle() || enemyDead || playerDead) {
+            sniperJoeAttacking = false;
+            return;
+        }
+
+        enemyImg.src = ENEMY_TYPE_DATA.sniperjoe.attackFrames[1];
+
+        const screenRect = screen.getBoundingClientRect();
+        const enemyRect = enemyImg.getBoundingClientRect();
+        const rockRect = rockmanArea.getBoundingClientRect();
+
+        const bullet = document.createElement('div');
+        bullet.className = 'enemy-bullet sniperjoe-bullet';
+        bullet.style.left = (enemyRect.left - screenRect.left + 2) + 'px';
+        bullet.style.bottom = (screenRect.bottom - enemyRect.top - 34) + 'px';
+        screen.appendChild(bullet);
+
+        const travel = Math.min(-35, (rockRect.left - enemyRect.left) - 10);
+        bullet.animate(
+            [{ transform: 'translateX(0)' }, { transform: `translateX(${travel}px)` }],
+            { duration: 520, easing: 'linear' }
+        );
+
+        setTimeout(() => {
+            if (!enemyDead && !playerDead && isSniperJoeBattle()) {
+                enemyHitsPlayerByBullet();
+            }
+            bullet.remove();
+        }, 520);
+
+        setTimeout(() => {
+            sniperJoeAttacking = false;
+            if (isSniperJoeBattle() && !enemyDead) enemyImg.src = ENEMY_TYPE_DATA.sniperjoe.idleFrame;
+        }, 300);
+    }, 130);
+}
+
+function enemyHitsPlayerByBullet() {
+    if (playerDead || enemyDead) return;
+
+    const damage = Math.max(1, Math.floor(enemyAtk));
+    gameData.playerHp -= damage;
+    if (gameData.playerHp < 0) gameData.playerHp = 0;
+
+    showPlayerDamageText(damage);
+    playPlayerHitEffect();
+
+    updateUI();
+    saveData();
+
+    if (gameData.playerHp <= 0) {
+        failStage();
+    }
+}
+
 
 function animate() {
     const rImg = document.getElementById('rockman-img');
     const eImg = document.getElementById('enemy-img');
 
     if (!rImg || !eImg) return;
+
+    if (isSniperJoeBattle()) {
+        applyStillBattleFrames();
+        if (!enemyDead && !sniperJoeJumping && !sniperJoeAttacking) {
+            eImg.src = ENEMY_TYPE_DATA.sniperjoe.idleFrame;
+        }
+        animateBeat();
+        animateBlues();
+        return;
+    }
 
     rockFrame += rockDir;
     if (rockFrame === 3 || rockFrame === 1) rockDir *= -1;
@@ -304,13 +520,20 @@ function animate() {
     animateX();
 }
 
+
 function animateRush() {
     const rushImg = document.getElementById('rush-img');
     if (!rushImg || !gameData.rushOwned) return;
 
+    if (isSniperJoeBattle()) {
+        rushImg.src = 'sprites/partner/rush/rush_st.png';
+        return;
+    }
+
     rushImg.src = `sprites/partner/rush/rush_0${rushWalkFrames[rushWalkIndex]}.png`;
     rushWalkIndex = (rushWalkIndex + 1) % rushWalkFrames.length;
 }
+
 
 function animateBeat() {
     const beatImg = document.getElementById('beat-img');
@@ -329,6 +552,13 @@ function animateBlues() {
   const bluesImg = document.getElementById('blues-img');
   if (!bluesImg || !gameData.bluesOwned || bluesAttacking) return;
 
+  if (isSniperJoeBattle()) {
+    const frame = bluesStandPattern[bluesStandIndex];
+    bluesImg.src = `sprites/partner/blues/blues_st_0${frame}.png`;
+    bluesStandIndex = (bluesStandIndex + 1) % bluesStandPattern.length;
+    return;
+  }
+
   bluesFrame++;
   if (bluesFrame > 9) bluesFrame = 6;
 
@@ -338,6 +568,11 @@ function animateBlues() {
 function animateForte() {
   const forteImg = document.getElementById('forte-img');
   if (!forteImg || !gameData.forteOwned) return;
+
+  if (isSniperJoeBattle()) {
+    if (!forteAttacking) forteImg.src = 'sprites/partner/forte/forte_st.png';
+    return;
+  }
 
   const frame = forteFramePattern[forteFrameIndex];
   forteImg.src = `sprites/partner/forte/forte_0${frame}.png`;
@@ -349,11 +584,17 @@ function animateX() {
   const xImg = document.getElementById('x-img');
   if (!xImg || !gameData.xOwned) return;
 
+  if (isSniperJoeBattle()) {
+    if (!xAttacking) xImg.src = 'sprites/partner/x/x_st.png';
+    return;
+  }
+
   const frame = xFramePattern[xFrameIndex];
   xImg.src = `sprites/partner/x/x_0${frame}.png`;
 
   xFrameIndex = (xFrameIndex + 1) % xFramePattern.length;
 }
+
 
 const PARTNER_SYNC_UPGRADE_COST = 30;
 const PARTNER_SYNC_UPGRADE_MIN_GAIN = 2;
@@ -469,10 +710,9 @@ function bluesShieldCharge() {
       clearInterval(chargeAnim);
 
       const damage = Math.floor(gameData.atk * 1.8);
-      enemyHp -= damage;
+      const hit = applyEnemyDamage(damage, false, false);
 
-      showDamageText(damage, false);
-      playEnemyHit(enemy);
+      if (hit && !enemyDead) playEnemyHit(enemy);
 
 // 🔴 넉백 확률 적용
 const knockbackChance = 0.65;
@@ -601,8 +841,8 @@ function firePartnerBuster(type) {
 
         setTimeout(() => {
             if (!enemyDead && !playerDead) {
-                applyPartnerDamage(type, isChargeShot);
-                if (!enemyDead) playEnemyHit(enemy);
+                const hit = applyPartnerDamage(type, isChargeShot);
+                if (hit && !enemyDead) playEnemyHit(enemy);
             }
 
             bullet.remove();
@@ -627,23 +867,16 @@ function firePartnerBuster(type) {
 }
 
 function applyPartnerDamage(type, isChargeShot = false) {
-    if (enemyDead || playerDead) return;
+    if (enemyDead || playerDead) return false;
 
     let damage = getPartnerDamage(type);
     if (isChargeShot) {
         damage = Math.floor(damage * gameData.critMultiplier);
     }
 
-    enemyHp -= damage;
-    showDamageText(damage, isChargeShot);
-
-    if (enemyHp <= 0) {
-        killEnemy();
-    }
-
-    updateUI();
-    saveData();
+    return applyEnemyDamage(damage, isChargeShot, true);
 }
+
 
 setInterval(animate, 200);
 
@@ -652,6 +885,7 @@ function startChase() {
 
     chaseTimer = setInterval(() => {
         if (enemyDead || playerDead || enemyStunned) return;
+        if (isSniperJoeBattle()) return;
 
         if (enemyX > ENEMY_ATTACK_X) {
             enemyX -= enemySpeed;
@@ -696,20 +930,27 @@ function enemyHitsPlayer() {
 }
 
 function playPlayerHitEffect() {
-    const rockmanArea = document.getElementById('rockman-area');
-    const bg = document.getElementById('scroll-bg');
+    flashAllyCharacter('rockman-img');
+    flashAllyCharacter('rush-img', gameData.rushOwned);
+    flashAllyCharacter('beat-img', gameData.beatOwned);
+    flashAllyCharacter('blues-img', gameData.bluesOwned);
+    flashAllyCharacter('forte-img', gameData.forteOwned);
+    flashAllyCharacter('x-img', gameData.xOwned);
+}
 
-    if (!rockmanArea || !bg) return;
+function flashAllyCharacter(elementId, shouldFlash = true) {
+    if (!shouldFlash) return;
 
-    rockmanArea.classList.remove('knockback');
-    void rockmanArea.offsetWidth;
-    rockmanArea.classList.add('knockback');
+    const el = document.getElementById(elementId);
+    if (!el) return;
 
-    bg.classList.add('paused');
+    el.classList.remove('ally-hit-flash');
+    void el.offsetWidth;
+    el.classList.add('ally-hit-flash');
 
     setTimeout(() => {
-        bg.classList.remove('paused');
-    }, 230);
+        el.classList.remove('ally-hit-flash');
+    }, 520);
 }
 
 function playRockmanDeathEffect() {
@@ -763,12 +1004,15 @@ function failStage() {
     enemyDead = true;
     enemyAttacking = true;
 
+    stopSniperJoeActions();
     playRockmanDeathEffect();
 
     setTimeout(() => {
         if (gameData.stage > 1) {
-            gameData.stage--;
-            showStageText("STAGE DOWN");
+            const beforeStage = gameData.stage;
+            gameData.stage = Math.max(1, gameData.stage - 3);
+            const downCount = beforeStage - gameData.stage;
+            showStageText(`STAGE DOWN -${downCount}`);
         } else {
             showStageText("RETRY");
         }
@@ -840,8 +1084,8 @@ function fireNormalShot(screen, enemy) {
     );
 
     setTimeout(() => {
-        applyDamage(false);
-        if (!enemyDead) playEnemyHit(enemy);
+        const hit = applyDamage(false);
+        if (hit && !enemyDead) playEnemyHit(enemy);
         bullet.remove();
     }, 280);
 }
@@ -876,8 +1120,8 @@ function fireChargeShot(screen, enemy) {
         );
 
         setTimeout(() => {
-            applyDamage(true);
-            if (!enemyDead) playEnemyHit(enemy);
+            const hit = applyDamage(true);
+            if (hit && !enemyDead) playEnemyHit(enemy);
             bullet.remove();
         }, 170);
     }, 110);
@@ -898,6 +1142,26 @@ function applyDamage(isChargeShot) {
         damage = Math.floor(damage * gameData.critMultiplier);
     }
 
+    return applyEnemyDamage(damage, isChargeShot, true);
+}
+
+function applyEnemyDamage(rawDamage, isChargeShot = false, isBusterAttack = true) {
+    if (enemyDead || playerDead) return false;
+
+    let damage = Math.max(1, Math.floor(rawDamage));
+
+    if (isSniperJoeBattle()) {
+        if (sniperJoeJumping || Math.random() < SNIPERJOE_DODGE_CHANCE) {
+            playSniperJoeJump();
+            showDamageText('MISS', false);
+            return false;
+        }
+
+        if (isBusterAttack) {
+            damage = Math.max(1, Math.floor(damage * SNIPERJOE_BUSTER_DAMAGE_RATE));
+        }
+    }
+
     enemyHp -= damage;
 
     showDamageText(damage, isChargeShot);
@@ -908,13 +1172,16 @@ function applyDamage(isChargeShot) {
 
     updateUI();
     saveData();
+    return true;
 }
+
 
 function killEnemy() {
     if (enemyDead || playerDead) return;
 
     enemyDead = true;
     enemyHp = 0;
+    stopSniperJoeActions();
 
     if (isBossBattle && currentBossType === 'super-rboss') {
         const rewardGem = 1;
@@ -1263,7 +1530,9 @@ function prepareSummonPopup(type) {
     if (type === 'blues') {
         text.innerText = 'BLUES JOIN!';
         rushImg.style.display = 'none';
-        beatImg.src = 'sprites/partner/blues/blues_06.png';
+        beatImg.src = 'sprites/partner/blues/blues_join_01.png';
+        beatImg.style.setProperty('width', '54px', 'important');
+        beatImg.style.setProperty('height', '54px', 'important');
         beatImg.style.display = 'block';
     }
 
@@ -1286,6 +1555,9 @@ function prepareSummonPopup(type) {
     }
 
     popup.classList.add('active');
+    popup.onclick = () => {
+        closeSummonPopup();
+    };
 
     return { popup, rushImg, beatImg };
 }
@@ -1327,10 +1599,6 @@ rushImg.classList.add('join-drop');
             rushImg.src = `sprites/partner/rush/rush_01.png`;
         }
     }, 180);
-
-    popup.onclick = () => {
-        closeSummonPopup();
-    };
 
     updateUI();
     saveData();
@@ -1376,11 +1644,6 @@ function summonBeat() {
         beatImg.style.transform = `translateX(-50%) translateY(${Math.sin(beatFloat / 2) * 4}px)`;
     }, 120);
 
-    setTimeout(() => {
-        closeSummonPopup();
-        updateUI();
-        saveData();
-    }, 1800);
 }
 
 function summonBlues() {
@@ -1398,33 +1661,30 @@ function summonBlues() {
 
     const { beatImg } = popupData;
 
-let bluesJoinFrame = 6;
-let bluesJoinDir = 1;
-let bluesJoinFloat = 0;
+    let bluesJoinFrame = 1;
 
-beatImg.src = 'sprites/partner/blues/blues_06.png';
+    beatImg.src = 'sprites/partner/blues/blues_join_01.png';
+    beatImg.style.setProperty('width', '54px', 'important');
+    beatImg.style.setProperty('height', '54px', 'important');
+    beatImg.style.transform = 'translateX(-50%)';
     beatImg.classList.remove('rush-drop');
-    void beatImg.offsetWidth;
-    beatImg.classList.add('rush-drop');
+    beatImg.classList.remove('join-drop');
 
     if (beatJoinTimer) clearInterval(beatJoinTimer);
 
     beatJoinTimer = setInterval(() => {
-bluesJoinFrame += bluesJoinDir;
+        bluesJoinFrame++;
 
-if (bluesJoinFrame >= 9) bluesJoinDir = -1;
-if (bluesJoinFrame <= 6) bluesJoinDir = 1;
+        if (bluesJoinFrame <= 8) {
+            beatImg.src = `sprites/partner/blues/blues_join_0${bluesJoinFrame}.png`;
+        } else {
+            clearInterval(beatJoinTimer);
+            beatJoinTimer = null;
 
-bluesJoinFloat += 1;
-beatImg.src = `sprites/partner/blues/blues_0${bluesJoinFrame}.png`;
-beatImg.style.transform = `translateY(${Math.sin(bluesJoinFloat / 2) * 4}px)`;
+            beatImg.src = 'sprites/partner/blues/blues_join_08.png';
+        }
     }, 120);
 
-    setTimeout(() => {
-        closeSummonPopup();
-        updateUI();
-        saveData();
-    }, 1800);
 }
 
 function summonForte() {
@@ -1463,11 +1723,6 @@ function summonForte() {
         }
     }, 120);
 
-    setTimeout(() => {
-        closeSummonPopup();
-        updateUI();
-        saveData();
-    }, 1600);
 }
 
 function summonX() {
@@ -1501,11 +1756,6 @@ function summonX() {
         xJoinIndex = (xJoinIndex + 1) % xJoinPattern.length;
     }, 160);
 
-    setTimeout(() => {
-        closeSummonPopup();
-        updateUI();
-        saveData();
-    }, 1800);
 }
 
 function closeSummonPopup() {
@@ -1526,6 +1776,11 @@ function closeSummonPopup() {
     if (beatJoinTimer) {
         clearInterval(beatJoinTimer);
         beatJoinTimer = null;
+    }
+
+    if (forteJoinTimer) {
+        clearInterval(forteJoinTimer);
+        forteJoinTimer = null;
     }
 
     if (xJoinTimer) {
@@ -1667,11 +1922,17 @@ function enterBossBattle() {
 
     isBossBattle = true;
     currentBossType = 'super-rboss';
+    currentEnemyType = null;
+    stopSniperJoeActions();
 
     const screen = document.querySelector('.game-screen');
     if (screen) {
+      screen.classList.remove('sniperjoe-mode');
       screen.classList.add('boss-mode');
     }
+
+    const bg = document.getElementById('scroll-bg');
+    if (bg) bg.classList.remove('paused');
 
     const enemyImg = document.getElementById('enemy-img');
     if (enemyImg) {
@@ -1993,6 +2254,23 @@ function showMineBigResult(message, type = 'success') {
 function startMining() {
     if (mineTimer) clearInterval(mineTimer);
     mineTimer = setInterval(mineAttack, 1200);
+}
+
+function showBattleTip() {
+    const tip = document.getElementById('battle-tip-message');
+    if (!tip || !BATTLE_TIPS.length) return;
+
+    tip.classList.remove('active');
+    tip.innerText = BATTLE_TIPS[battleTipIndex];
+    battleTipIndex = (battleTipIndex + 1) % BATTLE_TIPS.length;
+    void tip.offsetWidth;
+    tip.classList.add('active');
+}
+
+function startBattleTips() {
+    if (battleTipTimer) clearInterval(battleTipTimer);
+    showBattleTip();
+    battleTipTimer = setInterval(showBattleTip, 4800);
 }
 
 function updateUI() {
@@ -2357,3 +2635,4 @@ startBluesAttack();
 startForteAttack();
 startXAttack();
 startMining();
+startBattleTips();

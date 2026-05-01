@@ -1170,7 +1170,7 @@ body {
   left: 80px;
   bottom: 10px;
   display: none;
-  z-index: 4;
+  z-index: 12;
 }
 
 .forte-area.active {
@@ -1604,6 +1604,7 @@ body {
   z-index: 1;
 }
 
+
 .mine-screen::after {
   content: "";
   position: absolute;
@@ -1994,4 +1995,128 @@ body {
   height: 14px;
   margin-left: 2px;
   margin-right: 0;
+}
+
+/* 스나이퍼죠 전투: 배경/캐릭터 정지 전투용 */
+.game-screen.sniperjoe-mode {
+  box-shadow: none;
+}
+
+.game-screen.sniperjoe-mode #scroll-bg.paused {
+  filter: none;
+}
+
+.ally-hit-flash {
+  animation: allyHitFlash 0.52s linear;
+}
+
+@keyframes allyHitFlash {
+  0% { opacity: 1; filter: brightness(1); }
+  12% { opacity: 0.35; filter: brightness(2.2); }
+  24% { opacity: 1; filter: brightness(1); }
+  36% { opacity: 0.35; filter: brightness(2.2); }
+  48% { opacity: 1; filter: brightness(1); }
+  60% { opacity: 0.35; filter: brightness(2.2); }
+  100% { opacity: 1; filter: brightness(1); }
+}
+
+.enemy-bullet {
+  position: absolute;
+  width: 8px;
+  height: 5px;
+  border-radius: 3px;
+  z-index: 18;
+  pointer-events: none;
+}
+
+.sniperjoe-bullet {
+  background: #00ff66;
+  box-shadow: 0 0 6px #ffffff, 0 0 10px #00ff66, 0 0 16px #00ff66;
+}
+
+#enemy-img.sniperjoe-jump {
+  animation: sniperJoeJump 0.52s ease-out;
+}
+
+@keyframes sniperJoeJump {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(-22px); }
+  100% { transform: translateY(0); }
+}
+
+/* TIP 전광판 */
+.tip-board {
+  position: relative;
+  height: 28px;
+  margin: -4px 0 8px;
+  overflow: hidden;
+  border: 1px solid #145c2e;
+  border-radius: 5px;
+  background: linear-gradient(to bottom, #061208, #020604);
+  box-shadow: inset 0 0 10px rgba(0, 255, 102, 0.12);
+}
+
+.tip-board::before {
+  content: "TIP";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 1px 5px;
+  color: #000;
+  background: #00ff66;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  z-index: 2;
+}
+
+.tip-message {
+  position: absolute;
+  left: 42px;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9dffbf;
+  font-size: 11px;
+  font-weight: bold;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+}
+
+.tip-message.active {
+  animation: tipBoardSlide 4.5s ease-in-out forwards;
+}
+
+@keyframes tipBoardSlide {
+  0% { opacity: 0; transform: translateY(70%); }
+  12% { opacity: 1; transform: translateY(-50%); }
+  78% { opacity: 1; transform: translateY(-50%); }
+  100% { opacity: 0; transform: translateY(-145%); }
+}
+
+.footer-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-actions .reset-btn {
+  margin-top: 0;
+}
+
+/* 스나이퍼죠 등장 연출 */
+#enemy-area.sniperjoe-enter-area {
+  animation: sniperJoeEnterArea 0.62s ease-out;
+}
+
+@keyframes sniperJoeEnterArea {
+  0% { bottom: 88px; opacity: 0; }
+  65% { bottom: 12px; opacity: 1; }
+  82% { bottom: 22px; opacity: 1; }
+  100% { bottom: 17px; opacity: 1; }
 }

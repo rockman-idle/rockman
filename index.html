@@ -12,12 +12,18 @@
     <img src="sprites/rock/rock_01.png">
     <img src="sprites/rock/rock_02.png">
     <img src="sprites/rock/rock_03.png">
+    <img src="sprites/rock/rock_st.png">
     <img src="sprites/enemy/met/met_01.png">
     <img src="sprites/enemy/met/met_02.png">
+    <img src="sprites/enemy/sniperjoe/sniperjoe_01.png">
+    <img src="sprites/enemy/sniperjoe/sniperjoe_02.png">
+    <img src="sprites/enemy/sniperjoe/sniperjoe_03.png">
+    <img src="sprites/enemy/sniperjoe/sniperjoe_04.png">
     <img src="sprites/partner/rush/rush_01.png">
     <img src="sprites/partner/rush/rush_02.png">
     <img src="sprites/partner/rush/rush_03.png">
     <img src="sprites/partner/rush/rush_04.png">
+    <img src="sprites/partner/rush/rush_st.png">
     <img src="sprites/partner/rush/rush_join_01.png">
     <img src="sprites/partner/rush/rush_join_02.png">
     <img src="sprites/partner/rush/rush_join_03.png">
@@ -25,9 +31,22 @@
     <img src="sprites/partner/beat/beat_02.png">
     <img src="sprites/partner/beat/beat_03.png">
     <img src="sprites/partner/beat/beat_04.png">
+    <img src="sprites/partner/blues/blues_st_01.png">
+    <img src="sprites/partner/blues/blues_st_02.png">
+    <img src="sprites/partner/blues/blues_st_03.png">
+    <img src="sprites/partner/blues/blues_join_01.png">
+    <img src="sprites/partner/blues/blues_join_02.png">
+    <img src="sprites/partner/blues/blues_join_03.png">
+    <img src="sprites/partner/blues/blues_join_04.png">
+    <img src="sprites/partner/blues/blues_join_05.png">
+    <img src="sprites/partner/blues/blues_join_06.png">
+    <img src="sprites/partner/blues/blues_join_07.png">
+    <img src="sprites/partner/blues/blues_join_08.png">
+    <img src="sprites/partner/forte/forte_st.png">
     <img src="sprites/partner/x/x_01.png">
     <img src="sprites/partner/x/x_02.png">
     <img src="sprites/partner/x/x_03.png">
+    <img src="sprites/partner/x/x_st.png">
     <img src="sprites/partner/x/x_join_01.png">
     <img src="sprites/partner/x/x_join_02.png">
     <img src="sprites/partner/x/x_join_03.png">
@@ -47,6 +66,14 @@
     <img src="sprites/mine/pickaxe/pickaxe_08.png">
     <img src="sprites/mine/pickaxe/pickaxe_09.png">
     <img src="sprites/mine/pickaxe/pickaxe_10.png">
+    <img src="sprites/partner/blues/blues_join_01.png">
+    <img src="sprites/partner/blues/blues_join_02.png">
+    <img src="sprites/partner/blues/blues_join_03.png">
+    <img src="sprites/partner/blues/blues_join_04.png">
+    <img src="sprites/partner/blues/blues_join_05.png">
+    <img src="sprites/partner/blues/blues_join_06.png">
+    <img src="sprites/partner/blues/blues_join_07.png">
+    <img src="sprites/partner/blues/blues_join_08.png">
 </div>
 
 <div id="summon-popup" class="summon-popup">
@@ -122,14 +149,15 @@
             </div>
         </div>
 
+        <div class="tip-board" aria-live="polite">
+            <div id="battle-tip-message" class="tip-message">TIP</div>
+        </div>
+
         <div class="resource-panel">
             <div class="resource-box">🔩 <span id="screws">0</span></div>
             <div class="resource-box">💎 <span id="crystals">0</span></div>
             <div class="resource-box"><img src="sprites/mine/stone.png" class="resource-icon stone-resource-icon" alt="돌"> <span id="stones">0</span></div>
         </div>
-
-<button class="reset-btn" onclick="devCheat()">[DEV 치트]</button>
-
 
         <div class="exchange-panel">
             <div class="exchange-title">나사 → 크리스탈 교환 (🔩100 : 💎1)</div>
@@ -573,7 +601,10 @@
 </div>
 
 <div class="footer-row">
-            <button class="reset-btn" onclick="resetGame()">[데이터 초기화]</button>
+    <div class="footer-actions">
+        <button class="reset-btn" onclick="resetGame()">[데이터 초기화]</button>
+        <button class="reset-btn" onclick="devCheat()">[DEV 치트]</button>
+    </div>
     <div class="credit-text">햇밤</div>
 </div>
 </div>
