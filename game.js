@@ -148,8 +148,13 @@ const ENEMY_START_X = 460;
 const BOSS_START_X = 380; // 보스 등장 시작 위치: 숫자가 작을수록 왼쪽
 const ENEMY_ATTACK_X = 120;
 const SNIPERJOE_START_X = 335;
+// 스나이퍼 죠 위치 조정은 여기 숫자만 바꾸면 됩니다.
+// 값이 커질수록 위로 올라가며, 현재는 록맨과 같은 높이 기준입니다.
+const SNIPERJOE_BOTTOM = 20;
+const MET_BOTTOM = 19;
+const BOSS_BOTTOM = 24;
 const SNIPERJOE_BUSTER_DAMAGE_RATE = 0.5;
-const SNIPERJOE_DODGE_CHANCE = 0.22;
+const SNIPERJOE_DODGE_CHANCE = 0.10;
 
 const ENEMY_TYPE_DATA = {
     met: {
@@ -186,11 +191,34 @@ const PARTNER_ATTACK_DATA = {
         bulletClass: 'partner-bullet forte-bullet',
         chargeBulletClass: 'partner-bullet forte-charge-bullet',
         chargeEffectClass: 'partner-charge-effect forte-charge-effect',
+        chargeFramePrefix: 'sprites/partner/forte/forte_c_bullet_',
+        chargeFrameCount: 5,
+        chargeFrameInterval: 70,
         attackFrame: 'sprites/partner/forte/forte_03.png',
         idleFrame: 'sprites/partner/forte/forte_01.png',
-        busterOffsetX: 20,
-        busterOffsetY: 35,
-        shotDuration: 260
+
+        // 포르테 투사체 위치 조절부입니다.
+        // 기준점: forte-img의 오른쪽 아래(bottom/right)를 기준으로 총구 중심을 잡습니다.
+        // busterOffsetX: 작게 = 왼쪽, 크게 = 오른쪽
+        // busterOffsetY: 작게 = 아래쪽, 크게 = 위쪽
+        projectilePositionMode: 'muzzle-center',
+        muzzleAnchorX: 'right',
+        muzzleAnchorY: 'bottom',
+        busterOffsetX: -15,
+        busterOffsetY: 9,
+
+        // 기본탄/차지탄은 크기가 달라도 같은 중심점에서 발사됩니다.
+        bulletWidth: 54,
+        bulletHeight: 36,
+        chargeBulletWidth: 72,
+        chargeBulletHeight: 48,
+        chargeEffectWidth: 18,
+        chargeEffectHeight: 18,
+        chargeEffectOffsetX: 0,
+        chargeEffectOffsetY: 0,
+
+        shotDuration: 460,
+        chargeShotDuration: 340
     },
     x: {
         name: '엑스',
@@ -364,8 +392,16 @@ function setupStage() {
 
     const enemyArea = document.getElementById('enemy-area');
     if (enemyArea) {
-        enemyArea.classList.remove('boss-enter-area', 'sniperjoe-enter-area');
-        enemyArea.style.bottom = currentEnemyType === 'sniperjoe' ? '17px' : '19px';
+        enemyArea.classList.remove('boss-enter-area', 'sniperjoe-enter-area', 'sniperjoe-area');
+        if (currentEnemyType === 'sniperjoe') {
+            enemyArea.classList.add('sniperjoe-area');
+            enemyArea.style.setProperty('--sniperjoe-ground-bottom', `${SNIPERJOE_BOTTOM}px`);
+            enemyArea.style.bottom = `${SNIPERJOE_BOTTOM}px`;
+        } else {
+            enemyArea.classList.remove('sniperjoe-area');
+            enemyArea.style.removeProperty('--sniperjoe-ground-bottom');
+            enemyArea.style.bottom = `${MET_BOTTOM}px`;
+        }
 
         if (currentEnemyType === 'sniperjoe') {
             void enemyArea.offsetWidth;
@@ -436,7 +472,7 @@ function startSniperJoeActions() {
     sniperJoeActionTimer = setInterval(() => {
         if (!isSniperJoeBattle() || enemyDead || playerDead || sniperJoeJumping || sniperJoeAttacking) return;
 
-        if (Math.random() < 0.78) fireSniperJoeBullet();
+        if (Math.random() < 0.90) fireSniperJoeBullet();
         else playSniperJoeJump();
     }, 1650);
 }
@@ -953,8 +989,7 @@ function zeroMeleeAttack() {
     }, 1600);
 }
 
-function getPartnerBusterPosition(type) {
-    const data = PARTNER_ATTACK_DATA[type];
+function getPartnerAnchorPoint(data) {
     const screen = document.querySelector('.game-screen');
     const img = document.getElementById(data?.imgId);
 
@@ -963,10 +998,93 @@ function getPartnerBusterPosition(type) {
     const screenRect = screen.getBoundingClientRect();
     const imgRect = img.getBoundingClientRect();
 
+    const anchorX = data.muzzleAnchorX || 'left';
+    const anchorY = data.muzzleAnchorY || 'top';
+
+    let x;
+    if (anchorX === 'right') {
+        x = imgRect.right - screenRect.left;
+    } else if (anchorX === 'center') {
+        x = imgRect.left - screenRect.left + imgRect.width / 2;
+    } else {
+        x = imgRect.left - screenRect.left;
+    }
+
+    let y;
+    if (anchorY === 'bottom') {
+        y = screenRect.bottom - imgRect.bottom;
+    } else if (anchorY === 'center') {
+        y = screenRect.bottom - (imgRect.top + imgRect.height / 2);
+    } else {
+        y = screenRect.bottom - imgRect.top;
+    }
+
+    return { x, y };
+}
+
+function getPartnerBusterPosition(type) {
+    const data = PARTNER_ATTACK_DATA[type];
+    const anchor = getPartnerAnchorPoint(data);
+
+    if (!data || !anchor) return null;
+
+    // legacy 모드는 기존 좌하단 배치 방식과 호환됩니다.
+    if (data.projectilePositionMode !== 'muzzle-center') {
+        return {
+            x: anchor.x + (data.busterOffsetX || 0),
+            y: anchor.y - (data.busterOffsetY || 0)
+        };
+    }
+
+    // muzzle-center 모드는 busterOffsetX/Y가 '투사체 중심점'을 직접 조정합니다.
+    // anchorY가 bottom일 때는 Y값이 클수록 위로 올라가므로 위치 조정 감각이 직관적입니다.
     return {
-        x: imgRect.left - screenRect.left + data.busterOffsetX,
-        y: screenRect.bottom - imgRect.top - data.busterOffsetY
+        x: anchor.x + (data.busterOffsetX || 0),
+        y: anchor.y + (data.busterOffsetY || 0)
     };
+}
+
+function getPartnerProjectileSize(data, isChargeShot) {
+    return {
+        width: isChargeShot ? (data.chargeBulletWidth || data.bulletWidth || 7) : (data.bulletWidth || 7),
+        height: isChargeShot ? (data.chargeBulletHeight || data.bulletHeight || 5) : (data.bulletHeight || 5)
+    };
+}
+
+function placeElementByCenter(element, center, width, height) {
+    element.style.left = (center.x - width / 2) + 'px';
+    element.style.bottom = (center.y - height / 2) + 'px';
+}
+
+function placePartnerProjectile(element, data, pos, isChargeShot) {
+    const size = getPartnerProjectileSize(data, isChargeShot);
+
+    if (data.projectilePositionMode !== 'muzzle-center') {
+        element.style.left = pos.x + 'px';
+        element.style.bottom = pos.y + 'px';
+        return;
+    }
+
+    // 기본탄/차지탄 크기가 달라도 같은 중심점에서 출발합니다.
+    placeElementByCenter(element, pos, size.width, size.height);
+}
+
+function placePartnerChargeEffect(element, data, pos) {
+    if (data.projectilePositionMode !== 'muzzle-center') {
+        element.style.left = (pos.x - 8) + 'px';
+        element.style.bottom = (pos.y - 8) + 'px';
+        return;
+    }
+
+    const effectWidth = data.chargeEffectWidth || 18;
+    const effectHeight = data.chargeEffectHeight || 18;
+    const effectCenter = {
+        x: pos.x + (data.chargeEffectOffsetX || 0),
+        y: pos.y + (data.chargeEffectOffsetY || 0)
+    };
+
+    // 차지 이펙트도 투사체 중심점과 같은 기준으로 배치합니다.
+    placeElementByCenter(element, effectCenter, effectWidth, effectHeight);
 }
 
 function firePartnerBuster(type) {
@@ -997,12 +1115,29 @@ function firePartnerBuster(type) {
     const shoot = () => {
         const bullet = document.createElement('div');
         bullet.className = isChargeShot ? (data.chargeBulletClass || data.bulletClass) : data.bulletClass;
-        bullet.style.left = pos.x + 'px';
-        bullet.style.bottom = pos.y + 'px';
+        placePartnerProjectile(bullet, data, pos, isChargeShot);
         screen.appendChild(bullet);
 
-        const travel = getBulletTravel(pos.x);
-        const duration = isChargeShot ? Math.max(150, data.shotDuration - 90) : data.shotDuration;
+        let chargeFrameTimer = null;
+        if (isChargeShot && data.chargeFramePrefix && data.chargeFrameCount) {
+            let frame = 1;
+            chargeFrameTimer = setInterval(() => {
+                frame = frame >= data.chargeFrameCount ? 1 : frame + 1;
+                bullet.style.backgroundImage = `url("${data.chargeFramePrefix}${String(frame).padStart(2, '0')}.png")`;
+            }, data.chargeFrameInterval || 70);
+        }
+
+        // 이동 거리는 투사체의 실제 중심점 기준으로 계산합니다.
+        const projectileSize = getPartnerProjectileSize(data, isChargeShot);
+        const bulletLeft = parseFloat(bullet.style.left) || pos.x;
+        const bulletCenterX = data.projectilePositionMode === 'muzzle-center'
+            ? bulletLeft + projectileSize.width / 2
+            : bulletLeft;
+
+        const travel = getBulletTravel(bulletCenterX);
+        const duration = isChargeShot
+            ? (data.chargeShotDuration || Math.max(150, (data.shotDuration || 260) - 90))
+            : (data.shotDuration || 260);
 
         bullet.animate(
             [{ transform: 'translateX(0)' }, { transform: `translateX(${travel}px)` }],
@@ -1010,6 +1145,8 @@ function firePartnerBuster(type) {
         );
 
         setTimeout(() => {
+            if (chargeFrameTimer) clearInterval(chargeFrameTimer);
+
             if (!enemyDead && !playerDead) {
                 const hit = applyPartnerDamage(type, isChargeShot);
                 if (hit && !enemyDead) playEnemyHit(enemy);
@@ -1023,8 +1160,7 @@ function firePartnerBuster(type) {
     if (isChargeShot) {
         const charge = document.createElement('div');
         charge.className = data.chargeEffectClass || 'partner-charge-effect';
-        charge.style.left = (pos.x - 8) + 'px';
-        charge.style.bottom = (pos.y - 8) + 'px';
+        placePartnerChargeEffect(charge, data, pos);
         screen.appendChild(charge);
 
         setTimeout(() => {
@@ -1237,11 +1373,38 @@ function getBulletTravel(startX) {
     return Math.max(40, enemyCenterX - startX);
 }
 
-function fireNormalShot(screen, enemy) {
-    const bullet = document.createElement('div');
-    bullet.className = 'bullet';
+const ROCK_BULLET_OFFSET_X = -25;
+const ROCK_BULLET_OFFSET_Y = -17;
+const ROCK_CHARGE_BULLET_OFFSET_Y = -23;
+const ROCK_NORMAL_BULLET_DURATION = 460;
+const ROCK_CHARGE_BULLET_DURATION = 340;
 
+function getRockBulletPosition(isChargeShot = false) {
     const pos = getBusterPosition();
+    return {
+        x: pos.x + ROCK_BULLET_OFFSET_X,
+        y: pos.y + (isChargeShot ? ROCK_CHARGE_BULLET_OFFSET_Y : ROCK_BULLET_OFFSET_Y)
+    };
+}
+
+function createRockBulletElement(isChargeShot = false) {
+    const bullet = document.createElement('div');
+    bullet.className = isChargeShot ? 'rock-bullet rock-charge-bullet' : 'rock-bullet rock-normal-bullet';
+    return bullet;
+}
+
+function startChargeBulletAnimation(bullet) {
+    let frame = 1;
+    return setInterval(() => {
+        frame = frame >= 4 ? 1 : frame + 1;
+        bullet.style.backgroundImage = `url("sprites/rock/rock_c_bullet_0${frame}.png")`;
+    }, 70);
+}
+
+function fireNormalShot(screen, enemy) {
+    const bullet = createRockBulletElement(false);
+
+    const pos = getRockBulletPosition(false);
     bullet.style.left = pos.x + "px";
     bullet.style.bottom = pos.y + "px";
 
@@ -1251,14 +1414,14 @@ function fireNormalShot(screen, enemy) {
 
     bullet.animate(
         [{ transform: 'translateX(0)' }, { transform: `translateX(${travel}px)` }],
-        { duration: 280, easing: 'linear' }
+        { duration: ROCK_NORMAL_BULLET_DURATION, easing: 'linear' }
     );
 
     setTimeout(() => {
         const hit = applyDamage(false);
         if (hit && !enemyDead) playEnemyHit(enemy);
         bullet.remove();
-    }, 280);
+    }, ROCK_NORMAL_BULLET_DURATION);
 }
 
 function fireChargeShot(screen, enemy) {
@@ -1274,27 +1437,28 @@ function fireChargeShot(screen, enemy) {
     setTimeout(() => {
         charge.remove();
 
-        const bullet = document.createElement('div');
-        bullet.className = 'bullet charge-shot';
+        const bullet = createRockBulletElement(true);
 
-        const pos = getBusterPosition();
+        const pos = getRockBulletPosition(true);
         bullet.style.left = pos.x + "px";
         bullet.style.bottom = pos.y + "px";
 
         screen.appendChild(bullet);
 
+        const chargeBulletTimer = startChargeBulletAnimation(bullet);
         const travel = getBulletTravel(pos.x);
 
         bullet.animate(
             [{ transform: 'translateX(0)' }, { transform: `translateX(${travel}px)` }],
-            { duration: 170, easing: 'linear' }
+            { duration: ROCK_CHARGE_BULLET_DURATION, easing: 'linear' }
         );
 
         setTimeout(() => {
+            clearInterval(chargeBulletTimer);
             const hit = applyDamage(true);
             if (hit && !enemyDead) playEnemyHit(enemy);
             bullet.remove();
-        }, 170);
+        }, ROCK_CHARGE_BULLET_DURATION);
     }, 110);
 }
 
@@ -2189,6 +2353,9 @@ function enterBossBattle() {
 
     const enemyArea = document.getElementById('enemy-area');
     if (enemyArea) {
+      enemyArea.classList.remove('sniperjoe-area');
+      enemyArea.style.removeProperty('--sniperjoe-ground-bottom');
+      enemyArea.style.bottom = `${BOSS_BOTTOM}px`;
       enemyArea.classList.remove('boss-enter-area');
       void enemyArea.offsetWidth;
       enemyArea.classList.add('boss-enter-area');
