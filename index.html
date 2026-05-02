@@ -60,9 +60,29 @@
     <img src="sprites/partner/x/x_02.png">
     <img src="sprites/partner/x/x_03.png">
     <img src="sprites/partner/x/x_st.png">
+    <img src="sprites/partner/x/x_c_bullet_03.png">
+    <img src="sprites/partner/x/x_c_bullet_02.png">
+    <img src="sprites/partner/x/x_c_bullet_01.png">
+    <img src="sprites/partner/x/x_bullet_01.png">
     <img src="sprites/partner/x/x_join_01.png">
     <img src="sprites/partner/x/x_join_02.png">
     <img src="sprites/partner/x/x_join_03.png">
+    <img src="sprites/partner/rockexe/rockexe_portrait.png">
+    <img src="sprites/partner/rockexe/rockexe_01.png">
+    <img src="sprites/partner/rockexe/rockexe_02.png">
+    <img src="sprites/partner/rockexe/rockexe_03.png">
+    <img src="sprites/partner/rockexe/rockexe_st.png">
+    <img src="sprites/partner/rockexe/rockexe_join_01.png">
+    <img src="sprites/partner/rockexe/rockexe_join_02.png">
+    <img src="sprites/partner/rockexe/rockexe_join_03.png">
+    <img src="sprites/partner/rockexe/rockexe_join_04.png">
+    <img src="sprites/partner/rockexe/rockexe_join_05.png">
+    <img src="sprites/partner/rockexe/rockexe_join_06.png">
+    <img src="sprites/partner/rockexe/rockexe_at_01.png">
+    <img src="sprites/partner/rockexe/rockexe_at_02.png">
+    <img src="sprites/partner/rockexe/rockexe_at_03.png">
+    <img src="sprites/partner/rockexe/rockexe_bullet_01.png">
+    <img src="sprites/partner/rockexe/rockexe_c_bullet_01.png">
     <img src="sprites/partner/zero/zero_01.png">
     <img src="sprites/partner/zero/zero_02.png">
     <img src="sprites/partner/zero/zero_03.png">
@@ -207,6 +227,18 @@
                             <button id="zero-sync-upgrade-btn" class="partner-sync-upgrade-btn" onclick="upgradePartnerSync('zero')">강화</button>
                         </div>
                     </div>
+
+                    <div id="exeRockman-sync-row" class="partner-sync-card">
+                        <div class="sync-card-name">록맨.EXE</div>
+                        <div class="sync-portrait-frame" style="--sync:10%;">
+                            <img src="sprites/partner/rockexe/rockexe_portrait.png" class="sync-portrait-img" alt="록맨.EXE">
+                            <span id="exeRockman-sync-percent" class="sync-percent-text">10%</span>
+                        </div>
+                        <div class="sync-card-footer">
+                            <span class="sync-chance-small">강화확률<br><b id="exeRockman-sync-chance">82%</b></span>
+                            <button id="exeRockman-sync-upgrade-btn" class="partner-sync-upgrade-btn" onclick="upgradePartnerSync('exeRockman')">강화</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -256,6 +288,10 @@
 
 <div id="x-area" class="x-area">
   <img id="x-img" src="sprites/partner/x/x_01.png">
+</div>
+
+<div id="rockexe-area" class="rockexe-area">
+  <img id="rockexe-img" src="sprites/partner/rockexe/rockexe_01.png">
 </div>
 
 <div id="zero-area" class="zero-area">
@@ -481,6 +517,33 @@
   </div>
 
   <div id="x-complete-badge" class="complete-badge">COMPLETE</div>
+
+</div>
+
+<div id="exeRockman-card" class="partner-card">
+
+  <div class="partner-top">
+    <div class="partner-left">
+      <img src="sprites/partner/rockexe/rockexe_portrait.png" class="partner-icon">
+      <span class="partner-title">
+        록맨.EXE (<span id="exeRockman-fragments">0</span> / 100)
+      </span>
+    </div>
+
+    <button id="exeRockman-summon-btn" class="summon-btn" onclick="summonExeRockman()">소환</button>
+  </div>
+
+  <div class="partner-desc">
+    - 기본 버스터 / 치명타 시 포물선 폭탄 투척
+  </div>
+
+  <div class="partner-actions">
+    <button id="exeRockman-buy1" class="partner-buy-btn" onclick="buyExeRockmanFragment(1)">조각 1개</button>
+    <button id="exeRockman-buy10" class="partner-buy-btn" onclick="buyExeRockmanFragment(10)">조각 10개</button>
+    <button id="exeRockman-buy100" class="partner-buy-btn" onclick="buyExeRockmanFragment(100)">조각 100개</button>
+  </div>
+
+  <div id="exeRockman-complete-badge" class="complete-badge">COMPLETE</div>
 
 </div>
 

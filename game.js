@@ -41,7 +41,7 @@ const defaultData = {
     zeroFragments: 0,
     zeroOwned: false,
 
-    // 추후 추가될 버스터형 파트너용 기본값
+    exeRockmanFragments: 0,
     exeRockmanOwned: false,
 
     partnerAtkSpd: 2000,
@@ -117,6 +117,7 @@ gameData.xFragments = Math.floor(gameData.xFragments || 0);
 gameData.xOwned = gameData.xOwned || false;
 gameData.zeroFragments = Math.floor(gameData.zeroFragments || 0);
 gameData.zeroOwned = gameData.zeroOwned || false;
+gameData.exeRockmanFragments = Math.floor(gameData.exeRockmanFragments || 0);
 gameData.exeRockmanOwned = gameData.exeRockmanOwned || false;
 gameData.partnerAtkSpd = gameData.partnerAtkSpd || 2000;
 gameData.partnerSync = { ...defaultData.partnerSync, ...(gameData.partnerSync || {}) };
@@ -144,6 +145,7 @@ const BLUES_REQUIRED_FRAGMENTS = 100;
 const FORTE_REQUIRED_FRAGMENTS = 100;
 const X_REQUIRED_FRAGMENTS = 100;
 const ZERO_REQUIRED_FRAGMENTS = 100;
+const EXE_ROCKMAN_REQUIRED_FRAGMENTS = 100;
 const ENEMY_START_X = 460;
 const BOSS_START_X = 380; // 보스 등장 시작 위치: 숫자가 작을수록 왼쪽
 const ENEMY_ATTACK_X = 120;
@@ -155,6 +157,11 @@ const MET_BOTTOM = 19;
 const BOSS_BOTTOM = 24;
 const SNIPERJOE_BUSTER_DAMAGE_RATE = 0.5;
 const SNIPERJOE_DODGE_CHANCE = 0.10;
+
+// 투사체 속도 보정: 원거리에서 보이던 속도를 기준으로, 거리 변화에 따라 이동 시간을 자동 조절합니다.
+// 기존에는 이동 거리는 바뀌는데 duration이 고정이라 가까울수록 탄이 느려 보였습니다.
+const PROJECTILE_MIN_DURATION = 90;
+const SNIPERJOE_BULLET_DURATION = 1040;
 
 const ENEMY_TYPE_DATA = {
     met: {
@@ -204,7 +211,7 @@ const PARTNER_ATTACK_DATA = {
         projectilePositionMode: 'muzzle-center',
         muzzleAnchorX: 'right',
         muzzleAnchorY: 'bottom',
-        busterOffsetX: -15,
+        busterOffsetX: -13,
         busterOffsetY: 9,
 
         // 기본탄/차지탄은 크기가 달라도 같은 중심점에서 발사됩니다.
@@ -217,8 +224,8 @@ const PARTNER_ATTACK_DATA = {
         chargeEffectOffsetX: 0,
         chargeEffectOffsetY: 0,
 
-        shotDuration: 460,
-        chargeShotDuration: 340
+        shotDuration: 920,
+        chargeShotDuration: 680
     },
     x: {
         name: '엑스',
@@ -231,11 +238,34 @@ const PARTNER_ATTACK_DATA = {
         bulletClass: 'partner-bullet x-bullet',
         chargeBulletClass: 'partner-bullet x-charge-bullet',
         chargeEffectClass: 'partner-charge-effect x-charge-effect',
+        chargeFramePrefix: 'sprites/partner/x/x_c_bullet_',
+        chargeFrameCount: 3,
+        chargeFrameInterval: 70,
         attackFrame: 'sprites/partner/x/x_03.png',
         idleFrame: 'sprites/partner/x/x_01.png',
-        busterOffsetX: 23,
-        busterOffsetY: 32,
-        shotDuration: 250
+
+        // 엑스 투사체 위치 조절부입니다.
+        // 기준점: x-img의 오른쪽 아래(bottom/right)를 기준으로 총구 중심을 잡습니다.
+        // busterOffsetX: 작게 = 왼쪽, 크게 = 오른쪽
+        // busterOffsetY: 작게 = 아래쪽, 크게 = 위쪽
+        projectilePositionMode: 'muzzle-center',
+        muzzleAnchorX: 'right',
+        muzzleAnchorY: 'bottom',
+        busterOffsetX: -20,
+        busterOffsetY: 10,
+
+        // 기본탄/차지탄은 크기가 달라도 같은 중심점에서 발사됩니다.
+        bulletWidth: 54,
+        bulletHeight: 36,
+        chargeBulletWidth: 72,
+        chargeBulletHeight: 48,
+        chargeEffectWidth: 18,
+        chargeEffectHeight: 18,
+        chargeEffectOffsetX: 0,
+        chargeEffectOffsetY: 0,
+
+        shotDuration: 920,
+        chargeShotDuration: 680
     },
     zero: {
         name: '제로',
@@ -253,7 +283,46 @@ const PARTNER_ATTACK_DATA = {
         name: '록맨.EXE',
         ownedKey: 'exeRockmanOwned',
         syncKey: 'exeRockman',
-        defaultSync: 10
+        defaultSync: 10,
+        portrait: 'sprites/partner/rockexe/rockexe_portrait.png',
+        areaId: 'rockexe-area',
+        imgId: 'rockexe-img',
+        bulletClass: 'partner-bullet rockexe-bullet',
+        chargeBulletClass: 'partner-bullet rockexe-charge-bullet',
+        chargeEffectClass: 'partner-charge-effect rockexe-charge-effect',
+        attackFramePrefix: 'sprites/partner/rockexe/rockexe_at_',
+        attackFrameCount: 3,
+        bulletFramePrefix: null,
+        chargeFramePrefix: null,
+        attackFrame: 'sprites/partner/rockexe/rockexe_03.png',
+        idleFrame: 'sprites/partner/rockexe/rockexe_01.png',
+
+        // 록맨.EXE 투사체 위치 조절부입니다.
+        // 기준점: rockexe-img의 오른쪽 아래(bottom/right)를 기준으로 총구 중심을 잡습니다.
+        // busterOffsetX: 작게 = 왼쪽, 크게 = 오른쪽
+        // busterOffsetY: 작게 = 아래쪽, 크게 = 위쪽
+        projectilePositionMode: 'muzzle-center',
+        muzzleAnchorX: 'right',
+        muzzleAnchorY: 'bottom',
+        busterOffsetX: -19,
+        busterOffsetY: 8,
+
+        bulletWidth: 54,
+        bulletHeight: 36,
+        chargeBulletWidth: 48,
+        chargeBulletHeight: 48,
+        chargeEffectWidth: 18,
+        chargeEffectHeight: 18,
+        chargeEffectOffsetX: 0,
+        chargeEffectOffsetY: 0,
+
+        arcChargeProjectile: true,
+        arcHeight: 24,
+        arcHeightMin: 18,
+        arcHeightMax: 34,
+        explosionRadius: 44,
+        shotDuration: 920,
+        chargeShotDuration: 1360
     }
 };
 
@@ -309,6 +378,14 @@ let xJoinTimer = null;
 let xAttackTimer = null;
 let xAttacking = false;
 
+const rockexeFramePattern = [1, 2, 3, 2];
+let rockexeFrameIndex = 0;
+let rockexeJoinTimer = null;
+let rockexeAttackTimer = null;
+let rockexeAttacking = false;
+let rockexeAttackAnimating = false;
+let rockexeAttackAnimTimer = null;
+
 const zeroFramePattern = [1, 2, 3, 2];
 let zeroFrameIndex = 0;
 let zeroJoinTimer = null;
@@ -323,14 +400,14 @@ let mineAttackAnimating = false;
 let mineEnhancing = false;
 
 const BATTLE_TIPS = [
-    'TIP. 스나이퍼 죠는 10스테이지마다 등장합니다.',
-    'TIP. 스나이퍼 죠에게는 버스터 데미지가 반감됩니다.',
-    'TIP. 광산은 일찍 개방할수록 좋아요.',
-    'TIP. 크리스탈은 파트너 소환뿐만 아니라 여러 곳에 쓰입니다.',
-    'TIP. 파트너를 소환하면 전투가 훨씬 수월해집니다.',
-    'TIP. 동료들은 록맨과의 싱크로율에 따라 강해집니다.',
-    'TIP. 보스전에서 다양한 아이템을 얻을 수 있습니다.',
-    'TIP. 피켈맨의 야근수당은 연봉에 포함되어 있습니다.'
+    '스나이퍼 죠는 10스테이지마다 등장합니다.',
+    '스나이퍼 죠에게는 버스터 데미지가 반감됩니다.',
+    '광산은 일찍 개방할수록 좋아요.',
+    '크리스탈은 파트너 소환뿐만 아니라 여러 곳에 쓰입니다.',
+    '파트너를 소환하면 전투가 훨씬 수월해집니다.',
+    '동료들은 록맨과의 싱크로율에 따라 강해집니다.',
+    '보스전에서 다양한 아이템을 얻을 수 있습니다.',
+    '피켈맨의 야근수당은 연봉에 포함되어 있습니다.'
 ];
 let battleTipIndex = 0;
 let battleTipTimer = null;
@@ -449,12 +526,14 @@ function applyStillBattleFrames() {
     const rushImg = document.getElementById('rush-img');
     const forteImg = document.getElementById('forte-img');
     const xImg = document.getElementById('x-img');
+    const rockexeImg = document.getElementById('rockexe-img');
     const zeroImg = document.getElementById('zero-img');
 
     if (rockman) rockman.src = 'sprites/rock/rock_st.png';
     if (rushImg && gameData.rushOwned) rushImg.src = 'sprites/partner/rush/rush_st.png';
     if (forteImg && gameData.forteOwned && !forteAttacking) forteImg.src = 'sprites/partner/forte/forte_st.png';
     if (xImg && gameData.xOwned && !xAttacking) xImg.src = 'sprites/partner/x/x_st.png';
+    if (rockexeImg && gameData.exeRockmanOwned && !rockexeAttacking) rockexeImg.src = 'sprites/partner/rockexe/rockexe_st.png';
     if (zeroImg && gameData.zeroOwned && !zeroAttacking) zeroImg.src = 'sprites/partner/zero/zero_st.png';
 }
 
@@ -496,6 +575,13 @@ function playSniperJoeJump() {
     }, 520);
 }
 
+function getEnemyProjectileDuration(currentTravel, currentEnemyLeft, referenceEnemyLeft, referenceDuration, minDuration = PROJECTILE_MIN_DURATION) {
+    // 적 탄도 적 위치가 달라질 경우를 대비해 같은 속도로 보정합니다.
+    // 왼쪽으로 날아가는 탄은 travel이 음수라 절댓값 기준으로 계산합니다.
+    const referenceTravel = currentTravel - (referenceEnemyLeft - currentEnemyLeft);
+    return getDistanceBasedDuration(currentTravel, referenceTravel, referenceDuration, minDuration);
+}
+
 function fireSniperJoeBullet() {
     if (!isSniperJoeBattle() || enemyDead || playerDead || sniperJoeAttacking) return;
 
@@ -526,9 +612,17 @@ function fireSniperJoeBullet() {
         screen.appendChild(bullet);
 
         const travel = Math.min(-35, (rockRect.left - enemyRect.left) - 10);
+        const currentEnemyLeft = enemyRect.left - screenRect.left;
+        const duration = getEnemyProjectileDuration(
+            travel,
+            currentEnemyLeft,
+            SNIPERJOE_START_X,
+            SNIPERJOE_BULLET_DURATION
+        );
+
         bullet.animate(
             [{ transform: 'translateX(0)' }, { transform: `translateX(${travel}px)` }],
-            { duration: 520, easing: 'linear' }
+            { duration, easing: 'linear' }
         );
 
         setTimeout(() => {
@@ -536,7 +630,7 @@ function fireSniperJoeBullet() {
                 enemyHitsPlayerByBullet();
             }
             bullet.remove();
-        }, 520);
+        }, duration);
 
         setTimeout(() => {
             sniperJoeAttacking = false;
@@ -577,6 +671,7 @@ function animate() {
         }
         animateBeat();
         animateBlues();
+        animateRockExe();
         animateZero();
         return;
     }
@@ -595,6 +690,7 @@ function animate() {
     animateBlues();
     animateForte();
     animateX();
+    animateRockExe();
     animateZero();
 }
 
@@ -671,6 +767,21 @@ function animateX() {
   xImg.src = `sprites/partner/x/x_0${frame}.png`;
 
   xFrameIndex = (xFrameIndex + 1) % xFramePattern.length;
+}
+
+function animateRockExe() {
+  const rockexeImg = document.getElementById('rockexe-img');
+  if (!rockexeImg || !gameData.exeRockmanOwned || rockexeAttackAnimating) return;
+
+  if (isSniperJoeBattle()) {
+    if (!rockexeAttacking) rockexeImg.src = 'sprites/partner/rockexe/rockexe_st.png';
+    return;
+  }
+
+  const frame = rockexeFramePattern[rockexeFrameIndex];
+  rockexeImg.src = `sprites/partner/rockexe/rockexe_0${frame}.png`;
+
+  rockexeFrameIndex = (rockexeFrameIndex + 1) % rockexeFramePattern.length;
 }
 
 function animateZero() {
@@ -907,6 +1018,16 @@ function startXAttack() {
   }, gameData.partnerAtkSpd);
 }
 
+function startExeRockmanAttack() {
+  if (rockexeAttackTimer) clearInterval(rockexeAttackTimer);
+
+  rockexeAttackTimer = setInterval(() => {
+    if (!gameData.exeRockmanOwned || enemyDead || playerDead || rockexeAttacking) return;
+
+    firePartnerBuster('exeRockman');
+  }, gameData.partnerAtkSpd);
+}
+
 function startZeroAttack() {
   if (zeroAttackTimer) clearInterval(zeroAttackTimer);
 
@@ -915,6 +1036,33 @@ function startZeroAttack() {
 
     zeroMeleeAttack();
   }, Math.floor(gameData.partnerAtkSpd * ZERO_ATTACK_INTERVAL_MULTIPLIER));
+}
+
+
+function spawnZeroAfterimage() {
+    const zeroImg = document.getElementById('zero-img');
+    const screen = document.querySelector('.game-screen');
+    if (!zeroImg || !screen || !gameData.zeroOwned) return;
+
+    const screenRect = screen.getBoundingClientRect();
+    const zeroRect = zeroImg.getBoundingClientRect();
+
+    const ghost = document.createElement('img');
+    ghost.className = 'zero-afterimage';
+    ghost.src = zeroImg.src;
+    ghost.style.left = (zeroRect.left - screenRect.left) + 'px';
+    ghost.style.bottom = (screenRect.bottom - zeroRect.bottom) + 'px';
+    ghost.style.width = zeroRect.width + 'px';
+    ghost.style.height = zeroRect.height + 'px';
+
+    screen.appendChild(ghost);
+    setTimeout(() => ghost.remove(), 360);
+}
+
+function startZeroAfterimageTrail(duration = 420, interval = 58) {
+    spawnZeroAfterimage();
+    const trailTimer = setInterval(spawnZeroAfterimage, interval);
+    setTimeout(() => clearInterval(trailTimer), duration);
 }
 
 function zeroMeleeAttack() {
@@ -945,6 +1093,7 @@ function zeroMeleeAttack() {
     setTimeout(() => {
         zeroArea.style.transition = 'transform 0.36s ease-out';
         zeroArea.style.transform = `translate(${targetX}px, ${ZERO_ATTACK_TARGET_Y}px)`;
+        startZeroAfterimageTrail(380, 55);
     }, 20);
 
     setTimeout(() => {
@@ -969,6 +1118,7 @@ function zeroMeleeAttack() {
         zeroArea.classList.add('zero-return-jump');
         zeroArea.style.transition = 'transform 0.48s ease-in-out';
         zeroArea.style.transform = 'translate(0px, 0px)';
+        startZeroAfterimageTrail(500, 60);
 
         const returnTimer = setInterval(() => {
             zeroImg.src = `sprites/partner/zero/zero_at_${returnFrame}.png`;
@@ -1087,6 +1237,99 @@ function placePartnerChargeEffect(element, data, pos) {
     placeElementByCenter(element, effectCenter, effectWidth, effectHeight);
 }
 
+function playPartnerChargeAttackAnimation(type) {
+    if (type !== 'exeRockman') return;
+
+    const img = document.getElementById('rockexe-img');
+    if (!img) return;
+
+    if (rockexeAttackAnimTimer) {
+        clearInterval(rockexeAttackAnimTimer);
+        rockexeAttackAnimTimer = null;
+    }
+
+    rockexeAttackAnimating = true;
+    let frame = 1;
+    img.src = 'sprites/partner/rockexe/rockexe_at_01.png';
+
+    rockexeAttackAnimTimer = setInterval(() => {
+        frame++;
+        if (frame <= 3) {
+            img.src = `sprites/partner/rockexe/rockexe_at_0${frame}.png`;
+            return;
+        }
+
+        clearInterval(rockexeAttackAnimTimer);
+        rockexeAttackAnimTimer = null;
+        rockexeAttackAnimating = false;
+        if (isSniperJoeBattle() && gameData.exeRockmanOwned) {
+            img.src = 'sprites/partner/rockexe/rockexe_st.png';
+        }
+    }, 90);
+}
+
+function getArcProjectileHeight(travel, data) {
+    const minHeight = Math.max(12, data.arcHeightMin || data.arcHeight || 20);
+    const maxHeight = Math.max(minHeight, data.arcHeightMax || Math.max(minHeight, (data.arcHeight || 20) + 10));
+    const distanceFactor = Math.max(0, Math.min(1, Math.abs(travel) / 260));
+    return Math.round(minHeight + (maxHeight - minHeight) * distanceFactor);
+}
+
+function buildArcKeyframes(travel, arcHeight) {
+    return [
+        { transform: 'translate(0px, 0px)', offset: 0 },
+        { transform: `translate(${Math.round(travel * 0.12)}px, -${Math.round(arcHeight * 0.34)}px)`, offset: 0.12 },
+        { transform: `translate(${Math.round(travel * 0.28)}px, -${Math.round(arcHeight * 0.72)}px)`, offset: 0.28 },
+        { transform: `translate(${Math.round(travel * 0.48)}px, -${Math.round(arcHeight)}px)`, offset: 0.48 },
+        { transform: `translate(${Math.round(travel * 0.68)}px, -${Math.round(arcHeight * 0.74)}px)`, offset: 0.68 },
+        { transform: `translate(${Math.round(travel * 0.84)}px, -${Math.round(arcHeight * 0.34)}px)`, offset: 0.84 },
+        { transform: `translate(${Math.round(travel * 0.94)}px, -${Math.round(arcHeight * 0.08)}px)`, offset: 0.94 },
+        { transform: `translate(${travel}px, 0px)`, offset: 1 }
+    ];
+}
+
+function createProjectileExplosion(screen, centerX, centerY, radius = 40) {
+    if (!screen) return;
+
+    const explosion = document.createElement('div');
+    explosion.className = 'projectile-explosion rockexe-explosion';
+    explosion.style.left = (centerX - radius / 2) + 'px';
+    explosion.style.bottom = (centerY - radius / 2) + 'px';
+    explosion.style.width = radius + 'px';
+    explosion.style.height = radius + 'px';
+    screen.appendChild(explosion);
+
+    const particleCount = 8;
+    for (let i = 0; i < particleCount; i++) {
+        const angle = (Math.PI * 2 * i) / particleCount;
+        const dist = Math.round(radius * (0.38 + ((i % 3) * 0.12)));
+        const particle = document.createElement('div');
+        particle.className = 'projectile-explosion-particle rockexe-explosion-particle';
+        particle.style.left = centerX + 'px';
+        particle.style.bottom = centerY + 'px';
+        particle.style.setProperty('--x', `${Math.round(Math.cos(angle) * dist)}px`);
+        particle.style.setProperty('--y', `${Math.round(Math.sin(angle) * dist)}px`);
+        screen.appendChild(particle);
+        setTimeout(() => particle.remove(), 420);
+    }
+
+    setTimeout(() => explosion.remove(), 320);
+}
+
+function getEnemyImpactPoint() {
+    const screen = document.querySelector('.game-screen');
+    const enemy = document.getElementById('enemy-img');
+    if (!screen || !enemy) return null;
+
+    const screenRect = screen.getBoundingClientRect();
+    const enemyRect = enemy.getBoundingClientRect();
+
+    return {
+        x: enemyRect.left - screenRect.left + enemyRect.width / 2,
+        y: screenRect.bottom - enemyRect.bottom + Math.max(10, enemyRect.height * 0.48)
+    };
+}
+
 function firePartnerBuster(type) {
     const data = PARTNER_ATTACK_DATA[type];
     const screen = document.querySelector('.game-screen');
@@ -1098,18 +1341,23 @@ function firePartnerBuster(type) {
     // img.src를 공격/대기 프레임으로 바꾸면 발사 타이밍마다 애니메이션이 멈칫거립니다.
     if (type === 'forte') forteAttacking = true;
     if (type === 'x') xAttacking = true;
+    if (type === 'exeRockman') rockexeAttacking = true;
 
     const isChargeShot = Math.random() * 100 < gameData.critChance;
     const pos = getPartnerBusterPosition(type);
     if (!pos) {
         if (type === 'forte') forteAttacking = false;
         if (type === 'x') xAttacking = false;
+        if (type === 'exeRockman') rockexeAttacking = false;
         return;
     }
 
     const finishAttack = () => {
         if (type === 'forte') forteAttacking = false;
         if (type === 'x') xAttacking = false;
+        if (type === 'exeRockman') {
+            rockexeAttacking = false;
+        }
     };
 
     const shoot = () => {
@@ -1135,21 +1383,40 @@ function firePartnerBuster(type) {
             : bulletLeft;
 
         const travel = getBulletTravel(bulletCenterX);
-        const duration = isChargeShot
+        const referenceDuration = isChargeShot
             ? (data.chargeShotDuration || Math.max(150, (data.shotDuration || 260) - 90))
             : (data.shotDuration || 260);
+        const duration = getPlayerProjectileDuration(bulletCenterX, travel, referenceDuration);
 
-        bullet.animate(
-            [{ transform: 'translateX(0)' }, { transform: `translateX(${travel}px)` }],
-            { duration, easing: 'linear' }
-        );
+        const shouldExplodeOnImpact = type === 'exeRockman' && isChargeShot && data.arcChargeProjectile;
+
+        if (isChargeShot && data.arcChargeProjectile) {
+            const arcHeight = getArcProjectileHeight(travel, data);
+            bullet.animate(
+                buildArcKeyframes(travel, arcHeight),
+                { duration, easing: 'linear' }
+            );
+        } else {
+            bullet.animate(
+                [{ transform: 'translateX(0)' }, { transform: `translateX(${travel}px)` }],
+                { duration, easing: 'linear' }
+            );
+        }
 
         setTimeout(() => {
             if (chargeFrameTimer) clearInterval(chargeFrameTimer);
 
+            let hit = false;
             if (!enemyDead && !playerDead) {
-                const hit = applyPartnerDamage(type, isChargeShot);
+                hit = applyPartnerDamage(type, isChargeShot);
                 if (hit && !enemyDead) playEnemyHit(enemy);
+            }
+
+            if (shouldExplodeOnImpact) {
+                const impactPoint = getEnemyImpactPoint();
+                if (impactPoint) {
+                    createProjectileExplosion(screen, impactPoint.x, impactPoint.y, data.explosionRadius || 40);
+                }
             }
 
             bullet.remove();
@@ -1158,6 +1425,15 @@ function firePartnerBuster(type) {
     };
 
     if (isChargeShot) {
+        playPartnerChargeAttackAnimation(type);
+
+        if (type === 'exeRockman') {
+            setTimeout(() => {
+                shoot();
+            }, 170);
+            return;
+        }
+
         const charge = document.createElement('div');
         charge.className = data.chargeEffectClass || 'partner-charge-effect';
         placePartnerChargeEffect(charge, data, pos);
@@ -1242,6 +1518,7 @@ function playPlayerHitEffect() {
     flashAllyCharacter('blues-img', gameData.bluesOwned);
     flashAllyCharacter('forte-img', gameData.forteOwned);
     flashAllyCharacter('x-img', gameData.xOwned);
+    flashAllyCharacter('rockexe-img', gameData.exeRockmanOwned);
     flashAllyCharacter('zero-img', gameData.zeroOwned);
 }
 
@@ -1373,11 +1650,35 @@ function getBulletTravel(startX) {
     return Math.max(40, enemyCenterX - startX);
 }
 
+function getProjectileReferenceEnemyX() {
+    if (isSniperJoeBattle()) return SNIPERJOE_START_X;
+    if (isBossBattle) return BOSS_START_X;
+    return ENEMY_START_X;
+}
+
+function getReferenceBulletTravel(startX) {
+    // enemyX는 #enemy-area의 left 값입니다. 적 이미지 중심과 마진은 현재값을 유지하고,
+    // 적이 원거리 시작 위치에 있을 때의 이동거리만 역산합니다.
+    const currentTravel = getBulletTravel(startX);
+    const referenceEnemyX = getProjectileReferenceEnemyX();
+    return Math.max(40, currentTravel + (referenceEnemyX - enemyX));
+}
+
+function getDistanceBasedDuration(travel, referenceTravel, referenceDuration, minDuration = PROJECTILE_MIN_DURATION) {
+    const safeTravel = Math.max(1, Math.abs(travel));
+    const safeReferenceTravel = Math.max(1, Math.abs(referenceTravel));
+    return Math.max(minDuration, Math.round(referenceDuration * (safeTravel / safeReferenceTravel)));
+}
+
+function getPlayerProjectileDuration(startX, travel, referenceDuration, minDuration = PROJECTILE_MIN_DURATION) {
+    return getDistanceBasedDuration(travel, getReferenceBulletTravel(startX), referenceDuration, minDuration);
+}
+
 const ROCK_BULLET_OFFSET_X = -25;
-const ROCK_BULLET_OFFSET_Y = -17;
-const ROCK_CHARGE_BULLET_OFFSET_Y = -23;
-const ROCK_NORMAL_BULLET_DURATION = 460;
-const ROCK_CHARGE_BULLET_DURATION = 340;
+const ROCK_BULLET_OFFSET_Y = -14;
+const ROCK_CHARGE_BULLET_OFFSET_Y = -20;
+const ROCK_NORMAL_BULLET_DURATION = 620;
+const ROCK_CHARGE_BULLET_DURATION = 460;
 
 function getRockBulletPosition(isChargeShot = false) {
     const pos = getBusterPosition();
@@ -1411,17 +1712,18 @@ function fireNormalShot(screen, enemy) {
     screen.appendChild(bullet);
 
     const travel = getBulletTravel(pos.x);
+    const duration = getPlayerProjectileDuration(pos.x, travel, ROCK_NORMAL_BULLET_DURATION);
 
     bullet.animate(
         [{ transform: 'translateX(0)' }, { transform: `translateX(${travel}px)` }],
-        { duration: ROCK_NORMAL_BULLET_DURATION, easing: 'linear' }
+        { duration, easing: 'linear' }
     );
 
     setTimeout(() => {
         const hit = applyDamage(false);
         if (hit && !enemyDead) playEnemyHit(enemy);
         bullet.remove();
-    }, ROCK_NORMAL_BULLET_DURATION);
+    }, duration);
 }
 
 function fireChargeShot(screen, enemy) {
@@ -1447,10 +1749,11 @@ function fireChargeShot(screen, enemy) {
 
         const chargeBulletTimer = startChargeBulletAnimation(bullet);
         const travel = getBulletTravel(pos.x);
+        const duration = getPlayerProjectileDuration(pos.x, travel, ROCK_CHARGE_BULLET_DURATION);
 
         bullet.animate(
             [{ transform: 'translateX(0)' }, { transform: `translateX(${travel}px)` }],
-            { duration: ROCK_CHARGE_BULLET_DURATION, easing: 'linear' }
+            { duration, easing: 'linear' }
         );
 
         setTimeout(() => {
@@ -1458,7 +1761,7 @@ function fireChargeShot(screen, enemy) {
             const hit = applyDamage(true);
             if (hit && !enemyDead) playEnemyHit(enemy);
             bullet.remove();
-        }, ROCK_CHARGE_BULLET_DURATION);
+        }, duration);
     }, 110);
 }
 
@@ -1711,6 +2014,7 @@ function buyUpgrade(type, amount) {
                 startBluesAttack();
                 startForteAttack();
                 startXAttack();
+                startExeRockmanAttack();
                 startZeroAttack();
 startMining();
             }
@@ -1841,6 +2145,21 @@ function buyZeroFragment(amount) {
   saveData();
 }
 
+function buyExeRockmanFragment(amount) {
+  if (gameData.exeRockmanOwned) return;
+  if (gameData.crystals < amount) return;
+
+  gameData.crystals -= amount;
+  gameData.exeRockmanFragments += amount;
+
+  if (gameData.exeRockmanFragments > EXE_ROCKMAN_REQUIRED_FRAGMENTS) {
+    gameData.exeRockmanFragments = EXE_ROCKMAN_REQUIRED_FRAGMENTS;
+  }
+
+  updateUI();
+  saveData();
+}
+
 function getSummonTextElement() {
     return document.getElementById('summon-text') || document.querySelector('.summon-text');
 }
@@ -1909,6 +2228,15 @@ function prepareSummonPopup(type) {
         text.innerText = 'ZERO JOIN!';
         rushImg.style.display = 'none';
         beatImg.src = 'sprites/partner/zero/zero_join_01.png';
+        beatImg.style.setProperty('width', '54px', 'important');
+        beatImg.style.setProperty('height', '54px', 'important');
+        beatImg.style.display = 'block';
+    }
+
+    if (type === 'exeRockman') {
+        text.innerText = 'ROCKMAN.EXE JOIN!';
+        rushImg.style.display = 'none';
+        beatImg.src = 'sprites/partner/rockexe/rockexe_join_01.png';
         beatImg.style.setProperty('width', '54px', 'important');
         beatImg.style.setProperty('height', '54px', 'important');
         beatImg.style.display = 'block';
@@ -2155,6 +2483,46 @@ function summonZero() {
     }, 120);
 }
 
+function summonExeRockman() {
+    if (gameData.exeRockmanOwned) return;
+    if (gameData.exeRockmanFragments < EXE_ROCKMAN_REQUIRED_FRAGMENTS) return;
+
+    gameData.exeRockmanOwned = true;
+
+    const popupData = prepareSummonPopup('exeRockman');
+    if (!popupData) {
+        updateUI();
+        saveData();
+        return;
+    }
+
+    const { beatImg } = popupData;
+    let exeJoinFrame = 1;
+
+    beatImg.src = 'sprites/partner/rockexe/rockexe_join_01.png';
+    beatImg.style.setProperty('width', '54px', 'important');
+    beatImg.style.setProperty('height', '54px', 'important');
+    beatImg.style.transform = 'translateX(-50%)';
+    beatImg.classList.remove('rush-drop', 'join-drop');
+
+    if (rockexeJoinTimer) clearInterval(rockexeJoinTimer);
+
+    rockexeJoinTimer = setInterval(() => {
+        exeJoinFrame++;
+
+        if (exeJoinFrame <= 6) {
+            beatImg.src = `sprites/partner/rockexe/rockexe_join_0${exeJoinFrame}.png`;
+        } else {
+            clearInterval(rockexeJoinTimer);
+            rockexeJoinTimer = null;
+            beatImg.src = 'sprites/partner/rockexe/rockexe_join_06.png';
+        }
+    }, 120);
+
+    updateUI();
+    saveData();
+}
+
 function closeSummonPopup() {
     const popup = document.getElementById('summon-popup');
     const rushJoinImg = document.getElementById('rush-join-img');
@@ -2188,6 +2556,11 @@ function closeSummonPopup() {
     if (zeroJoinTimer) {
         clearInterval(zeroJoinTimer);
         zeroJoinTimer = null;
+    }
+
+    if (rockexeJoinTimer) {
+        clearInterval(rockexeJoinTimer);
+        rockexeJoinTimer = null;
     }
 
 if (rushJoinImg) {
@@ -2790,6 +3163,14 @@ setButtonActive(document.getElementById('zero-buy10'), !gameData.zeroOwned && ga
 setButtonActive(document.getElementById('zero-buy100'), !gameData.zeroOwned && gameData.crystals >= 100 && gameData.zeroFragments === 0);
 setButtonActive(document.getElementById('zero-summon-btn'), !gameData.zeroOwned && gameData.zeroFragments >= 100);
 
+const exeRockmanFragmentsEl = document.getElementById('exeRockman-fragments');
+if (exeRockmanFragmentsEl) exeRockmanFragmentsEl.innerText = gameData.exeRockmanFragments;
+
+setButtonActive(document.getElementById('exeRockman-buy1'), !gameData.exeRockmanOwned && gameData.crystals >= 1 && gameData.exeRockmanFragments < 100);
+setButtonActive(document.getElementById('exeRockman-buy10'), !gameData.exeRockmanOwned && gameData.crystals >= 10 && gameData.exeRockmanFragments <= 90);
+setButtonActive(document.getElementById('exeRockman-buy100'), !gameData.exeRockmanOwned && gameData.crystals >= 100 && gameData.exeRockmanFragments === 0);
+setButtonActive(document.getElementById('exeRockman-summon-btn'), !gameData.exeRockmanOwned && gameData.exeRockmanFragments >= 100);
+
     const beatCard = document.getElementById('beat-card');
     const beatBadge = document.getElementById('beat-complete-badge');
     const beatArea = document.getElementById('beat-area');
@@ -2842,6 +3223,19 @@ if (zeroCard && zeroBadge) {
   } else {
     zeroCard.classList.remove('complete');
     zeroBadge.classList.remove('active');
+  }
+}
+
+const exeRockmanCard = document.getElementById('exeRockman-card');
+const exeRockmanBadge = document.getElementById('exeRockman-complete-badge');
+
+if (exeRockmanCard && exeRockmanBadge) {
+  if (gameData.exeRockmanOwned) {
+    exeRockmanCard.classList.add('complete');
+    exeRockmanBadge.classList.add('active');
+  } else {
+    exeRockmanCard.classList.remove('complete');
+    exeRockmanBadge.classList.remove('active');
   }
 }
 
@@ -2910,6 +3304,18 @@ if (xArea) {
 
 if (xImg) {
   xImg.style.display = gameData.xOwned ? 'block' : 'none';
+}
+
+const rockexeArea = document.getElementById('rockexe-area');
+const rockexeImg = document.getElementById('rockexe-img');
+
+if (rockexeArea) {
+  if (gameData.exeRockmanOwned) rockexeArea.classList.add('active');
+  else rockexeArea.classList.remove('active');
+}
+
+if (rockexeImg) {
+  rockexeImg.style.display = gameData.exeRockmanOwned ? 'block' : 'none';
 }
 
 const zeroArea = document.getElementById('zero-area');
@@ -2998,7 +3404,7 @@ setButtonActive(document.getElementById('mine-tier-up-btn'), !mineEnhancing && g
 
 
 function hasOwnedBusterPartner() {
-    return ['blues', 'forte', 'x', 'zero'].some(type => {
+    return ['blues', 'forte', 'x', 'zero', 'exeRockman'].some(type => {
         const data = PARTNER_ATTACK_DATA[type];
         return data && gameData[data.ownedKey];
     });
@@ -3017,7 +3423,7 @@ function updatePartnerAttackUpgradeUI() {
         btn.classList.toggle('active', wing && wing.classList.contains('open'));
     }
 
-    ['blues', 'forte', 'x', 'zero'].forEach(type => {
+    ['blues', 'forte', 'x', 'zero', 'exeRockman'].forEach(type => {
         const data = PARTNER_ATTACK_DATA[type];
         const row = document.getElementById(`${type}-sync-row`);
         const percent = document.getElementById(`${type}-sync-percent`);
@@ -3087,6 +3493,7 @@ startChase();
 startBluesAttack();
 startForteAttack();
 startXAttack();
+startExeRockmanAttack();
 startZeroAttack();
 startMining();
 startBattleTips();
