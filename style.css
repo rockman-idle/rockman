@@ -38,6 +38,11 @@ body {
 
 .tab-btn {
     width: 65px;
+    min-height: 44px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 8px 4px;
     background: #111;
     color: #777;
@@ -162,15 +167,12 @@ body {
 }
 
 #enemy-img {
+    display: block;
     width: 22px;
     height: 22px;
     image-rendering: pixelated;
     object-fit: contain;
     margin-top: 18px;
-}
-
-#enemy-img {
-    display: block;
 }
 
 #enemy-area.sniperjoe-area {
@@ -524,10 +526,7 @@ body {
     text-shadow: 0 0 8px #00d4ff;
 }
 
-.partner-desc {
-    font-size: 13px;
-    color: #aaa;
-}
+/* .partner-desc 공통 스타일은 하단의 실제 적용값으로 통합됨 */
 
 .partner-card {
     position: relative;
@@ -889,10 +888,12 @@ body {
 }
 
 .armor-main-image {
-  max-width: 190px;
-  max-height: 135px;
   position: relative;
   z-index: 2;
+  width: 180px;
+  max-width: none;
+  max-height: none;
+  image-rendering: pixelated;
 }
 
 .armor-part-list {
@@ -995,14 +996,6 @@ body {
   flex: 0 0 110px;
 }
 
-.armor-main-image {
-  width: 180px;
-  max-width: none;
-  max-height: none;
-  image-rendering: pixelated;
-  
-}
-
 .armor-right {
   flex: 1;
   display: flex;
@@ -1058,20 +1051,6 @@ body {
 
 .boss-enter {
   animation: bossEnter 0.5s ease-out;
-}
-
-@keyframes bossEnter {
-  0% {
-    transform: translateY(-80px) scale(1.3);
-    opacity: 0;
-  }
-  70% {
-    transform: translateY(6px) scale(1.05);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(0) scale(1);
-  }
 }
 
 .game-screen.boss-mode {
@@ -2330,12 +2309,7 @@ body {
 }
 
 
-/* 좌측 메뉴 재배치: 전투 / 광산 / 개발실 / 보스전 */
-.tab-bookmark-left {
-  left: -67px;
-  top: 55px;
-}
-
+/* 좌측 메뉴 재배치 값은 상단 .tab-bookmark-left에 통합됨 */
 
 @property --sync {
   syntax: '<percentage>';
@@ -2349,14 +2323,7 @@ body {
   top: 55px;
 }
 
-/* 우측 날개 버튼이 기존 탭 버튼과 정확히 줄 맞도록 고정 */
-.tab-btn {
-  box-sizing: border-box;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* 우측 날개 버튼이 기존 탭 버튼과 정확히 줄 맞도록 고정: 위 .tab-btn 공통 설정에 통합됨 */
 
 .partner-sync-wing {
   position: absolute;
