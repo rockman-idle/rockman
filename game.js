@@ -8,6 +8,12 @@ const defaultData = {
         superRockChip: 0
     },
 
+    development: {
+        currentLabIndex: 0,
+        selectedItem: 'superRock',
+        superRockProgress: 0
+    },
+
     minePickaxeOwned: false,
     minePickaxeTier: 0,
     minePickaxeFloorTier: 0,
@@ -88,7 +94,8 @@ let gameData = {
     lv: { ...defaultData.lv, ...(savedData.lv || {}) },
     costs: { ...defaultData.costs, ...(savedData.costs || {}) },
     partnerSync: { ...defaultData.partnerSync, ...(savedData.partnerSync || {}) },
-    materials: { ...defaultData.materials, ...(savedData.materials || {}) }
+    materials: { ...defaultData.materials, ...(savedData.materials || {}) },
+    development: { ...defaultData.development, ...(savedData.development || {}) }
 };
 
 if (savedData.partnerFragments && !savedData.rushFragments) {
@@ -110,6 +117,10 @@ gameData.materials = { ...defaultData.materials, ...(gameData.materials || {}) }
 Object.keys(defaultData.materials).forEach(key => {
     gameData.materials[key] = Math.max(0, Math.floor(gameData.materials[key] || 0));
 });
+gameData.development = { ...defaultData.development, ...(gameData.development || {}) };
+gameData.development.currentLabIndex = Math.max(0, Math.min(3, Math.floor(gameData.development.currentLabIndex || 0)));
+gameData.development.selectedItem = gameData.development.selectedItem || 'superRock';
+gameData.development.superRockProgress = Math.max(0, Math.min(30, Math.floor(gameData.development.superRockProgress || 0)));
 gameData.minePickaxeOwned = gameData.minePickaxeOwned || false;
 gameData.minePickaxeTier = Math.max(0, Math.floor(gameData.minePickaxeTier || 0));
 gameData.minePickaxeFloorTier = Math.max(0, Math.floor(gameData.minePickaxeFloorTier || 0));
@@ -1373,10 +1384,14 @@ function createProjectileExplosion(screen, centerX, centerY, radius = 40) {
         particle.className = 'projectile-explosion-particle rockexe-explosion-particle';
         particle.style.left = centerX + 'px';
         particle.style.bottom = centerY + 'px';
-        particle.style.setProperty('--x', `${Math.round(Math.cos(angle) * dist)}px`);
-        particle.style.setProperty('--y', `${Math.round(Math.sin(angle) * dist)}px`);
+        const dx = Math.round(Math.cos(angle) * dist);
+        const dy = Math.round(Math.sin(angle) * dist);
+        particle.style.setProperty('--tx', `${dx}px`);
+        // CSS translateY는 양수가 아래 방향이므로, 수학 좌표계의 위쪽(+dy)을 브라우저 좌표계에서는 음수로 변환합니다.
+        // calc(var(--y) * -1) 같은 표현은 Chrome에서 애니메이션이 무시될 수 있어 JS에서 미리 계산합니다.
+        particle.style.setProperty('--ty', `${-dy}px`);
         screen.appendChild(particle);
-        setTimeout(() => particle.remove(), 420);
+        setTimeout(() => particle.remove(), 460);
     }
 
     setTimeout(() => explosion.remove(), 320);
@@ -2884,6 +2899,240 @@ function showBossBattleLockedMessage() {
 }
 
 
+
+const DEVELOPMENT_LAB_DATA = [
+    {
+        key: 'classic',
+        name: '클래식 보스전',
+        sectionName: '클래식 개발 항목',
+        hint: '클래식 보스전에서 데이터칩을 수급합니다.',
+        bg: 'sprites/background/development_lab_bg.png',
+        sprite: 'sprites/background/lab_classic.png'
+    },
+    {
+        key: 'x',
+        name: 'X 보스전',
+        sectionName: 'X 개발 항목',
+        hint: '이레귤러 보스 개발 항목은 다음 단계에서 열립니다.',
+        bg: 'sprites/background/development_lab_bg.png',
+        sprite: 'sprites/background/lab_x.png'
+    },
+    {
+        key: 'exe',
+        name: 'EXE 보스전',
+        sectionName: 'EXE 개발 항목',
+        hint: '바이러스 내비 개발 항목은 다음 단계에서 열립니다.',
+        bg: 'sprites/background/development_lab_bg.png',
+        sprite: 'sprites/background/lab_exe.png'
+    },
+    {
+        key: 'starforce',
+        name: 'STAR FORCE',
+        sectionName: '유성록맨 개발 항목',
+        hint: '스타포스 개발 항목은 다음 단계에서 열립니다.',
+        bg: 'sprites/background/development_lab_bg.png',
+        sprite: 'sprites/background/lab_starforce.png'
+    }
+];
+
+const DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS = 30;
+
+let superRockDevSpriteAnimTimer = null;
+let superRockDevSpriteAnimToken = 0;
+
+function getSuperRockDevelopmentFrame(frame) {
+    return `sprites/armor/super-r/super_r_${String(frame).padStart(2, '0')}.png`;
+}
+
+function playSuperRockDevelopmentSpriteIntro(force = false) {
+    const img = document.getElementById('super-rock-dev-sprite');
+    if (!img) return;
+
+    // 기존 interval 방식은 다른 UI 갱신과 겹칠 때 프레임이 튀어 보일 수 있어,
+    // 단일 setTimeout 체인으로 1 → 7을 정확히 한 번만 재생합니다.
+    superRockDevSpriteAnimToken += 1;
+    const token = superRockDevSpriteAnimToken;
+
+    if (superRockDevSpriteAnimTimer) {
+        clearTimeout(superRockDevSpriteAnimTimer);
+        superRockDevSpriteAnimTimer = null;
+    }
+
+    let frame = 1;
+    img.src = getSuperRockDevelopmentFrame(frame);
+
+    const step = () => {
+        if (token !== superRockDevSpriteAnimToken) return;
+
+        frame += 1;
+        if (frame >= 7) {
+            img.src = getSuperRockDevelopmentFrame(7);
+            superRockDevSpriteAnimTimer = null;
+            return;
+        }
+
+        img.src = getSuperRockDevelopmentFrame(frame);
+        superRockDevSpriteAnimTimer = setTimeout(step, 280);
+    };
+
+    superRockDevSpriteAnimTimer = setTimeout(step, 280);
+}
+
+function getCurrentDevelopmentLab() {
+    const index = Math.max(0, Math.min(DEVELOPMENT_LAB_DATA.length - 1, Math.floor(gameData.development?.currentLabIndex || 0)));
+    return DEVELOPMENT_LAB_DATA[index] || DEVELOPMENT_LAB_DATA[0];
+}
+
+function changeDevelopmentLab(delta = 1, event = null) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    if (!gameData.development) gameData.development = { ...defaultData.development };
+    const total = DEVELOPMENT_LAB_DATA.length;
+    const current = Math.max(0, Math.min(total - 1, Math.floor(gameData.development.currentLabIndex || 0)));
+    gameData.development.currentLabIndex = (current + delta + total) % total;
+    gameData.development.selectedItem = gameData.development.currentLabIndex === 0 ? 'superRock' : '';
+
+    updateDevelopmentLabUI();
+    if (getCurrentDevelopmentLab().key === 'classic') {
+        playSuperRockDevelopmentSpriteIntro(true);
+    }
+    saveData();
+}
+
+function openDevelopmentGroup() {
+    if (!gameData.development) gameData.development = { ...defaultData.development };
+    const lab = getCurrentDevelopmentLab();
+    if (lab.key === 'classic' && !gameData.development.selectedItem) {
+        gameData.development.selectedItem = 'superRock';
+    }
+
+    const panel = document.getElementById('development-item-panel');
+    if (panel) panel.classList.add('open');
+
+    updateDevelopmentLabUI();
+    if (getCurrentDevelopmentLab().key === 'classic') {
+        playSuperRockDevelopmentSpriteIntro(true);
+    }
+    saveData();
+}
+
+function selectDevelopmentItem(itemKey) {
+    if (!gameData.development) gameData.development = { ...defaultData.development };
+    gameData.development.selectedItem = itemKey;
+    updateDevelopmentLabUI();
+    if (itemKey === 'superRock' && getCurrentDevelopmentLab().key === 'classic') {
+        playSuperRockDevelopmentSpriteIntro(true);
+    }
+    saveData();
+}
+
+function upgradeSuperRockDevelopment(event = null) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    if (!gameData.development) gameData.development = { ...defaultData.development };
+
+    const progress = Math.max(0, Math.min(DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS, Math.floor(gameData.development.superRockProgress || 0)));
+    if (progress >= DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS) return;
+    if (!gameData.materials) gameData.materials = { ...defaultData.materials };
+    if ((gameData.materials.superRockChip || 0) <= 0) return;
+
+    gameData.materials.superRockChip = Math.max(0, Math.floor(gameData.materials.superRockChip || 0) - 1);
+    gameData.development.superRockProgress = Math.min(DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS, progress + 1);
+
+    const card = document.getElementById('development-super-rock-card');
+    if (card) {
+        card.classList.remove('developing', 'complete-pulse');
+        void card.offsetWidth;
+        card.classList.add(gameData.development.superRockProgress >= DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS ? 'complete-pulse' : 'developing');
+        setTimeout(() => card.classList.remove('developing', 'complete-pulse'), 720);
+    }
+
+    updateUI();
+    saveData();
+}
+
+function updateDevelopmentLabUI() {
+    if (!gameData.development) gameData.development = { ...defaultData.development };
+    const lab = getCurrentDevelopmentLab();
+    const isClassic = lab.key === 'classic';
+
+    const bg = document.getElementById('development-lab-bg');
+    if (bg) {
+        bg.style.backgroundImage = `url("${lab.bg}")`;
+        bg.dataset.lab = lab.key;
+    }
+
+    const centerSprite = document.getElementById('development-center-sprite');
+    if (centerSprite) {
+        centerSprite.src = lab.sprite;
+        centerSprite.alt = lab.name;
+    }
+
+    const nameEl = document.getElementById('development-lab-name');
+    if (nameEl) nameEl.innerText = lab.name;
+
+    const sectionName = document.getElementById('development-section-name');
+    if (sectionName) sectionName.innerText = lab.sectionName;
+
+    const sectionHint = document.getElementById('development-section-hint');
+    if (sectionHint) sectionHint.innerText = lab.hint;
+
+    const classicList = document.getElementById('development-classic-list');
+    const placeholderList = document.getElementById('development-placeholder-list');
+    if (classicList) classicList.classList.toggle('active', isClassic);
+    if (placeholderList) placeholderList.classList.toggle('active', !isClassic);
+
+    const placeholderTitle = document.getElementById('development-placeholder-title');
+    if (placeholderTitle) placeholderTitle.innerText = `${lab.name} 준비중`;
+    const placeholderDesc = document.getElementById('development-placeholder-desc');
+    if (placeholderDesc) placeholderDesc.innerText = lab.hint;
+
+    document.querySelectorAll('.development-upgrade-card').forEach(card => card.classList.remove('selected'));
+    const selectedMap = {
+        superRock: 'development-super-rock-card',
+        bluesBuster: 'development-blues-buster-card',
+        superForte: 'development-super-forte-card'
+    };
+    const selectedCard = document.getElementById(selectedMap[gameData.development.selectedItem] || 'development-super-rock-card');
+    if (selectedCard && isClassic) selectedCard.classList.add('selected');
+
+    const chipCount = Math.max(0, Math.floor(gameData.materials?.superRockChip || 0));
+    const chipCountEl = document.getElementById('dev-superrock-chip-count');
+    if (chipCountEl) chipCountEl.innerText = chipCount.toLocaleString();
+
+    const progress = Math.max(0, Math.min(DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS, Math.floor(gameData.development.superRockProgress || 0)));
+    const progressText = document.getElementById('super-rock-dev-progress-text');
+    if (progressText) progressText.innerText = `${progress} / ${DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS}`;
+
+    const boxes = document.querySelectorAll('#super-rock-dev-gauge .development-progress-box');
+    boxes.forEach((box, index) => {
+        box.classList.toggle('filled', index < progress);
+    });
+
+    const btn = document.getElementById('super-rock-dev-btn');
+    if (btn) {
+        const complete = progress >= DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS;
+        const canUpgrade = !complete && chipCount > 0;
+        btn.disabled = !canUpgrade;
+        btn.classList.toggle('active', canUpgrade);
+        btn.innerText = complete ? '완료' : '개발';
+        btn.title = complete ? '슈퍼록맨 개발 완료' : (canUpgrade ? '슈퍼록맨 데이터칩 1개를 투입합니다.' : '슈퍼록맨 데이터칩이 부족합니다.');
+    }
+
+    const superRockCard = document.getElementById('development-super-rock-card');
+    if (superRockCard) {
+        superRockCard.classList.toggle('complete', progress >= DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS);
+    }
+
+}
+
+
 function showTab(tabName) {
     if (isBossBattle && !enemyDead && !playerDead && tabName !== 'battle') {
         updateBossBattleTabLockState();
@@ -2912,6 +3161,15 @@ function showTab(tabName) {
     if (targetTab) targetTab.classList.add('active');
     if (targetBtn) targetBtn.classList.add('active');
 
+    if (tabName === 'armor') {
+        setTimeout(() => {
+            updateDevelopmentLabUI();
+            if (getCurrentDevelopmentLab().key === 'classic') {
+                playSuperRockDevelopmentSpriteIntro(true);
+            }
+        }, 0);
+    }
+
     if (tabName === 'boss' && typeof normalizeCutmanBossCardUI === 'function') {
         setTimeout(normalizeCutmanBossCardUI, 0);
     }
@@ -2926,7 +3184,7 @@ function showTab(tabName) {
 }
 
 function showArmorTab(type) {
-    const armorImg = document.getElementById('armor-img');
+    const armorImg = document.querySelector('#armor-tab .armor-main-image') || document.getElementById('armor-img');
     const armorName = document.getElementById('armor-name');
 
     const armorData = {
@@ -2939,16 +3197,15 @@ function showArmorTab(type) {
 
     if (!armorData[type]) return;
 
-    armorImg.src = armorData[type].img;
-    armorName.innerText = armorData[type].name;
+    if (armorImg) armorImg.src = armorData[type].img;
+    if (armorName) armorName.innerText = armorData[type].name;
 
     document.querySelectorAll('#armor-tab .inner-tab').forEach(btn => {
         btn.classList.remove('active');
     });
 
-    if (event && event.target) {
-        event.target.classList.add('active');
-    }
+    const activeBtn = document.querySelector(`#armor-tab .inner-tab[onclick*="${type}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
 }
 
 function toggleBossGroup(groupKey) {
@@ -3887,6 +4144,7 @@ forteUpgradeEls.forEach(el => {
 });
 
 updatePartnerAttackUpgradeUI();
+updateDevelopmentLabUI();
 
 const superRockGemEls = document.querySelectorAll('.super-rock-gem-count');
 superRockGemEls.forEach(el => {
@@ -4025,7 +4283,7 @@ function devCheat() {
     gameData.crystals += 1000;
     gameData.stones += 1000;
     gameData.materials.cardChip += 30;
-    gameData.materials.superRockChip += 3;
+    gameData.materials.superRockChip += 30;
 
     updateUI();
     saveData();

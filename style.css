@@ -4169,3 +4169,787 @@ body {
 .cutman-death-particle {
   animation: cutmanDeathParticle 2.2s ease-out forwards;
 }
+
+/* 록맨.EXE 치명타 포물선탄 착탄 폭발 이펙트 복구 v27 - Chrome 안전형 */
+.projectile-explosion {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  z-index: 32;
+  transform: scale(0.2);
+  opacity: 0;
+  box-sizing: border-box;
+}
+
+.rockexe-explosion {
+  background:
+    radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,231,77,0.92) 18%, rgba(255,112,0,0.72) 42%, rgba(255,0,0,0.28) 66%, transparent 72%);
+  border: 2px solid rgba(255, 240, 120, 0.95);
+  box-shadow:
+    0 0 7px #ffffff,
+    0 0 13px #ffd700,
+    0 0 24px #ff7a00,
+    inset 0 0 10px rgba(255, 255, 255, 0.75);
+  animation: rockexeExplosionPop 0.32s ease-out forwards;
+}
+
+.projectile-explosion-particle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  pointer-events: none;
+  border-radius: 50%;
+  z-index: 33;
+  transform: translate(-50%, 50%) scale(1);
+  opacity: 1;
+}
+
+.rockexe-explosion-particle {
+  background: #fff2a0;
+  box-shadow:
+    0 0 5px #ffffff,
+    0 0 9px #ffd700,
+    0 0 14px #ff7a00;
+  animation: rockexeExplosionParticle 0.42s ease-out forwards;
+}
+
+@keyframes rockexeExplosionPop {
+  0% {
+    transform: scale(0.18) rotate(0deg);
+    opacity: 0;
+    filter: brightness(1.8);
+  }
+  20% {
+    transform: scale(0.88) rotate(8deg);
+    opacity: 1;
+    filter: brightness(2.2);
+  }
+  58% {
+    transform: scale(1.18) rotate(18deg);
+    opacity: 0.92;
+    filter: brightness(1.45);
+  }
+  100% {
+    transform: scale(1.45) rotate(28deg);
+    opacity: 0;
+    filter: brightness(1);
+  }
+}
+
+@keyframes rockexeExplosionParticle {
+  0% {
+    transform: translate(-50%, 50%) scale(1.15);
+    opacity: 1;
+  }
+  72% {
+    opacity: 0.95;
+  }
+  100% {
+    /* Chrome 호환: calc 안에서 곱셈을 쓰지 않고, JS에서 --tx/--ty를 미리 계산합니다. */
+    transform: translate(calc(var(--tx, 0px) - 50%), calc(var(--ty, 0px) + 50%)) scale(0.15);
+    opacity: 0;
+  }
+}
+
+
+/* 개발실 카드형 배경: 광산 화면처럼 상단에 연구실 카드 추가 */
+.development-lab-card {
+  position: relative;
+  height: 120px;
+  margin: 8px 0 10px;
+  border: 2px solid #00d4ff;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #111;
+  box-shadow: inset 0 0 18px rgba(0, 212, 255, 0.16), 0 0 8px rgba(0, 212, 255, 0.22);
+}
+
+.development-lab-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.26)),
+    radial-gradient(circle at 50% 62%, rgba(0, 212, 255, 0.12), transparent 34%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.development-lab-card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 22px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.42), transparent);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.development-lab-screen {
+  position: absolute;
+  inset: 0;
+  background-image: url("sprites/background/development_lab_bg.png");
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  z-index: 1;
+}
+
+.development-display-overlay {
+  position: absolute;
+  left: 158px;
+  top: 60px;
+  width: 160px;
+  height: 31px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #bff7ff;
+  font-family: 'Courier New', monospace;
+  text-align: center;
+  pointer-events: none;
+  text-shadow: 0 0 5px #00d4ff, 0 0 8px #003cff;
+  opacity: 0.9;
+  z-index: 4;
+}
+
+.development-display-title {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.development-display-sub {
+  margin-top: 3px;
+  font-size: 7px;
+  color: #7dffb0;
+  line-height: 1;
+}
+
+.development-guide-text {
+  margin-top: 8px;
+}
+
+.development-card-panel {
+  padding: 8px;
+  border: 1px solid #333;
+  border-radius: 7px;
+  background: linear-gradient(to bottom, #090909, #050505);
+}
+
+/* 개발실 v2: 카테고리 카드 + 클래식 개발 항목 */
+.development-panel-v2 {
+  min-height: 420px;
+  padding: 14px 15px 16px;
+}
+
+.development-panel-v2 h2 {
+  margin-bottom: 10px;
+}
+
+.development-lab-card-v2 {
+  position: relative;
+  margin: 0 0 10px;
+  border: 2px solid #00d4ff;
+  border-radius: 8px;
+  background: #050505;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.42), inset 0 0 12px rgba(0, 212, 255, 0.12);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.development-lab-card-v2:hover {
+  box-shadow: 0 0 14px rgba(0, 212, 255, 0.78), inset 0 0 14px rgba(0, 212, 255, 0.18);
+}
+
+.development-lab-bg-v2 {
+  position: relative;
+  height: 132px;
+  background-image: url("sprites/background/development_lab_bg.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  image-rendering: pixelated;
+  overflow: hidden;
+}
+
+.development-lab-bg-v2::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.02), rgba(0,0,0,0.18));
+  pointer-events: none;
+  z-index: 2;
+}
+
+.development-nav-btn {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  background: linear-gradient(to right, #fff47a 0%, #ffd31a 58%, #b86f00 100%);
+  color: transparent;
+  font-size: 0;
+  cursor: pointer;
+  z-index: 8;
+  filter:
+    drop-shadow(0 0 3px rgba(255, 211, 26, 0.75))
+    drop-shadow(2px 2px 0 rgba(80, 42, 0, 0.68));
+  transition: transform 0.13s ease-out, filter 0.13s ease-out;
+}
+
+.development-nav-btn::before {
+  display: none;
+}
+
+.development-nav-prev {
+  left: 128px;
+  transform: translateY(-50%);
+  clip-path: polygon(100% 0, 15% 50%, 100% 100%, 67% 50%);
+}
+
+.development-nav-next {
+  right: 128px;
+  transform: translateY(-50%);
+  clip-path: polygon(0 0, 85% 50%, 0 100%, 33% 50%);
+}
+
+.development-nav-btn:hover {
+  transform: translateY(-50%) scale(1.18);
+  filter:
+    brightness(1.16)
+    drop-shadow(0 0 5px rgba(255, 230, 107, 1))
+    drop-shadow(3px 3px 0 rgba(80, 42, 0, 0.7));
+}
+
+.development-center-sprite-frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 300px;
+  height: 108px;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+  pointer-events: none;
+  border: none;
+  background: transparent;
+}
+
+.development-center-sprite {
+  width: 284px;
+  height: 94px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 7px rgba(0, 212, 255, 0.75)) drop-shadow(0 3px 0 rgba(0,0,0,0.65));
+}
+
+.development-lab-name {
+  display: none;
+}
+
+.development-item-panel {
+  display: none;
+  margin-top: 8px;
+  padding: 9px;
+  border: 1px solid #224b5c;
+  border-radius: 7px;
+  background: linear-gradient(to bottom, #07131a, #05080a);
+  box-shadow: inset 0 0 12px rgba(0, 212, 255, 0.08);
+}
+
+.development-item-panel.open {
+  display: block;
+}
+
+.development-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #00d4ff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+#development-section-hint {
+  color: #9fdfff;
+  font-size: 10px;
+  font-weight: bold;
+  text-align: right;
+  line-height: 1.25;
+}
+
+.development-upgrade-list,
+.development-placeholder-list {
+  display: none;
+}
+
+.development-upgrade-list.active,
+.development-placeholder-list.active {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.development-upgrade-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 2px solid #333;
+  border-radius: 7px;
+  background: #101010;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.14s ease-out, border-color 0.14s ease-out, box-shadow 0.14s ease-out, filter 0.14s ease-out;
+}
+
+.development-upgrade-card:hover {
+  transform: scale(1.018);
+  border-color: #00d4ff;
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.55);
+  filter: brightness(1.08);
+}
+
+.development-upgrade-card.selected {
+  border-color: #ffd31a;
+  box-shadow: 0 0 8px rgba(255, 211, 26, 0.65), inset 0 0 8px rgba(255, 211, 26, 0.12);
+}
+
+.development-upgrade-card.complete {
+  border-color: #00ff66;
+  box-shadow: 0 0 8px rgba(0, 255, 102, 0.7), inset 0 0 8px rgba(0, 255, 102, 0.12);
+}
+
+.development-sprite-box {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #060606;
+  border: 1px solid #333;
+  border-radius: 6px;
+}
+
+.development-upgrade-sprite {
+  max-width: 52px;
+  max-height: 52px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.super-rock-dev-sprite {
+  max-width: 60px;
+  max-height: 60px;
+}
+
+.development-upgrade-main {
+  min-width: 0;
+}
+
+.development-upgrade-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.development-upgrade-name {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.development-upgrade-desc {
+  margin-top: 2px;
+  color: #8fe8ff;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.development-chip-owned {
+  flex: 0 0 auto;
+  padding: 3px 6px;
+  color: #ffd31a;
+  background: #1a1300;
+  border: 1px solid #7a5b00;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.development-chip-owned b {
+  color: #fff2a0;
+}
+
+.development-chip-owned.muted {
+  color: #777;
+  background: #0b0b0b;
+  border-color: #333;
+}
+
+.development-progress-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 5px;
+  align-items: center;
+}
+
+.development-box-gauge {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  gap: 2px;
+}
+
+.development-progress-box {
+  height: 8px;
+  background: #080808;
+  border: 1px solid #444;
+  box-shadow: inset 0 0 3px #000;
+}
+
+.development-progress-box.filled {
+  background: #ffd31a;
+  border-color: #fff2a0;
+  box-shadow: 0 0 5px #ffd31a, inset 0 0 2px #fff2a0;
+}
+
+.development-progress-text {
+  color: #fff2a0;
+  font-size: 10px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.development-upgrade-actions {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.development-enhance-btn {
+  min-width: 50px;
+  height: 42px;
+  padding: 4px 8px;
+  color: #777;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: default;
+}
+
+.development-enhance-btn.active {
+  color: #000;
+  background: #ffd31a;
+  border-color: #fff2a0;
+  box-shadow: 0 0 8px rgba(255, 211, 26, 0.85);
+  cursor: pointer;
+}
+
+.development-enhance-btn.active:hover {
+  transform: scale(1.08);
+  filter: brightness(1.14);
+}
+
+.development-locked-note {
+  padding: 6px 8px;
+  color: #777;
+  background: #070707;
+  border: 1px dashed #333;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.development-placeholder-card {
+  padding: 18px 12px;
+  background: #0c0c0c;
+  border: 1px dashed #333;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.development-placeholder-title {
+  margin-bottom: 6px;
+  color: #ffd31a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.development-placeholder-desc {
+  color: #aaa;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.development-upgrade-card.developing {
+  animation: developmentCardCharge 0.72s ease-out;
+}
+
+.development-upgrade-card.complete-pulse {
+  animation: developmentCompletePulse 0.72s ease-out;
+}
+
+@keyframes developmentCardCharge {
+  0% { filter: brightness(1); transform: scale(1); }
+  28% { filter: brightness(1.6); transform: scale(1.025); }
+  58% { filter: brightness(1.15); transform: scale(1.01); }
+  100% { filter: brightness(1); transform: scale(1); }
+}
+
+@keyframes developmentCompletePulse {
+  0% { filter: brightness(1); transform: scale(1); }
+  35% { filter: brightness(2); transform: scale(1.04); box-shadow: 0 0 14px #00ff66; }
+  100% { filter: brightness(1); transform: scale(1); }
+}
+
+
+/* v2.05: 상단 제목을 BOSS BATTLE과 같은 크기/서체로 통일 */
+.partner-panel h2,
+.system-panel h2,
+.mine-panel h2,
+.boss-panel-v2 h2,
+.development-panel-v2 h2 {
+    margin: 0 0 12px 0 !important;
+    color: #00d4ff !important;
+    font-family: 'Courier New', monospace !important;
+    font-size: 1.5em !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+    text-shadow: 0 0 8px #00d4ff !important;
+}
+
+.mine-panel h2 {
+    color: #ffd700 !important;
+    text-shadow: 0 0 8px #ffd700 !important;
+}
+
+/* v2.05: 개발실 노란 화살표를 작고 두께감 있는 픽셀 버튼으로 재정리 */
+.development-nav-btn {
+    width: 22px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    clip-path: none !important;
+    color: #ffd31a !important;
+    font-size: 18px !important;
+    line-height: 28px !important;
+    font-weight: 900 !important;
+    font-family: Arial, 'Courier New', monospace !important;
+    text-align: center !important;
+    text-shadow:
+        1px 0 0 #8a5200,
+        -1px 0 0 #8a5200,
+        0 1px 0 #8a5200,
+        0 -1px 0 #fff47a,
+        2px 2px 0 rgba(35, 18, 0, 0.8),
+        0 0 5px rgba(255, 211, 26, 0.85) !important;
+    filter: none !important;
+    opacity: 0.95;
+    transition: transform 0.12s ease-out, opacity 0.12s ease-out, text-shadow 0.12s ease-out !important;
+}
+
+.development-nav-prev {
+    left: 116px !important;
+    transform: translateY(-50%) !important;
+}
+
+.development-nav-next {
+    right: 116px !important;
+    transform: translateY(-50%) !important;
+}
+
+.development-nav-btn:hover {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.16) !important;
+    text-shadow:
+        1px 0 0 #8a5200,
+        -1px 0 0 #8a5200,
+        0 1px 0 #8a5200,
+        0 -1px 0 #fff9a8,
+        2px 2px 0 rgba(35, 18, 0, 0.9),
+        0 0 8px rgba(255, 240, 100, 1) !important;
+}
+
+/* v2.06: PARTNER / LABORATORY / MINE / BOSS BATTLE 제목 강제 통일 */
+.section-heading-pixel,
+.partner-panel h2.section-heading-pixel,
+.system-panel h2.section-heading-pixel,
+.development-panel-v2 h2.section-heading-pixel,
+.boss-panel-v2 h2.section-heading-pixel,
+.mine-panel h2.section-heading-pixel {
+  display: block !important;
+  margin: 0 0 12px 0 !important;
+  padding: 0 !important;
+  color: #00d4ff !important;
+  font-family: 'Courier New', Courier, monospace !important;
+  font-size: 24px !important;
+  line-height: 1.2 !important;
+  font-weight: 900 !important;
+  letter-spacing: 0 !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  text-shadow: 0 0 8px #00d4ff !important;
+}
+
+/* v2.06: 개발실 화살표 버튼 최종형 */
+.development-nav-btn {
+  width: 18px !important;
+  height: 24px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #ffd31a !important;
+  font-size: 15px !important;
+  line-height: 24px !important;
+  font-weight: 900 !important;
+  font-family: 'Arial Black', Arial, 'Courier New', monospace !important;
+  text-align: center !important;
+  text-shadow:
+    1px 0 0 #8a5200,
+    -1px 0 0 #8a5200,
+    0 1px 0 #8a5200,
+    0 -1px 0 #fff2a0,
+    2px 2px 0 rgba(40, 20, 0, 0.85),
+    0 0 4px rgba(255, 211, 26, 0.9) !important;
+  filter: none !important;
+  clip-path: none !important;
+}
+
+.development-nav-prev {
+  left: 118px !important;
+  transform: translateY(-50%) !important;
+}
+
+.development-nav-next {
+  right: 118px !important;
+  transform: translateY(-50%) !important;
+}
+
+.development-nav-btn:hover {
+  transform: translateY(-50%) scale(1.14) !important;
+  text-shadow:
+    1px 0 0 #8a5200,
+    -1px 0 0 #8a5200,
+    0 1px 0 #8a5200,
+    0 -1px 0 #fff9a8,
+    2px 2px 0 rgba(40, 20, 0, 0.9),
+    0 0 7px rgba(255, 240, 100, 1) !important;
+}
+
+
+/* v2.07: 탭 제목 최종 강제 통일
+   BOSS BATTLE과 같은 body 기본 픽셀 서체(Courier New), 크기, 굵기, 색상으로 맞춥니다. */
+#partner-tab .partner-panel > h2,
+#partner-tab .partner-panel > h2.section-heading-pixel,
+#armor-tab .system-panel > h2,
+#armor-tab .system-panel > h2.section-heading-pixel,
+#boss-tab .boss-panel-v2 > h2,
+#boss-tab .boss-panel-v2 > h2.section-heading-pixel,
+#mine-tab .mine-panel > h2,
+#mine-tab .mine-panel > h2.section-heading-pixel,
+h2.section-heading-pixel {
+    display: block !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    margin: 0 0 12px 0 !important;
+    padding: 0 !important;
+    color: #00d4ff !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 24px !important;
+    line-height: 29px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0 !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
+    text-shadow: 0 0 8px #00d4ff !important;
+    background: transparent !important;
+    border: 0 !important;
+}
+
+/* v2.07: 기존 mine h2 노란색 지정까지 완전히 덮어씁니다. */
+#mine-tab .mine-panel > h2,
+#mine-tab .mine-panel > h2.section-heading-pixel {
+    color: #00d4ff !important;
+    text-shadow: 0 0 8px #00d4ff !important;
+}
+
+/* v2.07: 슈퍼록맨 개발 카드 스프라이트가 프레임 전환 중 흔들리지 않도록 고정 */
+#super-rock-dev-sprite.super-rock-dev-sprite,
+#super-rock-dev-sprite.development-upgrade-sprite {
+    width: 78px !important;
+    height: 78px !important;
+    object-fit: contain !important;
+    image-rendering: pixelated !important;
+}
+
+/* v2.08: 상단 탭 제목을 고딕 계열로 재통일 + 탭별 색상 지정 */
+#partner-tab .partner-panel > h2,
+#partner-tab .partner-panel > h2.section-heading-pixel,
+#armor-tab .system-panel > h2,
+#armor-tab .system-panel > h2.section-heading-pixel,
+#boss-tab .boss-panel-v2 > h2,
+#boss-tab .boss-panel-v2 > h2.section-heading-pixel,
+#mine-tab .mine-panel > h2,
+#mine-tab .mine-panel > h2.section-heading-pixel,
+h2.section-heading-pixel {
+    display: block !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    margin: 0 0 12px 0 !important;
+    padding: 0 !important;
+    font-family: Arial, 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif !important;
+    font-size: 24px !important;
+    line-height: 29px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.5px !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
+    background: transparent !important;
+    border: 0 !important;
+}
+
+#partner-tab .partner-panel > h2,
+#partner-tab .partner-panel > h2.section-heading-pixel {
+    color: #00d4ff !important;
+    text-shadow: 0 0 8px #00d4ff, 0 0 14px rgba(0, 212, 255, 0.45) !important;
+}
+
+#armor-tab .system-panel > h2,
+#armor-tab .system-panel > h2.section-heading-pixel {
+    color: #ff4fd8 !important;
+    text-shadow: 0 0 8px #ff4fd8, 0 0 14px rgba(255, 79, 216, 0.45) !important;
+}
+
+#boss-tab .boss-panel-v2 > h2,
+#boss-tab .boss-panel-v2 > h2.section-heading-pixel {
+    color: #ff5555 !important;
+    text-shadow: 0 0 8px #ff5555, 0 0 14px rgba(255, 85, 85, 0.45) !important;
+}
+
+#mine-tab .mine-panel > h2,
+#mine-tab .mine-panel > h2.section-heading-pixel {
+    color: #ffd700 !important;
+    text-shadow: 0 0 8px #ffd700, 0 0 14px rgba(255, 215, 0, 0.45) !important;
+}

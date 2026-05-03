@@ -3,12 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=development_lab_v2_08">
 </head>
 
 <body>
 <div class="preload">
     <img src="sprites/background/stage_01.png">
+    <img src="sprites/background/development_lab_bg.png">
+    <img src="sprites/background/lab_classic.png">
+    <img src="sprites/background/lab_x.png">
+    <img src="sprites/background/lab_exe.png">
+    <img src="sprites/background/lab_starforce.png">
     <img src="sprites/rock/rock_01.png">
     <img src="sprites/rock/rock_02.png">
     <img src="sprites/rock/rock_03.png">
@@ -115,6 +120,13 @@
     <img src="sprites/partner/x/x_portrait.png">
     <img src="sprites/partner/zero/zero_portrait.png">
     <img src="sprites/armor/super-r/super-r.png">
+    <img src="sprites/armor/super-r/super_r_01.png">
+    <img src="sprites/armor/super-r/super_r_02.png">
+    <img src="sprites/armor/super-r/super_r_03.png">
+    <img src="sprites/armor/super-r/super_r_04.png">
+    <img src="sprites/armor/super-r/super_r_05.png">
+    <img src="sprites/armor/super-r/super_r_06.png">
+    <img src="sprites/armor/super-r/super_r_07.png">
     <img src="sprites/boss/super-rboss/super-rboss.png">
     <img src="sprites/boss/super-rboss/cutman/cutman_portrait.png">
     <img src="sprites/boss/super-rboss/cutman/cutman_at_01.png">
@@ -169,13 +181,13 @@
 
 <div id="partner-sync-wing" class="partner-sync-wing">
     <button id="partner-sync-wing-btn" class="partner-sync-wing-btn" onclick="togglePartnerAttackUpgrade()">
-        동료<br>공격력
+        동료<br>싱크로율
     </button>
 
     <div id="partner-sync-wing-panel" class="partner-sync-wing-panel">
         <div class="partner-attack-upgrade-box visible">
             <div id="partner-attack-upgrade-header" class="partner-attack-upgrade-header active">
-                <span>동료 공격력</span>
+                <span>동료 싱크로율</span>
                 <span class="partner-attack-cost">💎 30</span>
             </div>
 
@@ -381,7 +393,7 @@
 
     <div id="partner-tab" class="tab-content">
         <div class="partner-panel">
-            <h2>동료</h2>
+            <h2 class="section-heading-pixel">PARTNER</h2>
             <p class="partner-desc">크리스탈로 동료 조각을 구매하고 동료를 소환할 수 있습니다.</p>
 
 <div id="rush-card" class="partner-card">
@@ -585,89 +597,111 @@
     </div>
 
     <div id="armor-tab" class="tab-content">
-    <div class="system-panel">
-        <h2>개발실</h2>
+    <div class="system-panel development-panel-v2">
+        <h2 class="section-heading-pixel">LABORATORY</h2>
 
-        <div class="inner-tabs">
-            <button class="inner-tab active" onclick="showArmorTab('super-r')">슈퍼록맨</button>
-            <button class="inner-tab" onclick="showArmorTab('first')">퍼스트아머</button>
-            <button class="inner-tab" onclick="showArmorTab('second')">세컨드아머</button>
-            <button class="inner-tab" onclick="showArmorTab('third')">서드아머</button>
-            <button class="inner-tab" onclick="showArmorTab('fourth')">포스아머</button>
+        <div id="development-lab-card" class="development-lab-card-v2" onclick="openDevelopmentGroup()" role="button" aria-label="개발실 카테고리 선택">
+          <div id="development-lab-bg" class="development-lab-bg-v2">
+            <button class="development-nav-btn development-nav-prev" type="button" onclick="changeDevelopmentLab(-1, event)" aria-label="이전 개발실">◀</button>
+            <button class="development-nav-btn development-nav-next" type="button" onclick="changeDevelopmentLab(1, event)" aria-label="다음 개발실">▶</button>
+
+            <div class="development-center-sprite-frame">
+              <img id="development-center-sprite" class="development-center-sprite development-lab-preview-img" src="sprites/background/lab_classic.png" alt="개발실 항목">
+            </div>
+
+            <div id="development-lab-name" class="development-lab-name">클래식 보스전</div>
+          </div>
         </div>
 
-<div class="armor-guide-text">
-  슈퍼록맨 보스전에서 강화 재료 수급 
-  <span class="armor-material-owned">🔴 : <span class="super-rock-gem-count">0</span> 보유중</span>
+        <div id="development-item-panel" class="development-item-panel open">
+          <div class="development-section-title">
+            <span id="development-section-name">클래식 개발 항목</span>
+            <span id="development-section-hint">클래식 보스전에서 데이터칩을 수급합니다.</span>
+          </div>
+
+          <div id="development-classic-list" class="development-upgrade-list active">
+            <div id="development-super-rock-card" class="development-upgrade-card selected" onclick="selectDevelopmentItem('superRock')">
+              <div class="development-upgrade-left">
+                <div class="development-sprite-box">
+                  <img id="super-rock-dev-sprite" class="development-upgrade-sprite super-rock-dev-sprite" src="sprites/armor/super-r/super_r_01.png" alt="슈퍼록맨">
+                </div>
+              </div>
+
+              <div class="development-upgrade-main">
+                <div class="development-upgrade-title-row">
+                  <div>
+                    <div class="development-upgrade-name">슈퍼록맨</div>
+                    <div class="development-upgrade-desc">러쉬 합체 프로젝트</div>
+                  </div>
+                </div>
+
+                <div class="development-progress-row">
+                  <div class="development-box-gauge" id="super-rock-dev-gauge">
+                    <span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span>
+                    <span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span>
+                    <span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span>
+                    <span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span>
+                    <span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span>
+                    <span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="development-upgrade-actions">
+                <button id="super-rock-dev-btn" class="development-enhance-btn" type="button" onclick="upgradeSuperRockDevelopment(event)">개발</button>
+              </div>
+            </div>
+
+            <div id="development-blues-buster-card" class="development-upgrade-card" onclick="selectDevelopmentItem('bluesBuster')">
+              <div class="development-upgrade-left">
+                <div class="development-sprite-box">
+                  <img class="development-upgrade-sprite" src="sprites/partner/blues/blues_portrait.png" alt="브루스버스터">
+                </div>
+              </div>
+              <div class="development-upgrade-main">
+                <div class="development-upgrade-title-row">
+                  <div>
+                    <div class="development-upgrade-name">브루스버스터</div>
+                    <div class="development-upgrade-desc">브루스 원거리 버스터 연구</div>
+                  </div>
+                  <div class="development-chip-owned muted">준비중</div>
+                </div>
+                <div class="development-locked-note">다음 단계에서 데이터칩/효과 연결 예정</div>
+              </div>
+            </div>
+
+            <div id="development-super-forte-card" class="development-upgrade-card" onclick="selectDevelopmentItem('superForte')">
+              <div class="development-upgrade-left">
+                <div class="development-sprite-box">
+                  <img class="development-upgrade-sprite" src="sprites/partner/forte/forte_portrait.png" alt="슈퍼포르테">
+                </div>
+              </div>
+              <div class="development-upgrade-main">
+                <div class="development-upgrade-title-row">
+                  <div>
+                    <div class="development-upgrade-name">슈퍼포르테</div>
+                    <div class="development-upgrade-desc">포르테 변신 프로젝트</div>
+                  </div>
+                  <div class="development-chip-owned muted">준비중</div>
+                </div>
+                <div class="development-locked-note">다음 단계에서 데이터칩/효과 연결 예정</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="development-placeholder-list" class="development-placeholder-list">
+            <div class="development-placeholder-card">
+              <div class="development-placeholder-title" id="development-placeholder-title">준비중</div>
+              <div class="development-placeholder-desc" id="development-placeholder-desc">해당 개발 항목은 다음 단계에서 연결됩니다.</div>
+            </div>
+          </div>
+        </div>
+    </div>
 </div>
-<div class="armor-layout">
-
-  <!-- 좌측 이미지 -->
-  <div class="armor-left">
-    <img class="armor-main-image" src="sprites/armor/super-r/super-r.png">
-  </div>
-
-  <!-- 우측 파츠 -->
-  <div class="armor-right">
-
-    <div class="armor-part-row">
-      <div class="armor-part-name">헤드 파츠</div>
-      <div class="armor-box-gauge">
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span>
-      </div>
-    </div>
-
-    <div class="armor-part-row">
-      <div class="armor-part-name">바디 파츠</div>
-      <div class="armor-box-gauge">
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span>
-      </div>
-    </div>
-
-    <div class="armor-part-row">
-      <div class="armor-part-name">암 파츠</div>
-      <div class="armor-box-gauge">
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span>
-      </div>
-    </div>
-
-    <div class="armor-part-row">
-      <div class="armor-part-name">풋 파츠</div>
-      <div class="armor-box-gauge">
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span>
-      </div>
-    </div>
-
-    <div class="armor-part-row">
-      <div class="armor-part-name">코어 파츠</div>
-      <div class="armor-box-gauge">
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span><span class="armor-box"></span><span class="armor-box"></span>
-        <span class="armor-box"></span>
-   </div>
-    </div> <!-- 코어 파츠 -->
-
-  </div> <!-- armor-right -->
-</div> <!-- armor-layout -->
-</div> <!-- system-panel -->
-</div> <!-- armor-tab -->
 
 <div id="boss-tab" class="tab-content">
   <div class="system-panel boss-panel-v2">
-    <h2>BOSS BATTLE</h2>
+    <h2 class="section-heading-pixel">BOSS BATTLE</h2>
 
     <div class="boss-category-list">
       <button id="boss-group-classic-btn" class="boss-category-btn active" onclick="toggleBossGroup('classic')">클래식 보스전</button>
@@ -724,7 +758,7 @@
 
 <div id="mine-tab" class="tab-content">
   <div class="system-panel mine-panel">
-    <h2>MINE</h2>
+    <h2 class="section-heading-pixel">MINE</h2>
     <div class="mine-guide-text">피켈맨 : 여기는 야근 수당이 어떻게 돼요?</div>
 
     <div class="mine-resource-row">
@@ -791,7 +825,7 @@
 </div>
 </div>
 
-<script src="game.js"></script>
+<script src="game.js?v=development_lab_v2_08"></script>
 
 
 </body>
