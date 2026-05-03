@@ -3,6 +3,10 @@ const defaultData = {
     crystals: 0,
     superRockGem: 0,
     stones: 0,
+    materials: {
+        cardChip: 0,
+        superRockChip: 0
+    },
 
     minePickaxeOwned: false,
     minePickaxeTier: 0,
@@ -83,7 +87,8 @@ let gameData = {
     ...savedData,
     lv: { ...defaultData.lv, ...(savedData.lv || {}) },
     costs: { ...defaultData.costs, ...(savedData.costs || {}) },
-    partnerSync: { ...defaultData.partnerSync, ...(savedData.partnerSync || {}) }
+    partnerSync: { ...defaultData.partnerSync, ...(savedData.partnerSync || {}) },
+    materials: { ...defaultData.materials, ...(savedData.materials || {}) }
 };
 
 if (savedData.partnerFragments && !savedData.rushFragments) {
@@ -98,6 +103,13 @@ gameData.screws = Math.floor(gameData.screws || 0);
 gameData.crystals = Math.floor(gameData.crystals || 0);
 gameData.superRockGem = Math.floor(gameData.superRockGem || 0);
 gameData.stones = Math.floor(gameData.stones || 0);
+gameData.materials = { ...defaultData.materials, ...(gameData.materials || {}) };
+gameData.materials.cardChip = Math.floor(gameData.materials.cardChip || 0);
+gameData.materials.superRockChip = Math.floor(gameData.materials.superRockChip || 0);
+gameData.materials = { ...defaultData.materials, ...(gameData.materials || {}) };
+Object.keys(defaultData.materials).forEach(key => {
+    gameData.materials[key] = Math.max(0, Math.floor(gameData.materials[key] || 0));
+});
 gameData.minePickaxeOwned = gameData.minePickaxeOwned || false;
 gameData.minePickaxeTier = Math.max(0, Math.floor(gameData.minePickaxeTier || 0));
 gameData.minePickaxeFloorTier = Math.max(0, Math.floor(gameData.minePickaxeFloorTier || 0));
@@ -158,10 +170,11 @@ const BOSS_BOTTOM = 24;
 const SNIPERJOE_BUSTER_DAMAGE_RATE = 0.5;
 const SNIPERJOE_DODGE_CHANCE = 0.10;
 
-// 투사체 속도 보정: 원거리에서 보이던 속도를 기준으로, 거리 변화에 따라 이동 시간을 자동 조절합니다.
-// 기존에는 이동 거리는 바뀌는데 duration이 고정이라 가까울수록 탄이 느려 보였습니다.
+// 투사체 속도 보정 핵심값입니다.
+// 모든 원거리 투사체가 같은 체감 속도로 이동하도록 공통 탄속(px/ms)을 사용합니다.
+// 값이 클수록 빠릅니다. 0.38은 기존 원거리 탄속보다 약간 정돈된 기준입니다.
 const PROJECTILE_MIN_DURATION = 90;
-const SNIPERJOE_BULLET_DURATION = 1040;
+const PROJECTILE_SPEED_PX_PER_MS = 0.38;
 
 const ENEMY_TYPE_DATA = {
     met: {
@@ -178,6 +191,48 @@ const ENEMY_TYPE_DATA = {
         jumpFrame: 'sprites/enemy/sniperjoe/sniperjoe_04.png'
     }
 };
+
+
+const BOSS_BATTLE_DATA = {
+    classic_cutman: {
+        group: 'classic',
+        name: '컷맨',
+        entryCost: 30,
+        hp: 5000,
+        atk: 20,
+        speed: 0.18,
+        attackInterval: 5200,
+        cutterSpeed: 0.34,
+        cutterDamageMultiplier: 1.15,
+        sprite: 'sprites/boss/super-rboss/cutman/cutman_at_01.png',
+        attackSprite: 'sprites/boss/super-rboss/cutman/cutman_at_02.png',
+        deadSprite: 'sprites/boss/super-rboss/cutman/cutman_dead.png',
+        cutterSprite: 'sprites/boss/super-rboss/cutman/cutman_bullet_01.png',
+        width: 60,
+        height: 60,
+        startX: 342,
+        bottom: 13,
+        marginTop: -8,
+        rewards: {
+            screwsMin: 180,
+            screwsMax: 320,
+            cardChipChance: 0.78,
+            cardChipMin: 1,
+            cardChipMax: 2,
+            superRockChipChance: 0.05,
+            superRockChipMin: 1,
+            superRockChipMax: 1
+        }
+    }
+};
+
+function getBossData(bossKey = currentBossType) {
+    return BOSS_BATTLE_DATA[bossKey] || BOSS_BATTLE_DATA.classic_cutman;
+}
+
+function rollInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 const PARTNER_ATTACK_DATA = {
     blues: {
@@ -318,9 +373,6 @@ const PARTNER_ATTACK_DATA = {
 
         arcChargeProjectile: true,
         arcHeight: 24,
-        arcHeightMin: 18,
-        arcHeightMax: 34,
-        explosionRadius: 44,
         shotDuration: 920,
         chargeShotDuration: 1360
     }
@@ -345,6 +397,8 @@ let currentEnemyType = 'met';
 let sniperJoeActionTimer = null;
 let sniperJoeJumping = false;
 let sniperJoeAttacking = false;
+let cutmanBossActionTimer = null;
+let cutmanBossAttacking = false;
 
 let rockFrame = 1;
 let rockDir = 1;
@@ -419,6 +473,9 @@ function setupStage() {
     const s = gameData.stage;
 
     stopSniperJoeActions();
+    stopCutmanBossActions();
+    document.querySelectorAll('.cutman-boss-cutter, .cutman-cutter-erase-pop').forEach(el => el.remove());
+    updateBossBattleTabLockState();
 
     currentEnemyType = getStageEnemyType(s);
 
@@ -470,6 +527,7 @@ function setupStage() {
     const enemyArea = document.getElementById('enemy-area');
     if (enemyArea) {
         enemyArea.classList.remove('boss-enter-area', 'sniperjoe-enter-area', 'sniperjoe-area');
+        enemyArea.style.removeProperty('--boss-ground-bottom');
         if (currentEnemyType === 'sniperjoe') {
             enemyArea.classList.add('sniperjoe-area');
             enemyArea.style.setProperty('--sniperjoe-ground-bottom', `${SNIPERJOE_BOTTOM}px`);
@@ -497,6 +555,7 @@ function setupStage() {
 
     isBossBattle = false;
     currentBossType = null;
+    updateBossBattleTabLockState();
 
     updateEnemyPosition();
     applyStillBattleFrames();
@@ -515,12 +574,20 @@ function getStageEnemyType(stage) {
     return stage % 10 === 0 ? 'sniperjoe' : 'met';
 }
 
+function isCutmanBossBattle() {
+    return isBossBattle && currentBossType === 'classic_cutman';
+}
+
+function isStillBossBattle() {
+    return isSniperJoeBattle() || isCutmanBossBattle();
+}
+
 function isSniperJoeBattle() {
     return !isBossBattle && currentEnemyType === 'sniperjoe';
 }
 
 function applyStillBattleFrames() {
-    if (!isSniperJoeBattle()) return;
+    if (!isStillBossBattle()) return;
 
     const rockman = document.getElementById('rockman-img');
     const rushImg = document.getElementById('rush-img');
@@ -546,7 +613,7 @@ function stopSniperJoeActions() {
 
 function startSniperJoeActions() {
     stopSniperJoeActions();
-    if (!isSniperJoeBattle()) return;
+    if (!isStillBossBattle()) return;
 
     sniperJoeActionTimer = setInterval(() => {
         if (!isSniperJoeBattle() || enemyDead || playerDead || sniperJoeJumping || sniperJoeAttacking) return;
@@ -573,13 +640,6 @@ function playSniperJoeJump() {
         enemyImg.classList.remove('sniperjoe-jump');
         if (isSniperJoeBattle() && !enemyDead) enemyImg.src = ENEMY_TYPE_DATA.sniperjoe.idleFrame;
     }, 520);
-}
-
-function getEnemyProjectileDuration(currentTravel, currentEnemyLeft, referenceEnemyLeft, referenceDuration, minDuration = PROJECTILE_MIN_DURATION) {
-    // 적 탄도 적 위치가 달라질 경우를 대비해 같은 속도로 보정합니다.
-    // 왼쪽으로 날아가는 탄은 travel이 음수라 절댓값 기준으로 계산합니다.
-    const referenceTravel = currentTravel - (referenceEnemyLeft - currentEnemyLeft);
-    return getDistanceBasedDuration(currentTravel, referenceTravel, referenceDuration, minDuration);
 }
 
 function fireSniperJoeBullet() {
@@ -611,14 +671,9 @@ function fireSniperJoeBullet() {
         bullet.style.bottom = (screenRect.bottom - enemyRect.top - 34) + 'px';
         screen.appendChild(bullet);
 
-        const travel = Math.min(-35, (rockRect.left - enemyRect.left) - 10);
-        const currentEnemyLeft = enemyRect.left - screenRect.left;
-        const duration = getEnemyProjectileDuration(
-            travel,
-            currentEnemyLeft,
-            SNIPERJOE_START_X,
-            SNIPERJOE_BULLET_DURATION
-        );
+        const startX = enemyRect.left - screenRect.left + 2;
+        const travel = getEnemyBulletTravel(startX);
+        const duration = getEnemyProjectileDuration(travel);
 
         bullet.animate(
             [{ transform: 'translateX(0)' }, { transform: `translateX(${travel}px)` }],
@@ -664,13 +719,24 @@ function animate() {
 
     if (!rImg || !eImg) return;
 
-    if (isSniperJoeBattle()) {
+    if (isStillBossBattle()) {
         applyStillBattleFrames();
-        if (!enemyDead && !sniperJoeJumping && !sniperJoeAttacking) {
-            eImg.src = ENEMY_TYPE_DATA.sniperjoe.idleFrame;
+
+        if (isSniperJoeBattle()) {
+            if (!enemyDead && !sniperJoeJumping && !sniperJoeAttacking) {
+                eImg.src = ENEMY_TYPE_DATA.sniperjoe.idleFrame;
+            }
+        } else if (isCutmanBossBattle()) {
+            const bossData = getBossData(currentBossType);
+            if (!enemyDead && !cutmanBossAttacking) {
+                eImg.src = bossData.sprite || 'sprites/boss/super-rboss/cutman/cutman_at_01.png';
+            }
         }
+
         animateBeat();
         animateBlues();
+        animateForte();
+        animateX();
         animateRockExe();
         animateZero();
         return;
@@ -699,7 +765,7 @@ function animateRush() {
     const rushImg = document.getElementById('rush-img');
     if (!rushImg || !gameData.rushOwned) return;
 
-    if (isSniperJoeBattle()) {
+    if (isStillBossBattle()) {
         rushImg.src = 'sprites/partner/rush/rush_st.png';
         return;
     }
@@ -726,7 +792,7 @@ function animateBlues() {
   const bluesImg = document.getElementById('blues-img');
   if (!bluesImg || !gameData.bluesOwned || bluesAttacking) return;
 
-  if (isSniperJoeBattle()) {
+  if (isStillBossBattle()) {
     const frame = bluesStandPattern[bluesStandIndex];
     bluesImg.src = `sprites/partner/blues/blues_st_0${frame}.png`;
     bluesStandIndex = (bluesStandIndex + 1) % bluesStandPattern.length;
@@ -743,7 +809,7 @@ function animateForte() {
   const forteImg = document.getElementById('forte-img');
   if (!forteImg || !gameData.forteOwned) return;
 
-  if (isSniperJoeBattle()) {
+  if (isStillBossBattle()) {
     if (!forteAttacking) forteImg.src = 'sprites/partner/forte/forte_st.png';
     return;
   }
@@ -758,7 +824,7 @@ function animateX() {
   const xImg = document.getElementById('x-img');
   if (!xImg || !gameData.xOwned) return;
 
-  if (isSniperJoeBattle()) {
+  if (isStillBossBattle()) {
     if (!xAttacking) xImg.src = 'sprites/partner/x/x_st.png';
     return;
   }
@@ -773,7 +839,7 @@ function animateRockExe() {
   const rockexeImg = document.getElementById('rockexe-img');
   if (!rockexeImg || !gameData.exeRockmanOwned || rockexeAttackAnimating) return;
 
-  if (isSniperJoeBattle()) {
+  if (isStillBossBattle()) {
     if (!rockexeAttacking) rockexeImg.src = 'sprites/partner/rockexe/rockexe_st.png';
     return;
   }
@@ -788,7 +854,7 @@ function animateZero() {
   const zeroImg = document.getElementById('zero-img');
   if (!zeroImg || !gameData.zeroOwned || zeroAttacking) return;
 
-  if (isSniperJoeBattle()) {
+  if (isStillBossBattle()) {
     zeroImg.src = 'sprites/partner/zero/zero_st.png';
     return;
   }
@@ -1324,9 +1390,10 @@ function getEnemyImpactPoint() {
     const screenRect = screen.getBoundingClientRect();
     const enemyRect = enemy.getBoundingClientRect();
 
+    // 폭발도 적의 실제 렌더링 중앙에 맞춥니다.
     return {
         x: enemyRect.left - screenRect.left + enemyRect.width / 2,
-        y: screenRect.bottom - enemyRect.bottom + Math.max(10, enemyRect.height * 0.48)
+        y: screenRect.bottom - enemyRect.bottom + enemyRect.height / 2
     };
 }
 
@@ -1375,18 +1442,11 @@ function firePartnerBuster(type) {
             }, data.chargeFrameInterval || 70);
         }
 
-        // 이동 거리는 투사체의 실제 중심점 기준으로 계산합니다.
-        const projectileSize = getPartnerProjectileSize(data, isChargeShot);
-        const bulletLeft = parseFloat(bullet.style.left) || pos.x;
-        const bulletCenterX = data.projectilePositionMode === 'muzzle-center'
-            ? bulletLeft + projectileSize.width / 2
-            : bulletLeft;
-
-        const travel = getBulletTravel(bulletCenterX);
-        const referenceDuration = isChargeShot
-            ? (data.chargeShotDuration || Math.max(150, (data.shotDuration || 260) - 90))
-            : (data.shotDuration || 260);
-        const duration = getPlayerProjectileDuration(bulletCenterX, travel, referenceDuration);
+        // 이동 거리는 실제 렌더링된 투사체의 앞쪽 끝 기준으로 계산합니다.
+        // 모든 불렛 PNG를 50x50으로 만들거나 CSS 크기를 바꿔도 자동으로 맞습니다.
+        const bulletFrontX = getElementFrontX(bullet);
+        const travel = getBulletTravel(bulletFrontX);
+        const duration = getPlayerProjectileDuration(bulletFrontX, travel);
 
         const shouldExplodeOnImpact = type === 'exeRockman' && isChargeShot && data.arcChargeProjectile;
 
@@ -1467,7 +1527,7 @@ function startChase() {
 
     chaseTimer = setInterval(() => {
         if (enemyDead || playerDead || enemyStunned) return;
-        if (isSniperJoeBattle()) return;
+        if (isSniperJoeBattle() || isCutmanBossBattle()) return;
 
         if (enemyX > ENEMY_ATTACK_X) {
             enemyX -= enemySpeed;
@@ -1584,15 +1644,22 @@ function playRockmanDeathEffect() {
 function failStage() {
     if (playerDead) return;
 
+    const wasBossBattle = isBossBattle;
+    const failedBossType = currentBossType;
+
     playerDead = true;
     enemyDead = true;
     enemyAttacking = true;
 
     stopSniperJoeActions();
+    stopCutmanBossActions();
+    updateBossBattleTabLockState();
     playRockmanDeathEffect();
 
     setTimeout(() => {
-        if (gameData.stage > 1) {
+        if (wasBossBattle) {
+            showStageText("패배");
+        } else if (gameData.stage > 1) {
             const beforeStage = gameData.stage;
             gameData.stage = Math.max(1, gameData.stage - 3);
             const downCount = beforeStage - gameData.stage;
@@ -1645,33 +1712,60 @@ function getBulletTravel(startX) {
     const screenRect = screen.getBoundingClientRect();
     const enemyRect = enemy.getBoundingClientRect();
 
-    const enemyCenterX = enemyRect.left + enemyRect.width / 2 - screenRect.left;
+    // 적 스프라이트도 CSS 렌더링 크기가 달라질 수 있으므로,
+    // 실제 화면에 보이는 적 이미지의 중앙을 탄 도착/삭제 기준으로 사용합니다.
+    const impactX = enemyRect.left - screenRect.left + enemyRect.width / 2;
 
-    return Math.max(40, enemyCenterX - startX);
+    return Math.max(28, impactX - startX);
 }
 
-function getProjectileReferenceEnemyX() {
-    if (isSniperJoeBattle()) return SNIPERJOE_START_X;
-    if (isBossBattle) return BOSS_START_X;
-    return ENEMY_START_X;
+function getEnemyBulletTravel(startX) {
+    const rockman = document.getElementById('rockman-img') || document.getElementById('rockman-area');
+    const screen = document.querySelector('.game-screen');
+
+    if (!rockman || !screen) return -120;
+
+    const screenRect = screen.getBoundingClientRect();
+    const rockRect = rockman.getBoundingClientRect();
+
+    // 스나이퍼죠 탄도 너무 앞에서 사라지지 않도록
+    // 실제 화면에 보이는 록맨 스프라이트 중앙을 도착/삭제 기준으로 사용합니다.
+    const impactX = rockRect.left - screenRect.left + rockRect.width / 2;
+
+    return Math.min(-28, impactX - startX);
 }
 
-function getReferenceBulletTravel(startX) {
-    // enemyX는 #enemy-area의 left 값입니다. 적 이미지 중심과 마진은 현재값을 유지하고,
-    // 적이 원거리 시작 위치에 있을 때의 이동거리만 역산합니다.
-    const currentTravel = getBulletTravel(startX);
-    const referenceEnemyX = getProjectileReferenceEnemyX();
-    return Math.max(40, currentTravel + (referenceEnemyX - enemyX));
+function getProjectileDurationBySpeed(travel, speed = PROJECTILE_SPEED_PX_PER_MS, minDuration = PROJECTILE_MIN_DURATION) {
+    return Math.max(minDuration, Math.round(Math.abs(travel) / Math.max(0.01, speed)));
 }
 
-function getDistanceBasedDuration(travel, referenceTravel, referenceDuration, minDuration = PROJECTILE_MIN_DURATION) {
-    const safeTravel = Math.max(1, Math.abs(travel));
-    const safeReferenceTravel = Math.max(1, Math.abs(referenceTravel));
-    return Math.max(minDuration, Math.round(referenceDuration * (safeTravel / safeReferenceTravel)));
+function getPlayerProjectileDuration(startX, travel, referenceDuration = null, minDuration = PROJECTILE_MIN_DURATION) {
+    return getProjectileDurationBySpeed(travel, PROJECTILE_SPEED_PX_PER_MS, minDuration);
 }
 
-function getPlayerProjectileDuration(startX, travel, referenceDuration, minDuration = PROJECTILE_MIN_DURATION) {
-    return getDistanceBasedDuration(travel, getReferenceBulletTravel(startX), referenceDuration, minDuration);
+function getEnemyProjectileDuration(currentTravel, currentEnemyLeft = null, referenceEnemyLeft = null, referenceDuration = null, minDuration = PROJECTILE_MIN_DURATION) {
+    return getProjectileDurationBySpeed(currentTravel, PROJECTILE_SPEED_PX_PER_MS, minDuration);
+}
+
+function getElementFrontX(element) {
+    const screen = document.querySelector('.game-screen');
+    if (!screen || !element) return 0;
+
+    const screenRect = screen.getBoundingClientRect();
+    const rect = element.getBoundingClientRect();
+
+    // 아군 탄은 오른쪽으로 날아가므로 실제 렌더링된 오른쪽 끝을 앞쪽으로 봅니다.
+    return rect.right - screenRect.left;
+}
+
+function getElementCenterX(element) {
+    const screen = document.querySelector('.game-screen');
+    if (!screen || !element) return 0;
+
+    const screenRect = screen.getBoundingClientRect();
+    const rect = element.getBoundingClientRect();
+
+    return rect.left - screenRect.left + rect.width / 2;
 }
 
 const ROCK_BULLET_OFFSET_X = -25;
@@ -1711,8 +1805,11 @@ function fireNormalShot(screen, enemy) {
 
     screen.appendChild(bullet);
 
-    const travel = getBulletTravel(pos.x);
-    const duration = getPlayerProjectileDuration(pos.x, travel, ROCK_NORMAL_BULLET_DURATION);
+    // 실제 렌더링된 탄의 앞쪽 끝 기준으로 이동거리를 계산합니다.
+    // PNG 원본 크기/CSS 표시 크기가 바뀌어도 자동으로 맞습니다.
+    const bulletFrontX = getElementFrontX(bullet);
+    const travel = getBulletTravel(bulletFrontX);
+    const duration = getPlayerProjectileDuration(bulletFrontX, travel);
 
     bullet.animate(
         [{ transform: 'translateX(0)' }, { transform: `translateX(${travel}px)` }],
@@ -1748,8 +1845,10 @@ function fireChargeShot(screen, enemy) {
         screen.appendChild(bullet);
 
         const chargeBulletTimer = startChargeBulletAnimation(bullet);
-        const travel = getBulletTravel(pos.x);
-        const duration = getPlayerProjectileDuration(pos.x, travel, ROCK_CHARGE_BULLET_DURATION);
+        // 차지샷도 실제 렌더링된 탄의 앞쪽 끝 기준으로 충돌 지점을 맞춥니다.
+        const bulletFrontX = getElementFrontX(bullet);
+        const travel = getBulletTravel(bulletFrontX);
+        const duration = getPlayerProjectileDuration(bulletFrontX, travel);
 
         bullet.animate(
             [{ transform: 'translateX(0)' }, { transform: `translateX(${travel}px)` }],
@@ -1814,23 +1913,96 @@ function applyEnemyDamage(rawDamage, isChargeShot = false, isBusterAttack = true
 }
 
 
+function giveBossBattleReward(displayDelay = 0) {
+    const bossData = getBossData(currentBossType);
+    const rewards = bossData?.rewards || {};
+
+    const screws = rollInt(rewards.screwsMin || 180, rewards.screwsMax || 320);
+    gameData.screws += screws;
+
+    const rewardData = {
+        screws,
+        cardChip: 0,
+        superRockChip: 0
+    };
+
+    if (Math.random() < (rewards.cardChipChance ?? 0.78)) {
+        const amount = rollInt(rewards.cardChipMin || 1, rewards.cardChipMax || 2);
+        gameData.materials.cardChip += amount;
+        rewardData.cardChip = amount;
+    }
+
+    if (Math.random() < (rewards.superRockChipChance ?? 0.05)) {
+        const amount = rollInt(rewards.superRockChipMin || 1, rewards.superRockChipMax || 1);
+        gameData.materials.superRockChip += amount;
+        rewardData.superRockChip = amount;
+    }
+
+    if (displayDelay > 0) {
+        setTimeout(() => {
+            showRewardText(rewardData);
+        }, displayDelay);
+    } else {
+        showRewardText(rewardData);
+    }
+}
+
 function killEnemy() {
     if (enemyDead || playerDead) return;
 
     enemyDead = true;
     enemyHp = 0;
     stopSniperJoeActions();
+    stopCutmanBossActions();
+    updateBossBattleTabLockState();
 
-    if (isBossBattle && currentBossType === 'super-rboss') {
-        const rewardGem = 1;
-        gameData.superRockGem += rewardGem;
+    if (isBossBattle && BOSS_BATTLE_DATA[currentBossType]) {
+        const deathDelay = currentBossType === 'classic_cutman'
+            ? playCutmanBossDeathEffect()
+            : (playEnemyDeathEffect(), 500);
 
-        playEnemyDeathEffect();
-        showRewardText(`+${rewardGem}🔴`);
+        if (currentBossType === 'classic_cutman') {
+            giveBossBattleReward(Math.max(0, (deathDelay || 500) - 260));
+        } else {
+            giveBossBattleReward();
+        }
 
         setTimeout(() => {
             setupStage();
             showStageText("BOSS CLEAR");
+            updateUI();
+            saveData();
+        }, deathDelay || 500);
+
+        return;
+    }
+
+    if (isBossBattle && currentBossType) {
+        const bossData = getBossData(currentBossType);
+        const rewards = bossData.rewards || {};
+        const screwReward = rollInt(rewards.screwsMin || 120, rewards.screwsMax || 220);
+        let rewardParts = [`+${screwReward}🔩`];
+
+        gameData.screws += screwReward;
+
+        if (Math.random() < (rewards.cardChipChance || 0)) {
+            const amount = rollInt(rewards.cardChipMin || 1, rewards.cardChipMax || 1);
+            gameData.materials.cardChip += amount;
+            rewardParts.push(`카드칩 +${amount}`);
+        }
+
+        if (Math.random() < (rewards.superRockChipChance || 0)) {
+            const amount = rollInt(rewards.superRockChipMin || 1, rewards.superRockChipMax || 1);
+            gameData.materials.superRockChip += amount;
+            rewardParts.push(`슈퍼록맨칩 +${amount}`);
+        }
+
+        playEnemyDeathEffect();
+        showRewardText(rewardParts.join(' / '));
+
+        setTimeout(() => {
+            setupStage();
+            showStageText(`${bossData.name} CLEAR`);
             updateUI();
             saveData();
         }, 500);
@@ -1851,6 +2023,74 @@ function killEnemy() {
         updateUI();
         saveData();
     }, 500);
+}
+
+
+function playCutmanBossDeathEffect() {
+    const enemy = document.getElementById('enemy-img');
+    const enemyArea = document.getElementById('enemy-area');
+    const screen = document.querySelector('.game-screen');
+    const bossData = getBossData(currentBossType);
+
+    if (!enemy || !enemyArea || !screen) return 0;
+
+    const screenRect = screen.getBoundingClientRect();
+    const enemyRect = enemy.getBoundingClientRect();
+
+    const centerX = enemyRect.left - screenRect.left + enemyRect.width / 2;
+    const centerY = screenRect.bottom - enemyRect.top - enemyRect.height / 2;
+
+    enemy.classList.remove('boss-enter', 'enemy-death', 'cutman-dead-blink', 'cutman-death-fade');
+    enemy.style.opacity = '1';
+    enemy.style.transform = '';
+    enemy.src = bossData.deadSprite || 'sprites/boss/super-rboss/cutman/cutman_dead.png';
+
+    setTimeout(() => {
+        if (!enemy.isConnected) return;
+        enemy.classList.add('cutman-dead-blink');
+    }, 840);
+
+    setTimeout(() => {
+        if (!enemy.isConnected) return;
+        enemy.classList.remove('cutman-dead-blink');
+        enemy.classList.add('cutman-death-fade');
+
+        const particles = [
+            [0, -42],
+            [30, -30],
+            [42, 0],
+            [30, 30],
+            [0, 42],
+            [-30, 30],
+            [-42, 0],
+            [-30, -30],
+            [18, -50],
+            [-18, -50]
+        ];
+
+        particles.forEach(pos => {
+            const p = document.createElement('div');
+            p.className = 'cutman-death-particle';
+            p.style.left = centerX + "px";
+            p.style.bottom = centerY + "px";
+            p.style.setProperty('--x', pos[0] + 'px');
+            p.style.setProperty('--y', pos[1] + 'px');
+            screen.appendChild(p);
+
+            setTimeout(() => {
+                p.remove();
+            }, 2200);
+        });
+    }, 2360);
+
+    setTimeout(() => {
+        if (!enemy.isConnected) return;
+        enemy.classList.remove('cutman-dead-blink');
+        enemy.classList.remove('cutman-death-fade');
+        enemy.style.opacity = '0';
+    }, 3720);
+
+    return 3800;
 }
 
 function playEnemyDeathEffect() {
@@ -1936,18 +2176,47 @@ function showRewardText(reward) {
     const text = document.createElement('div');
     text.className = 'damage-text reward-text';
 
-    if (typeof reward === 'string') {
-        text.innerText = reward;
-    } else {
+    if (typeof reward === 'number') {
         text.innerText = `+${reward}🔩`;
+    } else if (typeof reward === 'string') {
+        text.innerText = reward;
+    } else if (reward && typeof reward === 'object') {
+        const parts = [];
+        parts.push(`<span class="reward-inline-item reward-inline-screw">+${reward.screws || 0}🔩</span>`);
+
+        if (reward.cardChip) {
+            parts.push(
+                `<span class="reward-inline-item"><img class="reward-inline-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"> 카드칩 +${reward.cardChip}</span>`
+            );
+        }
+
+        if (reward.superRockChip) {
+            parts.push(
+                `<span class="reward-inline-item"><img class="reward-inline-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"> 슈퍼록맨 데이터칩 +${reward.superRockChip}</span>`
+            );
+        }
+
+        text.innerHTML = parts.join(`<span class="reward-sep"> / </span>`);
+    } else {
+        text.innerText = "";
     }
 
-    text.style.left = enemyX + "px";
+    const screenWidth = screen ? (screen.clientWidth || 320) : 320;
+    const boxWidth = 260;
+    const preferredLeft = enemyX - 78;
+    const safeLeft = Math.min(Math.max(24, preferredLeft), Math.max(24, screenWidth - boxWidth - 14));
+
+    text.style.left = safeLeft + "px";
     text.style.right = "auto";
-    text.style.bottom = "38px";
+    text.style.bottom = "42px";
+    text.style.maxWidth = boxWidth + "px";
+    text.style.width = boxWidth + "px";
+    text.style.whiteSpace = "normal";
+    text.style.lineHeight = "1.28";
+    text.style.textAlign = "center";
 
     screen.appendChild(text);
-    setTimeout(() => text.remove(), 600);
+    setTimeout(() => text.remove(), 1800);
 }
 
 function showStageText(msg) {
@@ -2595,7 +2864,33 @@ function togglePartnerUpgrade(type) {
     updateUI();
 }
 
+
+function updateBossBattleTabLockState() {
+    const isLocked = isBossBattle && !enemyDead && !playerDead;
+    const lockIds = ['mine-tab-btn', 'armor-tab-btn', 'boss-tab-btn', 'partner-tab-btn'];
+
+    lockIds.forEach(id => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+
+        btn.disabled = isLocked;
+        btn.classList.toggle('boss-battle-tab-locked', isLocked);
+        btn.title = isLocked ? '보스전 중에는 다른 탭으로 이동할 수 없습니다.' : '';
+    });
+}
+
+function showBossBattleLockedMessage() {
+    showStageText('보스전 진행 중');
+}
+
+
 function showTab(tabName) {
+    if (isBossBattle && !enemyDead && !playerDead && tabName !== 'battle') {
+        updateBossBattleTabLockState();
+        showBossBattleLockedMessage();
+        return;
+    }
+
     const currentTab = document.getElementById(tabName + '-tab');
 
     // 전투 탭이 아닌 다른 탭을 다시 누르면 전투 탭으로 복귀합니다.
@@ -2616,6 +2911,18 @@ function showTab(tabName) {
 
     if (targetTab) targetTab.classList.add('active');
     if (targetBtn) targetBtn.classList.add('active');
+
+    if (tabName === 'boss' && typeof normalizeCutmanBossCardUI === 'function') {
+        setTimeout(normalizeCutmanBossCardUI, 0);
+    }
+
+    if (tabName === 'boss' && typeof normalizeBossTabLayoutV5 === 'function') {
+        setTimeout(normalizeBossTabLayoutV5, 0);
+    }
+
+    if (tabName === 'boss' && typeof startCutmanPreviewV14 === 'function') {
+        setTimeout(startCutmanPreviewV14, 0);
+    }
 }
 
 function showArmorTab(type) {
@@ -2644,30 +2951,74 @@ function showArmorTab(type) {
     }
 }
 
-function showBossTab(type) {
-    const bossImg = document.getElementById('boss-img');
-    const bossName = document.getElementById('boss-name');
-
-    const bossData = {
-        'super-rboss': { name: '슈퍼록맨 보스전', img: 'sprites/boss/super-rboss/super-rboss.png' },
-        'first-boss': { name: '퍼스트 보스전', img: 'sprites/boss/super-rboss/super-rboss.png' },
-        'second-boss': { name: '세컨드 보스전', img: 'sprites/boss/super-rboss/super-rboss.png' },
-        'third-boss': { name: '서드 보스전', img: 'sprites/boss/super-rboss/super-rboss.png' },
-        'fourth-boss': { name: '포스 보스전', img: 'sprites/boss/super-rboss/super-rboss.png' }
-    };
-
-    if (!bossData[type]) return;
-
-    bossImg.src = bossData[type].img;
-    bossName.innerText = bossData[type].name;
-
-    document.querySelectorAll('#boss-tab .inner-tab').forEach(btn => {
+function toggleBossGroup(groupKey) {
+    document.querySelectorAll('.boss-group-panel').forEach(panel => {
+        panel.classList.remove('open');
+    });
+    document.querySelectorAll('.boss-category-btn').forEach(btn => {
         btn.classList.remove('active');
     });
 
-    if (event && event.target) {
-        event.target.classList.add('active');
+    const panel = document.getElementById(`boss-group-${groupKey}`);
+    const btn = document.getElementById(`boss-group-${groupKey}-btn`);
+
+    if (panel) panel.classList.add('open');
+    if (btn) btn.classList.add('active');
+}
+
+function showBossCardMessage(message) {
+    const card =
+        document.getElementById('boss-card-cutman') ||
+        document.querySelector('.cutman-card') ||
+        document.querySelector('.boss-select-card');
+
+    if (!card) {
+        showStageText(message);
+        return;
     }
+
+    let messageBox = card.querySelector('.boss-card-message');
+    if (!messageBox) {
+        messageBox = document.createElement('div');
+        messageBox.className = 'boss-card-message';
+        card.appendChild(messageBox);
+    }
+
+    messageBox.textContent = message;
+    messageBox.classList.remove('active');
+    void messageBox.offsetWidth;
+    messageBox.classList.add('active');
+
+    setTimeout(() => {
+        messageBox.classList.remove('active');
+    }, 900);
+}
+
+function selectBossCard(bossKey = 'classic_cutman') {
+    const bossData = getBossData(bossKey);
+    if (!bossData) return;
+
+    if (gameData.crystals < bossData.entryCost) {
+        showBossCardMessage('크리스탈 부족');
+        return;
+    }
+
+    const card =
+        document.getElementById('boss-card-cutman') ||
+        document.getElementById(`${bossKey}-card`) ||
+        document.querySelector(`[data-boss-key="${bossKey}"]`) ||
+        document.querySelector('.boss-select-card');
+
+    if (card) {
+        card.classList.remove('selecting');
+        void card.offsetWidth;
+        card.classList.add('selecting');
+    }
+
+    setTimeout(() => {
+        if (card) card.classList.remove('selecting');
+        enterBossBattle(bossKey);
+    }, 380);
 }
 
 let isBossWarning = false;
@@ -2697,13 +3048,26 @@ function showBossWarning(callback) {
   }, 3000);
 }
 
-function enterBossBattle() {
+function enterBossBattle(bossKey = 'classic_cutman') {
+  const bossData = getBossData(bossKey);
+  if (!bossData) return;
+
+  if (gameData.crystals < bossData.entryCost) {
+    showBossCardMessage('크리스탈 부족');
+    updateUI();
+    return;
+  }
+
+  gameData.crystals -= bossData.entryCost;
+  saveData();
+  updateUI();
+
   showTab('battle');
 
   showBossWarning(() => {
 
     isBossBattle = true;
-    currentBossType = 'super-rboss';
+    currentBossType = bossKey;
     currentEnemyType = null;
     stopSniperJoeActions();
 
@@ -2714,41 +3078,212 @@ function enterBossBattle() {
     }
 
     const bg = document.getElementById('scroll-bg');
-    if (bg) bg.classList.remove('paused');
+    if (bg) bg.classList.toggle('paused', bossKey === 'classic_cutman');
 
     const enemyImg = document.getElementById('enemy-img');
     if (enemyImg) {
-      enemyImg.src = 'sprites/boss/super-rboss/super-rboss.png';
-      enemyImg.style.width = '60px';
-      enemyImg.style.height = '60px';
-      enemyImg.style.marginTop = '-15px';
+      enemyImg.src = bossData.sprite || 'sprites/boss/super-rboss/cutman/cutman_at_01.png';
+      enemyImg.style.width = (bossData.width || 60) + 'px';
+      enemyImg.style.height = (bossData.height || 60) + 'px';
+      enemyImg.style.marginTop = (bossData.marginTop ?? -15) + 'px';
+      enemyImg.classList.remove('boss-enter');
+      void enemyImg.offsetWidth;
+      enemyImg.classList.add('boss-enter');
     }
 
     const enemyArea = document.getElementById('enemy-area');
     if (enemyArea) {
       enemyArea.classList.remove('sniperjoe-area');
       enemyArea.style.removeProperty('--sniperjoe-ground-bottom');
-      enemyArea.style.bottom = `${BOSS_BOTTOM}px`;
+      enemyArea.style.setProperty('--boss-ground-bottom', `${bossData.bottom ?? BOSS_BOTTOM}px`);
+      enemyArea.style.bottom = `${bossData.bottom ?? BOSS_BOTTOM}px`;
       enemyArea.classList.remove('boss-enter-area');
       void enemyArea.offsetWidth;
       enemyArea.classList.add('boss-enter-area');
     }
 
-    enemyMaxHp = 5000;
+    enemyMaxHp = bossData.hp || 5000;
     enemyHp = enemyMaxHp;
-    enemyAtk = 20;
-    enemySpeed = 0.18;
-    enemyX = BOSS_START_X;
+    enemyAtk = bossData.atk || 20;
+    enemySpeed = bossKey === 'classic_cutman' ? 0 : (bossData.speed || 0.18);
+    enemyX = bossData.startX ?? BOSS_START_X;
 
     enemyDead = false;
     enemyAttacking = false;
+    enemyStunned = false;
     playerDead = false;
 
     updateEnemyPosition();
+
+    const rockmanImg = document.getElementById('rockman-img');
+    if (rockmanImg) rockmanImg.src = 'sprites/rock/rock_st.png';
+
+    applyStillBattleFrames();
+    updateBossBattleTabLockState();
     updateUI();
+
+    if (bossKey === 'classic_cutman') {
+      startCutmanBossActions();
+    }
 
   });
 }
+
+
+function stopCutmanBossActions() {
+    if (cutmanBossActionTimer) {
+        clearInterval(cutmanBossActionTimer);
+        cutmanBossActionTimer = null;
+    }
+
+    cutmanBossAttacking = false;
+
+    document.querySelectorAll('.cutman-boss-cutter').forEach(el => el.remove());
+
+    const bossData = getBossData(currentBossType);
+    const enemyImg = document.getElementById('enemy-img');
+    if (enemyImg && bossData && currentBossType === 'classic_cutman' && !enemyDead && !playerDead) {
+        enemyImg.src = bossData.sprite || 'sprites/boss/super-rboss/cutman/cutman_at_01.png';
+    }
+}
+
+function startCutmanBossActions() {
+    stopCutmanBossActions();
+
+    if (!isBossBattle || currentBossType !== 'classic_cutman' || enemyDead || playerDead) return;
+
+    const bossData = getBossData(currentBossType);
+    const interval = bossData.attackInterval || 1850;
+
+    cutmanBossActionTimer = setInterval(() => {
+        if (!isBossBattle || currentBossType !== 'classic_cutman' || enemyDead || playerDead || cutmanBossAttacking) return;
+        fireCutmanBossCutter();
+    }, interval);
+
+    setTimeout(() => {
+        if (isBossBattle && currentBossType === 'classic_cutman' && !enemyDead && !playerDead) {
+            fireCutmanBossCutter();
+        }
+    }, 1800);
+}
+
+function createCutmanCutterErasePop(screen, centerX, centerY) {
+    if (!screen) return;
+
+    const pop = document.createElement('div');
+    pop.className = 'cutman-cutter-erase-pop';
+    pop.style.left = centerX + 'px';
+    pop.style.top = centerY + 'px';
+    screen.appendChild(pop);
+
+    setTimeout(() => pop.remove(), 260);
+}
+
+function erasePlayerProjectilesAtCutter(cutter, screen) {
+    if (!cutter || !screen) return;
+
+    const cutterRect = cutter.getBoundingClientRect();
+    const cutterCenterX = cutterRect.left + cutterRect.width / 2;
+    const toleranceX = Math.max(12, cutterRect.width * 0.48);
+
+    const projectileSelector = [
+        '.rock-bullet',
+        '.partner-bullet',
+        '.forte-bullet',
+        '.forte-charge-bullet',
+        '.x-bullet',
+        '.x-charge-bullet',
+        '.rockexe-bullet',
+        '.rockexe-charge-bullet'
+    ].join(',');
+
+    document.querySelectorAll(projectileSelector).forEach(projectile => {
+        if (!projectile || !projectile.isConnected) return;
+        if (projectile.classList.contains('enemy-bullet') || projectile.classList.contains('cutman-boss-cutter')) return;
+
+        const rect = projectile.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        const projectileCenterX = rect.left + rect.width / 2;
+
+        // 컷맨 커터와 같은 X축 근처에 들어온 아군 투사체는 전부 삭제합니다.
+        if (Math.abs(projectileCenterX - cutterCenterX) <= toleranceX) {
+            const screenRect = screen.getBoundingClientRect();
+            const centerX = rect.left - screenRect.left + rect.width / 2;
+            const centerY = rect.top - screenRect.top + rect.height / 2;
+            createCutmanCutterErasePop(screen, centerX, centerY);
+            projectile.remove();
+        }
+    });
+}
+
+function fireCutmanBossCutter() {
+    if (!isBossBattle || currentBossType !== 'classic_cutman' || enemyDead || playerDead || cutmanBossAttacking) return;
+
+    const screen = document.querySelector('.game-screen');
+    const enemyImg = document.getElementById('enemy-img');
+    const rockman = document.getElementById('rockman-img') || document.getElementById('rockman-area');
+    if (!screen || !enemyImg || !rockman) return;
+
+    const bossData = getBossData(currentBossType);
+    const screenRect = screen.getBoundingClientRect();
+    const enemyRect = enemyImg.getBoundingClientRect();
+    const rockRect = rockman.getBoundingClientRect();
+
+    cutmanBossAttacking = true;
+
+    enemyImg.src = bossData.attackSprite || 'sprites/boss/super-rboss/cutman/cutman_at_02.png';
+
+    const cutter = document.createElement('img');
+    cutter.className = 'enemy-bullet cutman-boss-cutter';
+    cutter.src = bossData.cutterSprite || 'sprites/boss/super-rboss/cutman/cutman_bullet_01.png';
+
+    const startX = enemyRect.left - screenRect.left + Math.max(0, enemyRect.width * 0.08);
+    const startY = enemyRect.top - screenRect.top + enemyRect.height * 0.48;
+
+    cutter.style.left = startX + 'px';
+    cutter.style.top = startY + 'px';
+    screen.appendChild(cutter);
+
+    const targetX = rockRect.left - screenRect.left + rockRect.width / 2;
+    const travel = Math.min(-40, targetX - startX);
+    const speed = bossData.cutterSpeed || 0.34;
+    const duration = Math.max(520, Math.round(Math.abs(travel) / speed));
+
+    const eraseTimer = setInterval(() => {
+        if (!isBossBattle || currentBossType !== 'classic_cutman' || enemyDead || playerDead || !cutter.isConnected) {
+            clearInterval(eraseTimer);
+            return;
+        }
+
+        erasePlayerProjectilesAtCutter(cutter, screen);
+    }, 24);
+
+    cutter.animate(
+        [
+            { transform: 'translateX(0px) rotate(0deg)', opacity: 1 },
+            { transform: `translateX(${travel}px) rotate(-920deg)`, opacity: 1 }
+        ],
+        { duration, easing: 'linear', fill: 'forwards' }
+    );
+
+    setTimeout(() => {
+        clearInterval(eraseTimer);
+
+        if (!enemyDead && !playerDead && isBossBattle && currentBossType === 'classic_cutman') {
+            enemyHitsPlayerByBullet();
+        }
+
+        cutter.remove();
+
+        if (!enemyDead && !playerDead && isBossBattle && currentBossType === 'classic_cutman') {
+            enemyImg.src = bossData.sprite || 'sprites/boss/super-rboss/cutman/cutman_at_01.png';
+        }
+
+        cutmanBossAttacking = false;
+    }, duration);
+}
+
 
 function startAutoAttack() {
     if (attackTimer) clearInterval(attackTimer);
@@ -3358,6 +3893,12 @@ superRockGemEls.forEach(el => {
     el.innerText = Math.floor(gameData.superRockGem || 0).toLocaleString();
 });
 
+const cardChipCount = document.getElementById('card-chip-count');
+if (cardChipCount) cardChipCount.innerText = Math.floor(gameData.materials.cardChip || 0).toLocaleString();
+
+const superrockChipCount = document.getElementById('superrock-chip-count');
+if (superrockChipCount) superrockChipCount.innerText = Math.floor(gameData.materials.superRockChip || 0).toLocaleString();
+
 const mineStoneEls = document.querySelectorAll('.stone-count');
 mineStoneEls.forEach(el => {
     el.innerText = Math.floor(gameData.stones || 0).toLocaleString();
@@ -3400,6 +3941,9 @@ setButtonActive(document.getElementById('craft-pickaxe-btn'), !gameData.minePick
 setButtonActive(document.getElementById('mine-enhance-btn'), !mineEnhancing && gameData.minePickaxeOwned && gameData.minePickaxeEnhance < 10 && gameData.stones >= getMineEnhanceCost());
 setButtonActive(document.getElementById('mine-tier-up-btn'), !mineEnhancing && gameData.minePickaxeOwned && gameData.minePickaxeEnhance >= 10 && gameData.minePickaxeTier < PICKAXE_MAX_TIER);
 
+
+
+    updateBossBattleTabLockState();
 }
 
 
@@ -3480,6 +4024,8 @@ function devCheat() {
     gameData.screws += 100000;
     gameData.crystals += 1000;
     gameData.stones += 1000;
+    gameData.materials.cardChip += 30;
+    gameData.materials.superRockChip += 3;
 
     updateUI();
     saveData();
@@ -3497,3 +4043,225 @@ startExeRockmanAttack();
 startZeroAttack();
 startMining();
 startBattleTips();
+
+
+function normalizeCutmanBossCardUI() {
+    const root = document.getElementById('boss-tab');
+    if (!root) return;
+
+    root.querySelectorAll('.boss-group-title, .classic-title, .classic-boss-section-title, .boss-section-title, .boss-category-title, .boss-list-title, .cutman-card-title-strip').forEach(el => {
+        if ((el.textContent || '').includes('클래식 보스전') || el.classList.contains('classic-title') || el.classList.contains('boss-group-title')) {
+            el.remove();
+        }
+    });
+
+    const wrongBossPath = 'sprites/' + 'bosss' + '/reward/cardchip.png';
+    root.querySelectorAll('img').forEach(img => {
+        const src = img.getAttribute('src') || '';
+        if (src.includes(wrongBossPath)) {
+            img.setAttribute('src', 'sprites/boss/reward/cardchip.png');
+        }
+    });
+
+    const cutmanCard =
+        document.getElementById('boss-card-cutman') ||
+        document.getElementById('cutman-boss-card') ||
+        root.querySelector('.cutman-card') ||
+        root.querySelector('.cutman-boss-card') ||
+        root.querySelector('[data-boss-key="classic_cutman"]') ||
+        root.querySelector('[onclick*="classic_cutman"]');
+
+    if (!cutmanCard) return;
+
+    cutmanCard.querySelectorAll('img').forEach(img => {
+        const src = img.getAttribute('src') || '';
+        if (src.includes('cutman_at_')) img.classList.add('cutman-preview-attack');
+        if (src.includes('screw') || src.includes('stone') || src.includes('나사')) img.remove();
+    });
+
+    cutmanCard.querySelectorAll('.boss-card-reward-text, .boss-card-rewards').forEach(el => el.remove());
+
+    let line = cutmanCard.querySelector('.cutman-reward-line, .boss-card-reward-line');
+    if (!line) {
+        line = document.createElement('div');
+        line.className = 'cutman-reward-line boss-card-reward-line';
+    }
+
+    line.innerHTML = `
+        <span class="reward-text-label">획득 가능 :</span>
+        <span class="boss-reward-item">나사 <span class="boss-reward-emoji">🔩</span></span>
+        <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+        <span class="boss-reward-item">슈퍼록맨 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
+    `;
+
+    const preview = cutmanCard.querySelector('.boss-demo-stage') || cutmanCard.querySelector('.boss-card-preview');
+    if (preview && preview.parentNode && line.previousElementSibling !== preview) {
+        preview.insertAdjacentElement('afterend', line);
+    } else if (!line.parentNode) {
+        cutmanCard.appendChild(line);
+    }
+
+    if (!cutmanCard.querySelector('.boss-card-message')) {
+        const msg = document.createElement('div');
+        msg.id = 'cutman-card-message';
+        msg.className = 'boss-card-message';
+        cutmanCard.appendChild(msg);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => { setTimeout(normalizeCutmanBossCardUI, 0); setTimeout(normalizeCutmanBossCardUI, 200); });
+
+
+function normalizeBossTabLayoutV5() {
+    const root = document.getElementById('boss-tab');
+    if (!root) return;
+
+    root.querySelectorAll('.boss-material-status').forEach(el => el.remove());
+
+    root.querySelectorAll('.boss-category-btn').forEach(btn => {
+        btn.textContent = (btn.textContent || '').replace(/[▲▼△▽▴▾⌃⌄↕↑↓]/g, '').trim();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(normalizeBossTabLayoutV5, 0);
+    setTimeout(normalizeBossTabLayoutV5, 200);
+});
+
+
+let cutmanPreviewTimer = null;
+let cutmanPreviewTimeouts = [];
+
+
+
+
+
+
+
+
+
+let cutmanPreviewV14Interval = null;
+let cutmanPreviewV14Timers = [];
+
+function clearCutmanPreviewV14() {
+    if (cutmanPreviewV14Interval) {
+        clearInterval(cutmanPreviewV14Interval);
+        cutmanPreviewV14Interval = null;
+    }
+
+    cutmanPreviewV14Timers.forEach(timerId => clearTimeout(timerId));
+    cutmanPreviewV14Timers = [];
+}
+
+function resetCutmanPreviewV14() {
+    const img = document.getElementById('cutman-preview-img-v14');
+    const cutter = document.getElementById('cutman-preview-cutter-v14');
+    const rockBullet = document.getElementById('cutman-preview-rockbullet-v14');
+    const pop = document.getElementById('cutman-preview-pop-v14');
+
+    if (img) img.src = 'sprites/boss/super-rboss/cutman/cutman_at_01.png';
+
+    if (cutter) {
+        cutter.style.opacity = '0';
+        cutter.style.transform = 'translateX(0px) rotate(0deg)';
+    }
+
+    if (rockBullet) {
+        rockBullet.style.opacity = '0';
+        rockBullet.style.transform = 'translateX(42px)';
+    }
+
+    if (pop) {
+        pop.style.opacity = '0';
+        pop.style.transform = 'scale(0.25)';
+    }
+}
+
+function playCutmanPreviewV14Once() {
+    const img = document.getElementById('cutman-preview-img-v14');
+    const cutter = document.getElementById('cutman-preview-cutter-v14');
+    const rockBullet = document.getElementById('cutman-preview-rockbullet-v14');
+    const pop = document.getElementById('cutman-preview-pop-v14');
+
+    if (!img || !cutter || !rockBullet || !pop) return;
+
+    resetCutmanPreviewV14();
+
+    const addTimer = (callback, delay) => {
+        const timerId = setTimeout(callback, delay);
+        cutmanPreviewV14Timers.push(timerId);
+    };
+
+    // 컷맨 커터 발사 시작: 커터가 화면에 있는 동안 at_02 유지
+    addTimer(() => {
+        img.src = 'sprites/boss/super-rboss/cutman/cutman_at_02.png';
+
+        cutter.style.opacity = '1';
+        cutter.style.transform = 'translateX(0px) rotate(0deg)';
+        cutter.animate(
+            [
+                { transform: 'translateX(0px) rotate(0deg)', opacity: 1 },
+                { transform: 'translateX(70px) rotate(430deg)', opacity: 1 },
+                // 적 불릿을 지운 뒤에도 같은 속도로 계속 진행
+                { transform: 'translateX(140px) rotate(860deg)', opacity: 1 },
+                { transform: 'translateX(148px) rotate(920deg)', opacity: 0 }
+            ],
+            { duration: 1500, easing: 'linear', fill: 'forwards' }
+        );
+    }, 240);
+
+    // 록맨탄은 충돌 지점까지 이동 후 폭발과 함께 소멸
+    addTimer(() => {
+        rockBullet.style.opacity = '1';
+        rockBullet.style.transform = 'translateX(42px)';
+        rockBullet.animate(
+            [
+                { transform: 'translateX(42px)', opacity: 1, offset: 0 },
+                { transform: 'translateX(14px)', opacity: 1, offset: 0.48 },
+                { transform: 'translateX(2px)', opacity: 1, offset: 0.68 },
+                // 폭발 직전에 먼저 사라져서 시간차가 어색하지 않게 처리
+                { transform: 'translateX(0px)', opacity: 0, offset: 0.78 },
+                { transform: 'translateX(0px)', opacity: 0, offset: 1 }
+            ],
+            { duration: 430, easing: 'linear', fill: 'forwards' }
+        );
+    }, 560);
+
+    // 충돌 지점 폭발
+    addTimer(() => {
+        pop.style.opacity = '1';
+        pop.style.transform = 'scale(0.25)';
+        pop.animate(
+            [
+                { transform: 'scale(0.25)', opacity: 0 },
+                { transform: 'scale(1.45)', opacity: 1 },
+                { transform: 'scale(0.35)', opacity: 0 }
+            ],
+            { duration: 320, easing: 'ease-out', fill: 'forwards' }
+        );
+    }, 900);
+
+    // 컷맨 커터가 화면에서 사라질 때 at_01로 복귀
+    addTimer(() => {
+        cutter.style.opacity = '0';
+        rockBullet.style.opacity = '0';
+        img.src = 'sprites/boss/super-rboss/cutman/cutman_at_01.png';
+    }, 1740);
+
+    addTimer(() => {
+        resetCutmanPreviewV14();
+    }, 1820);
+}
+
+function startCutmanPreviewV14() {
+    clearCutmanPreviewV14();
+    resetCutmanPreviewV14();
+
+    playCutmanPreviewV14Once();
+    cutmanPreviewV14Interval = setInterval(playCutmanPreviewV14Once, 2200);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(startCutmanPreviewV14, 0);
+    setTimeout(startCutmanPreviewV14, 250);
+});

@@ -116,6 +116,13 @@
     <img src="sprites/partner/zero/zero_portrait.png">
     <img src="sprites/armor/super-r/super-r.png">
     <img src="sprites/boss/super-rboss/super-rboss.png">
+    <img src="sprites/boss/super-rboss/cutman/cutman_portrait.png">
+    <img src="sprites/boss/super-rboss/cutman/cutman_at_01.png">
+    <img src="sprites/boss/super-rboss/cutman/cutman_at_02.png">
+    <img src="sprites/boss/super-rboss/cutman/cutman_bullet_01.png">
+    <img src="sprites/boss/super-rboss/cutman/cutman_dead.png">
+    <img src="sprites/boss/reward/cardchip.png">
+    <img src="sprites/boss/reward/superrockchip.png">
     <img src="sprites/mine/pickelman_01.png">
     <img src="sprites/mine/pickelman_02.png">
     <img src="sprites/mine/pickelman_03.png">
@@ -659,30 +666,59 @@
 </div> <!-- armor-tab -->
 
 <div id="boss-tab" class="tab-content">
-        <div class="system-panel">
-        <h2>BOSS BATTLE</h2>
+  <div class="system-panel boss-panel-v2">
+    <h2>BOSS BATTLE</h2>
 
-        <div class="inner-tabs">
-            <button class="inner-tab active" onclick="showBossTab('super-rboss')">슈퍼록맨</button>
-            <button class="inner-tab" onclick="showBossTab('first-boss')">퍼스트</button>
-            <button class="inner-tab" onclick="showBossTab('second-boss')">세컨드</button>
-            <button class="inner-tab" onclick="showBossTab('third-boss')">서드</button>
-            <button class="inner-tab" onclick="showBossTab('fourth-boss')">포스</button>
+    <div class="boss-category-list">
+      <button id="boss-group-classic-btn" class="boss-category-btn active" onclick="toggleBossGroup('classic')">클래식 보스전</button>
+      <button id="boss-group-irregular-btn" class="boss-category-btn locked" onclick="toggleBossGroup('irregular')">이레귤러 보스</button>
+      <button id="boss-group-virus-btn" class="boss-category-btn locked" onclick="toggleBossGroup('virus')">바이러스 내비</button>
+      <button id="boss-group-zero-btn" class="boss-category-btn locked" onclick="toggleBossGroup('zero')">록맨제로 보스</button>
+    </div>
+
+    <div id="boss-group-classic" class="boss-group-panel open">
+      <button id="boss-card-cutman" class="boss-select-card cutman-card" onclick="selectBossCard('classic_cutman')">
+        <div class="boss-portrait-box">
+          <img class="boss-portrait-img" src="sprites/boss/super-rboss/cutman/cutman_portrait.png" alt="컷맨">
         </div>
 
-<div class="boss-view-box">
+        <div class="boss-card-main">
+          <div class="boss-card-topline">
+            <div class="boss-card-name">컷맨</div>
+            <div class="boss-entry-cost"><span class="crystal-icon-small">💎</span> 30</div>
+          </div>
 
-<div class="boss-reward-guide">
-  슈퍼록맨 아머 강화재료 획득 가능 / 🔴 : 
-  <span class="super-rock-gem-count">0</span> 보유중
+          <div class="boss-card-preview">
+            <div class="boss-demo-stage cutman-preview-stage-v14">
+              <img id="cutman-preview-img-v14" class="cutman-preview-img-v14" src="sprites/boss/super-rboss/cutman/cutman_at_01.png" alt="컷맨">
+              <img id="cutman-preview-cutter-v14" class="cutman-preview-cutter-v14" src="sprites/boss/super-rboss/cutman/cutman_bullet_01.png" alt="컷맨 커터">
+              <span id="cutman-preview-rockbullet-v14" class="cutman-preview-rockbullet-v14"></span>
+              <span id="cutman-preview-pop-v14" class="cutman-preview-pop-v14"></span>
+            </div>
+
+            <div class="cutman-reward-line boss-card-reward-line">
+              <span class="reward-text-label">획득 가능 :</span>
+              <span class="boss-reward-item">나사 <span class="boss-reward-emoji">🔩</span></span>
+              <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+              <span class="boss-reward-item">슈퍼록맨 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
+            </div>
+
+            <div id="cutman-card-message" class="boss-card-message"></div>
+          </div>
+        </div>
+      </button>
+    </div>
+
+    <div id="boss-group-irregular" class="boss-group-panel">
+      <div class="boss-empty-note">이레귤러 보스는 추후 추가 예정입니다.</div>
+    </div>
+    <div id="boss-group-virus" class="boss-group-panel">
+      <div class="boss-empty-note">바이러스 내비는 추후 추가 예정입니다.</div>
+    </div>
+    <div id="boss-group-zero" class="boss-group-panel">
+      <div class="boss-empty-note">록맨제로 보스는 추후 추가 예정입니다.</div>
+    </div>
 </div>
-
-  <img id="boss-img" class="boss-main-image"
-       src="sprites/boss/super-rboss/super-rboss.png"
-       onclick="enterBossBattle()">
-
-</div>
-    </div> <!-- system-panel -->
 </div> <!-- boss-tab -->
 
 

@@ -38,11 +38,6 @@ body {
 
 .tab-btn {
     width: 65px;
-    min-height: 44px;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     padding: 8px 4px;
     background: #111;
     color: #777;
@@ -167,12 +162,15 @@ body {
 }
 
 #enemy-img {
-    display: block;
     width: 22px;
     height: 22px;
     image-rendering: pixelated;
     object-fit: contain;
     margin-top: 18px;
+}
+
+#enemy-img {
+    display: block;
 }
 
 #enemy-area.sniperjoe-area {
@@ -526,7 +524,10 @@ body {
     text-shadow: 0 0 8px #00d4ff;
 }
 
-/* .partner-desc 공통 스타일은 하단의 실제 적용값으로 통합됨 */
+.partner-desc {
+    font-size: 13px;
+    color: #aaa;
+}
 
 .partner-card {
     position: relative;
@@ -888,12 +889,10 @@ body {
 }
 
 .armor-main-image {
+  max-width: 190px;
+  max-height: 135px;
   position: relative;
   z-index: 2;
-  width: 180px;
-  max-width: none;
-  max-height: none;
-  image-rendering: pixelated;
 }
 
 .armor-part-list {
@@ -996,6 +995,14 @@ body {
   flex: 0 0 110px;
 }
 
+.armor-main-image {
+  width: 180px;
+  max-width: none;
+  max-height: none;
+  image-rendering: pixelated;
+  
+}
+
 .armor-right {
   flex: 1;
   display: flex;
@@ -1051,6 +1058,20 @@ body {
 
 .boss-enter {
   animation: bossEnter 0.5s ease-out;
+}
+
+@keyframes bossEnter {
+  0% {
+    transform: translateY(-80px) scale(1.3);
+    opacity: 0;
+  }
+  70% {
+    transform: translateY(6px) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
 }
 
 .game-screen.boss-mode {
@@ -1593,10 +1614,10 @@ body {
 
 .rockexe-area {
   position: absolute;
-  left: 50px;
-  bottom: 35px;
+  left: 35px;
+  bottom: 18px;
   display: none;
-  z-index: 5;
+  z-index: 7;
 }
 
 .rockexe-area.active {
@@ -1628,63 +1649,6 @@ body {
   box-shadow: 0 0 8px #ffd700, inset 0 0 8px #ffd700;
 }
 
-.projectile-explosion {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 22;
-}
-
-.rockexe-explosion {
-  background:
-    radial-gradient(circle, rgba(255,255,255,0.98) 0 18%, rgba(255,244,133,0.95) 20% 42%, rgba(255,166,0,0.9) 45% 68%, rgba(255,79,0,0.72) 70% 82%, rgba(255,79,0,0) 100%);
-  box-shadow:
-    0 0 10px rgba(255,255,255,0.8),
-    0 0 20px rgba(255,191,0,0.9),
-    0 0 28px rgba(255,94,0,0.7);
-  animation: rockexeExplosionBurst 0.32s ease-out forwards;
-}
-
-.projectile-explosion-particle {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 23;
-}
-
-.rockexe-explosion-particle {
-  background: radial-gradient(circle, rgba(255,255,255,1) 0 20%, rgba(255,214,10,0.95) 25% 60%, rgba(255,92,0,0.7) 100%);
-  box-shadow: 0 0 6px rgba(255,214,10,0.85), 0 0 12px rgba(255,92,0,0.65);
-  animation: rockexeExplosionParticle 0.42s ease-out forwards;
-}
-
-@keyframes rockexeExplosionBurst {
-  0% {
-    transform: scale(0.3);
-    opacity: 0.25;
-  }
-  35% {
-    transform: scale(1.12);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.42);
-    opacity: 0;
-  }
-}
-
-@keyframes rockexeExplosionParticle {
-  0% {
-    transform: translate(0, 0) scale(0.45);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(var(--x), var(--y)) scale(0.1);
-    opacity: 0;
-  }
-}
 
 /* 광산 탭 */
 .mine-panel h2 {
@@ -2309,7 +2273,12 @@ body {
 }
 
 
-/* 좌측 메뉴 재배치 값은 상단 .tab-bookmark-left에 통합됨 */
+/* 좌측 메뉴 재배치: 전투 / 광산 / 개발실 / 보스전 */
+.tab-bookmark-left {
+  left: -67px;
+  top: 55px;
+}
+
 
 @property --sync {
   syntax: '<percentage>';
@@ -2323,7 +2292,14 @@ body {
   top: 55px;
 }
 
-/* 우측 날개 버튼이 기존 탭 버튼과 정확히 줄 맞도록 고정: 위 .tab-btn 공통 설정에 통합됨 */
+/* 우측 날개 버튼이 기존 탭 버튼과 정확히 줄 맞도록 고정 */
+.tab-btn {
+  box-sizing: border-box;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 .partner-sync-wing {
   position: absolute;
@@ -2745,4 +2721,1451 @@ body {
 #rockman-img {
     width: 41px;
     height: 41px;
+}
+
+
+/* 보스전 탭 v2: 카테고리 펼침 + 보스 선택 카드 */
+.boss-panel-v2 {
+  min-height: 620px;
+  padding: 14px 16px 18px;
+  background: #101010;
+}
+
+.boss-panel-v2 h2 {
+  margin-bottom: 12px;
+}
+
+.boss-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.boss-category-btn {
+  position: relative;
+  width: 100%;
+  height: 42px;
+  padding: 0 14px;
+  background: #141414;
+  color: #777;
+  border: 2px solid #333;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: left;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+}
+
+.boss-category-btn.active {
+  color: #001632;
+  background: #12aee7;
+  border-color: #12d8ff;
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.75);
+}
+
+.boss-category-btn.locked {
+  opacity: 0.55;
+}
+
+.boss-category-btn::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-right: 3px solid currentColor;
+  border-bottom: 3px solid currentColor;
+  transform: translateY(-65%) rotate(45deg);
+  opacity: 0.75;
+}
+
+.boss-category-btn.active::after {
+  transform: translateY(-35%) rotate(225deg);
+}
+
+.boss-group-panel {
+  display: none;
+  animation: bossGroupOpen 0.18s ease-out;
+}
+
+.boss-group-panel.open {
+  display: block;
+}
+
+@keyframes bossGroupOpen {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.boss-group-title {
+  position: relative;
+  height: 41px;
+  margin: 8px 0 12px;
+  padding: 8px 16px;
+  color: #071956;
+  background: #11aee4;
+  font-size: 22px;
+  line-height: 25px;
+  font-weight: 900;
+  text-align: left;
+  letter-spacing: -1px;
+  box-sizing: border-box;
+}
+
+.boss-group-title::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 0;
+  width: 88px;
+  height: 100%;
+  background: repeating-linear-gradient(45deg, transparent 0 8px, #06315f 8px 11px, transparent 11px 18px);
+  transform: skewX(25deg);
+  opacity: 0.9;
+}
+
+.boss-select-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  width: 100%;
+  min-height: 108px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: #f33822;
+  overflow: hidden;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  text-align: left;
+  color: #fff;
+  transition: transform 0.14s ease-out, filter 0.14s ease-out, box-shadow 0.14s ease-out;
+}
+
+.boss-select-card:hover {
+  transform: scale(1.025);
+  filter: brightness(1.08);
+  box-shadow: 0 0 12px rgba(255, 70, 35, 0.9);
+  z-index: 3;
+}
+
+.boss-select-card.selecting {
+  animation: bossCardSelected 0.52s steps(2, end) 2;
+}
+
+@keyframes bossCardSelected {
+  0% { filter: brightness(1); box-shadow: 0 0 0 rgba(255,255,255,0); }
+  50% { filter: brightness(1.9); box-shadow: 0 0 18px #fff, 0 0 28px #ff3b22; }
+  100% { filter: brightness(1); box-shadow: 0 0 0 rgba(255,255,255,0); }
+}
+
+.boss-portrait-box {
+  position: relative;
+  background: #111;
+  overflow: hidden;
+}
+
+.boss-portrait-img {
+  width: 112px;
+  height: 108px;
+  object-fit: cover;
+  image-rendering: pixelated;
+  display: block;
+}
+
+.boss-card-main {
+  position: relative;
+  padding: 8px 9px 6px;
+}
+
+.boss-card-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.75);
+  padding-bottom: 4px;
+}
+
+.boss-card-name {
+  font-size: 22px;
+  font-weight: 900;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.25);
+}
+
+.boss-entry-cost {
+  min-width: 60px;
+  padding: 4px 8px;
+  color: #8bffb0;
+  background: #0e291d;
+  border: 1px solid #48d477;
+  border-radius: 2px;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.boss-card-preview {
+  display: grid;
+  grid-template-columns: 118px 1fr 54px;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.boss-demo-stage {
+  position: relative;
+  height: 48px;
+  overflow: hidden;
+}
+
+.cutman-demo-img {
+  position: absolute;
+  left: 1px;
+  bottom: 2px;
+  width: 42px;
+  height: 42px;
+  image-rendering: pixelated;
+  animation: cutmanDemoAttack 1.45s steps(1, end) infinite;
+}
+
+@keyframes cutmanDemoAttack {
+  0%, 42%, 100% { content: url("sprites/boss/super-rboss/cutman/cutman_at_01.png"); }
+  43%, 78% { content: url("sprites/boss/super-rboss/cutman/cutman_at_02.png"); }
+}
+
+.cutman-demo-rock-bullet {
+  position: absolute;
+  left: 73px;
+  bottom: 20px;
+  width: 28px;
+  height: 18px;
+  background-image: url("sprites/rock/rock_bullet_01.png");
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  animation: cutmanRockBulletErase 1.45s linear infinite;
+}
+
+.cutman-demo-bullet {
+  position: absolute;
+  left: 36px;
+  bottom: 16px;
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+  animation: cutmanCutterErase 1.45s linear infinite;
+  z-index: 2;
+}
+
+.cutman-demo-erase-pop {
+  position: absolute;
+  left: 83px;
+  bottom: 24px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 18%, #ffd700 24% 48%, rgba(255,80,0,0.8) 55%, rgba(255,80,0,0) 78%);
+  opacity: 0;
+  animation: cutmanErasePop 1.45s ease-out infinite;
+  z-index: 3;
+}
+
+@keyframes cutmanCutterErase {
+  0%, 40% { transform: translateX(0) rotate(0deg); opacity: 0; }
+  45% { opacity: 1; }
+  78% { transform: translateX(48px) rotate(420deg); opacity: 1; }
+  86%, 100% { transform: translateX(52px) rotate(500deg); opacity: 0; }
+}
+
+@keyframes cutmanRockBulletErase {
+  0% { transform: translateX(0); opacity: 1; }
+  56% { transform: translateX(-8px); opacity: 1; }
+  76% { transform: translateX(-14px); opacity: 1; }
+  80%, 100% { transform: translateX(-14px); opacity: 0; }
+}
+
+@keyframes cutmanErasePop {
+  0%, 72% { opacity: 0; transform: scale(0.3); }
+  78% { opacity: 1; transform: scale(1.6); }
+  100% { opacity: 0; transform: scale(2.7); }
+}
+
+.boss-card-reward-text {
+  color: #fff6d2;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.25;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.45);
+}
+
+.boss-card-rewards {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+}
+
+.boss-reward-icon {
+  width: 23px;
+  height: 23px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.8));
+}
+
+.reward-screw-like {
+  filter: sepia(1) saturate(2) hue-rotate(350deg) drop-shadow(0 0 3px rgba(0,0,0,0.8));
+}
+
+.boss-empty-note {
+  margin: 8px 0;
+  padding: 14px;
+  color: #777;
+  border: 1px dashed #333;
+  background: #0a0a0a;
+  font-size: 12px;
+}
+
+.boss-material-status {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+  padding: 7px;
+  color: #9dffbf;
+  background: #050b06;
+  border: 1px solid #145c2e;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.boss-material-status b {
+  color: #fff;
+}
+
+
+/* 컷맨 보스 카드 수정 */
+.boss-group-title,
+.classic-title,
+.classic-boss-section-title,
+.boss-section-title,
+.boss-category-title,
+.boss-list-title,
+.cutman-card-title-strip {
+  display: none !important;
+}
+
+.cutman-demo-img,
+.cutman-preview-attack,
+.cutman-at-img,
+.boss-card-cutman-at,
+.cutman-attack-sprite {
+  transform: scaleX(-1) !important;
+  transform-origin: center center;
+}
+
+.cutman-reward-line,
+.boss-card-reward-line {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  margin-top: 2px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 1px 1px 0 #8b1b12, 0 0 5px rgba(0,0,0,0.85);
+  white-space: nowrap;
+}
+
+.cutman-reward-line .reward-text-label,
+.boss-card-reward-line .reward-text-label {
+  color: #fff;
+  margin-right: 1px;
+}
+
+.cutman-reward-line img,
+.boss-card-reward-line img,
+.boss-reward-chip-icon {
+  width: 28px !important;
+  height: 28px !important;
+  image-rendering: pixelated;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.cutman-reward-line .screw-icon,
+.boss-card-reward-line .screw-icon,
+.cutman-reward-line img[src*="screw"],
+.boss-card-reward-line img[src*="screw"],
+.cutman-reward-line img[src*="stone"],
+.boss-card-reward-line img[src*="stone"],
+.reward-screw-like {
+  display: none !important;
+}
+
+
+/* 컷맨 카드 세부 조정 v3 */
+.cutman-card,
+#boss-card-cutman {
+  overflow: visible !important;
+}
+
+#boss-card-cutman .boss-card-main,
+.cutman-card .boss-card-main {
+  min-width: 0;
+  overflow: visible !important;
+}
+
+#boss-card-cutman .boss-card-topline,
+.cutman-card .boss-card-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+#boss-card-cutman .boss-card-name,
+.cutman-card .boss-card-name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#boss-card-cutman .boss-entry-cost,
+.cutman-card .boss-entry-cost {
+  flex: 0 0 auto;
+  min-width: 44px;
+  padding: 3px 7px !important;
+  white-space: nowrap;
+  box-sizing: border-box;
+  overflow: visible !important;
+  text-align: center;
+}
+
+#boss-card-cutman .boss-card-preview,
+.cutman-card .boss-card-preview {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 48px;
+  overflow: visible !important;
+}
+
+#boss-card-cutman .boss-demo-stage,
+.cutman-card .boss-demo-stage {
+  transform: scale(1.22);
+  transform-origin: left center;
+  margin-left: 4px;
+  margin-top: 0;
+  margin-bottom: 1px;
+  overflow: visible !important;
+}
+
+#boss-card-cutman .cutman-reward-line,
+.cutman-card .cutman-reward-line,
+#boss-card-cutman .boss-card-reward-line,
+.cutman-card .boss-card-reward-line {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 0 2px 0 0;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  text-align: left;
+  text-shadow: 1px 1px 0 #8b1b12, 0 0 5px rgba(0,0,0,0.85);
+}
+
+#boss-card-cutman .reward-text-label,
+.cutman-card .reward-text-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: visible;
+}
+
+#boss-card-cutman .boss-reward-chip-icons,
+.cutman-card .boss-reward-chip-icons {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-left: auto;
+  padding-left: 4px;
+}
+
+#boss-card-cutman .boss-reward-chip-icon,
+.cutman-card .boss-reward-chip-icon {
+  width: 28px !important;
+  height: 28px !important;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+/* 선택 시 빠르게 3회 깜빡임 */
+.boss-select-card.selecting,
+.cutman-boss-card.selecting,
+#boss-card-cutman.selecting {
+  animation: bossCardSelectedBlinkFast 0.12s linear 6 !important;
+}
+
+@keyframes bossCardSelectedBlinkFast {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(2.25) saturate(1.4); }
+}
+
+
+/* 보스전 종류 버튼 한 줄 정렬 + 컷맨 카드 재배치 v4 */
+.boss-panel-v2 .boss-category-list {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 3px !important;
+  margin-bottom: 10px !important;
+  width: 100% !important;
+}
+
+.boss-panel-v2 .boss-category-btn {
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 42px !important;
+  padding: 4px 2px !important;
+  font-size: 11px !important;
+  line-height: 1.15 !important;
+  white-space: normal !important;
+  word-break: keep-all !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+
+.boss-panel-v2 .boss-group-panel {
+  margin-top: 4px !important;
+}
+
+/* 컷맨 초상화 세로 높이에 맞춰 카드 축소 */
+#boss-card-cutman,
+.cutman-card {
+  min-height: 104px !important;
+  height: 104px !important;
+  padding: 0 !important;
+  align-items: stretch !important;
+  overflow: visible !important;
+}
+
+#boss-card-cutman .boss-portrait-box,
+.cutman-card .boss-portrait-box {
+  flex: 0 0 112px !important;
+  width: 112px !important;
+  height: 104px !important;
+  overflow: hidden !important;
+}
+
+#boss-card-cutman .boss-portrait-img,
+.cutman-card .boss-portrait-img {
+  width: 112px !important;
+  height: 104px !important;
+  object-fit: cover !important;
+  image-rendering: pixelated;
+}
+
+#boss-card-cutman .boss-card-main,
+.cutman-card .boss-card-main {
+  height: 104px !important;
+  padding: 5px 6px 4px 8px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+#boss-card-cutman .boss-card-topline,
+.cutman-card .boss-card-topline {
+  height: 28px !important;
+  margin-bottom: 0 !important;
+}
+
+#boss-card-cutman .boss-card-preview,
+.cutman-card .boss-card-preview {
+  height: 66px !important;
+  min-height: 66px !important;
+  position: relative !important;
+  overflow: visible !important;
+}
+
+/* 불렛 이레이징 애니메이션을 왼쪽으로 당기고 조금 크게 표시 */
+#boss-card-cutman .boss-demo-stage,
+.cutman-card .boss-demo-stage {
+  position: relative !important;
+  width: 170px !important;
+  height: 34px !important;
+  margin-left: -12px !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  transform: scale(1.28) !important;
+  transform-origin: left center !important;
+  overflow: visible !important;
+}
+
+#boss-card-cutman .cutman-demo-img,
+.cutman-card .cutman-demo-img {
+  left: 4px !important;
+}
+
+#boss-card-cutman .cutman-demo-bullet,
+.cutman-card .cutman-demo-bullet {
+  left: 64px !important;
+}
+
+#boss-card-cutman .cutman-demo-rock-bullet,
+.cutman-card .cutman-demo-rock-bullet {
+  left: 126px !important;
+}
+
+#boss-card-cutman .cutman-demo-erase-pop,
+.cutman-card .cutman-demo-erase-pop {
+  left: 134px !important;
+}
+
+/* 보상 한 줄: 카드칩 옆 카드칩, 슈퍼록맨 데이터칩 옆 데이터칩 */
+#boss-card-cutman .cutman-reward-line,
+.cutman-card .cutman-reward-line,
+#boss-card-cutman .boss-card-reward-line,
+.cutman-card .boss-card-reward-line {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 4px !important;
+  width: 100% !important;
+  height: 24px !important;
+  padding: 0 0 0 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  color: #fff !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  text-align: left !important;
+  overflow: visible !important;
+  text-shadow: 1px 1px 0 #8b1b12, 0 0 5px rgba(0,0,0,0.85);
+}
+
+#boss-card-cutman .boss-reward-item,
+.cutman-card .boss-reward-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  flex: 0 0 auto !important;
+}
+
+#boss-card-cutman .boss-reward-chip-icon,
+.cutman-card .boss-reward-chip-icon {
+  width: 22px !important;
+  height: 22px !important;
+  image-rendering: pixelated;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+
+/* 보스전 버튼 화살표 제거 + 컷맨 카드 위치 보정 v5 */
+.boss-category-btn::before,
+.boss-category-btn::after,
+.boss-group-classic-btn::before,
+.boss-group-classic-btn::after,
+#boss-group-classic-btn::before,
+#boss-group-classic-btn::after,
+#boss-group-irregular-btn::before,
+#boss-group-irregular-btn::after,
+#boss-group-virus-btn::before,
+#boss-group-virus-btn::after,
+#boss-group-zero-btn::before,
+#boss-group-zero-btn::after {
+  content: none !important;
+  display: none !important;
+}
+
+.boss-category-btn {
+  background-image: none !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.boss-category-btn span,
+.boss-category-btn {
+  text-decoration: none !important;
+}
+
+/* 하단 칩 보유량 바 제거 */
+.boss-material-status {
+  display: none !important;
+}
+
+/* 컷맨 카드: 너무 낮아져서 초상화/애니메이션이 밀리지 않도록 높이 재조정 */
+#boss-card-cutman,
+.cutman-card {
+  min-height: 116px !important;
+  height: 116px !important;
+  padding: 0 !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+}
+
+#boss-card-cutman .boss-portrait-box,
+.cutman-card .boss-portrait-box {
+  flex: 0 0 116px !important;
+  width: 116px !important;
+  height: 116px !important;
+  overflow: hidden !important;
+  align-self: stretch !important;
+}
+
+#boss-card-cutman .boss-portrait-img,
+.cutman-card .boss-portrait-img {
+  width: 116px !important;
+  height: 116px !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  image-rendering: pixelated;
+}
+
+#boss-card-cutman .boss-card-main,
+.cutman-card .boss-card-main {
+  position: relative !important;
+  height: 116px !important;
+  min-height: 116px !important;
+  padding: 5px 8px 4px 8px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+#boss-card-cutman .boss-card-topline,
+.cutman-card .boss-card-topline {
+  height: 30px !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: flex-start !important;
+}
+
+#boss-card-cutman .boss-card-name,
+.cutman-card .boss-card-name {
+  line-height: 1.1 !important;
+}
+
+#boss-card-cutman .boss-card-preview,
+.cutman-card .boss-card-preview {
+  position: absolute !important;
+  left: 8px !important;
+  right: 8px !important;
+  top: 38px !important;
+  bottom: 4px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+/* 컷맨 불렛 이레이징 미리보기: 카드 안쪽 중앙선으로 복구 */
+#boss-card-cutman .boss-demo-stage,
+.cutman-card .boss-demo-stage {
+  position: relative !important;
+  width: 170px !important;
+  height: 42px !important;
+  margin-left: -4px !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  transform: scale(1.14) !important;
+  transform-origin: left center !important;
+  overflow: visible !important;
+}
+
+#boss-card-cutman .cutman-demo-img,
+.cutman-card .cutman-demo-img {
+  left: 0 !important;
+  top: 0 !important;
+}
+
+#boss-card-cutman .cutman-demo-bullet,
+.cutman-card .cutman-demo-bullet {
+  left: 62px !important;
+  top: 15px !important;
+}
+
+#boss-card-cutman .cutman-demo-rock-bullet,
+.cutman-card .cutman-demo-rock-bullet {
+  left: 122px !important;
+  top: 18px !important;
+}
+
+#boss-card-cutman .cutman-demo-erase-pop,
+.cutman-card .cutman-demo-erase-pop {
+  left: 130px !important;
+  top: 18px !important;
+}
+
+/* 보상 한 줄은 카드 하단에 고정 */
+#boss-card-cutman .cutman-reward-line,
+.cutman-card .cutman-reward-line,
+#boss-card-cutman .boss-card-reward-line,
+.cutman-card .boss-card-reward-line {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 4px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 9px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#boss-card-cutman .boss-reward-chip-icon,
+.cutman-card .boss-reward-chip-icon {
+  width: 21px !important;
+  height: 21px !important;
+}
+
+
+/* 컷맨 카드 가독성/영역 분리/중앙 메시지 v6 */
+#boss-tab,
+#boss-tab * {
+  font-family: Arial, "Malgun Gothic", "맑은 고딕", sans-serif !important;
+}
+
+#boss-card-cutman,
+.cutman-card {
+  position: relative !important;
+  min-height: 124px !important;
+  height: 124px !important;
+}
+
+#boss-card-cutman .boss-portrait-box,
+.cutman-card .boss-portrait-box {
+  height: 124px !important;
+}
+
+#boss-card-cutman .boss-portrait-img,
+.cutman-card .boss-portrait-img {
+  height: 124px !important;
+}
+
+#boss-card-cutman .boss-card-main,
+.cutman-card .boss-card-main {
+  height: 124px !important;
+  min-height: 124px !important;
+  padding: 5px 8px 5px 9px !important;
+}
+
+/* 애니메이션 영역: 위쪽에 분리된 투명 무대 */
+#boss-card-cutman .boss-card-preview,
+.cutman-card .boss-card-preview {
+  top: 36px !important;
+  bottom: 5px !important;
+  display: block !important;
+}
+
+#boss-card-cutman .boss-demo-stage,
+.cutman-card .boss-demo-stage {
+  position: absolute !important;
+  left: 0 !important;
+  top: 2px !important;
+  width: 180px !important;
+  height: 42px !important;
+  margin: 0 !important;
+  transform: scale(1.18) !important;
+  transform-origin: left center !important;
+  border-bottom: 1px solid rgba(255,255,255,0.42);
+  overflow: visible !important;
+}
+
+/* 보상 영역: 아래쪽 별도 줄 */
+#boss-card-cutman .cutman-reward-line,
+.cutman-card .cutman-reward-line,
+#boss-card-cutman .boss-card-reward-line,
+.cutman-card .boss-card-reward-line {
+  bottom: 0 !important;
+  height: 34px !important;
+  padding: 4px 2px 0 0 !important;
+  border-top: 1px solid rgba(255,255,255,0.45);
+  background: rgba(255, 59, 32, 0.08);
+  gap: 5px !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.7px;
+  overflow: visible !important;
+}
+
+#boss-card-cutman .reward-text-label,
+.cutman-card .reward-text-label {
+  font-size: 11px !important;
+  flex: 0 0 auto !important;
+}
+
+#boss-card-cutman .boss-reward-item,
+.cutman-card .boss-reward-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  flex: 0 0 auto !important;
+}
+
+#boss-card-cutman .boss-reward-chip-icon,
+.cutman-card .boss-reward-chip-icon {
+  width: 27px !important;
+  height: 27px !important;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+/* 컷맨 카드 중앙 안내 */
+.boss-card-message {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  min-width: 130px;
+  padding: 8px 12px;
+  transform: translate(-50%, -50%) scale(0.85);
+  color: #fff;
+  background: rgba(0, 0, 0, 0.86);
+  border: 2px solid #00d4ff;
+  border-radius: 6px;
+  box-shadow: 0 0 12px #00d4ff, inset 0 0 8px rgba(0, 212, 255, 0.35);
+  font-size: 15px;
+  font-weight: 900;
+  text-align: center;
+  text-shadow: 0 0 7px #00d4ff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 80;
+}
+
+.boss-card-message.active {
+  animation: bossCardMessagePop 0.9s ease-out forwards;
+}
+
+@keyframes bossCardMessagePop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.72); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+  72% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -60%) scale(0.95); }
+}
+
+
+/* 컷맨 카드 마무리 조정 v7 */
+#boss-card-cutman .boss-demo-stage,
+.cutman-card .boss-demo-stage {
+  border-bottom: none !important;
+}
+
+/* 보상 영역 상단 구분선도 제거 */
+#boss-card-cutman .cutman-reward-line,
+.cutman-card .cutman-reward-line,
+#boss-card-cutman .boss-card-reward-line,
+.cutman-card .boss-card-reward-line {
+  border-top: none !important;
+}
+
+/* 나사 이모지 균형용 */
+#boss-card-cutman .boss-reward-emoji,
+.cutman-card .boss-reward-emoji {
+  display: inline-block;
+  font-size: 15px !important;
+  line-height: 1;
+  transform: translateY(1px);
+  filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.55));
+}
+
+/* 컷맨 커터가 너무 멀리서 시작되지 않도록 컷맨 바로 앞쪽으로 당김 */
+#boss-card-cutman .cutman-demo-bullet,
+.cutman-card .cutman-demo-bullet {
+  left: 42px !important;
+  top: 15px !important;
+}
+
+#boss-card-cutman .cutman-demo-rock-bullet,
+.cutman-card .cutman-demo-rock-bullet {
+  left: 118px !important;
+  top: 18px !important;
+}
+
+#boss-card-cutman .cutman-demo-erase-pop,
+.cutman-card .cutman-demo-erase-pop {
+  left: 126px !important;
+  top: 18px !important;
+}
+
+
+/* 컷맨 불렛 이레이징 중심 겹침 조정 v8 */
+#boss-card-cutman .boss-demo-stage,
+.cutman-card .boss-demo-stage {
+  width: 160px !important;
+  height: 42px !important;
+  margin-left: -8px !important;
+  transform: scale(1.18) !important;
+  transform-origin: left center !important;
+  overflow: visible !important;
+  border-bottom: none !important;
+}
+
+/* 컷맨 커터: 컷맨 바로 앞쪽에서 시작 */
+#boss-card-cutman .cutman-demo-bullet,
+.cutman-card .cutman-demo-bullet {
+  left: 24px !important;
+  top: 15px !important;
+  transform-origin: center center !important;
+}
+
+/* 록맨탄: 커터와 중심이 겹치는 위치로 조정 */
+#boss-card-cutman .cutman-demo-rock-bullet,
+.cutman-card .cutman-demo-rock-bullet {
+  left: 92px !important;
+  top: 18px !important;
+}
+
+/* 폭발: 커터/록맨탄 중심이 겹치는 중앙에 배치 */
+#boss-card-cutman .cutman-demo-erase-pop,
+.cutman-card .cutman-demo-erase-pop {
+  left: 100px !important;
+  top: 18px !important;
+  transform-origin: center center !important;
+}
+
+/* 기존 키프레임 이동거리가 너무 길면 중앙을 지나 멀리 가 보이므로 이동폭을 줄임 */
+#boss-card-cutman .cutman-demo-bullet,
+.cutman-card .cutman-demo-bullet {
+  animation-name: cutmanDemoBulletCloser !important;
+}
+
+#boss-card-cutman .cutman-demo-rock-bullet,
+.cutman-card .cutman-demo-rock-bullet {
+  animation-name: cutmanDemoRockBulletCloser !important;
+}
+
+#boss-card-cutman .cutman-demo-erase-pop,
+.cutman-card .cutman-demo-erase-pop {
+  animation-name: cutmanDemoEraseCenter !important;
+}
+
+@keyframes cutmanDemoBulletCloser {
+  0% {
+    transform: translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  55% {
+    transform: translateX(72px) rotate(430deg);
+    opacity: 1;
+  }
+  62% {
+    transform: translateX(76px) rotate(490deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(76px) rotate(490deg);
+    opacity: 0;
+  }
+}
+
+@keyframes cutmanDemoRockBulletCloser {
+  0% {
+    transform: translateX(36px);
+    opacity: 1;
+  }
+  45% {
+    transform: translateX(10px);
+    opacity: 1;
+  }
+  58% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  62% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+}
+
+@keyframes cutmanDemoEraseCenter {
+  0%, 54% {
+    transform: scale(0.25);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.35);
+    opacity: 1;
+  }
+  72% {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+}
+
+
+/* 컷맨 미리보기 단일 이미지 방식 v13
+   단 하나의 img#cutman-demo-img만 사용.
+   JS가 src를 at_01 -> at_02 -> at_01로 바꿈.
+*/
+#boss-card-cutman .cutman-demo-cutman-wrap,
+.cutman-card .cutman-demo-cutman-wrap,
+#boss-card-cutman .cutman-demo-throw,
+.cutman-card .cutman-demo-throw {
+  display: none !important;
+}
+
+#boss-card-cutman #cutman-demo-img,
+.cutman-card #cutman-demo-img,
+#boss-card-cutman .cutman-demo-img,
+.cutman-card .cutman-demo-img {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  image-rendering: pixelated;
+  transform: scaleX(-1) !important;
+  transform-origin: center center !important;
+}
+
+#boss-card-cutman .cutman-demo-bullet,
+.cutman-card .cutman-demo-bullet {
+  display: block !important;
+  visibility: visible !important;
+  left: 24px !important;
+  top: 15px !important;
+  opacity: 0;
+  transform-origin: center center !important;
+  animation: cutmanDemoBulletCloser 2.2s linear infinite !important;
+}
+
+#boss-card-cutman .cutman-demo-rock-bullet,
+.cutman-card .cutman-demo-rock-bullet {
+  display: block !important;
+  visibility: visible !important;
+  left: 92px !important;
+  top: 18px !important;
+  opacity: 0;
+  animation: cutmanDemoRockBulletCloser 2.2s linear infinite !important;
+}
+
+#boss-card-cutman .cutman-demo-erase-pop,
+.cutman-card .cutman-demo-erase-pop {
+  display: block !important;
+  visibility: visible !important;
+  left: 100px !important;
+  top: 18px !important;
+  opacity: 0;
+  transform-origin: center center !important;
+  animation: cutmanDemoEraseCenter 2.2s linear infinite !important;
+}
+
+
+/* 컷맨 미리보기 완전 분리 v14
+   기존 .cutman-demo-* CSS와 충돌하지 않는 전용 id/class만 사용.
+   프레임은 JS가 단일 img src를 at_01 -> at_02 -> at_01로 직접 변경.
+*/
+#boss-card-cutman .cutman-preview-stage-v14,
+.cutman-card .cutman-preview-stage-v14 {
+  position: relative !important;
+  width: 160px !important;
+  height: 42px !important;
+  margin-left: -8px !important;
+  transform: scale(1.18) !important;
+  transform-origin: left center !important;
+  overflow: visible !important;
+  border: none !important;
+}
+
+#cutman-preview-img-v14 {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  image-rendering: pixelated;
+  transform: scaleX(-1) !important;
+  transform-origin: center center !important;
+  z-index: 2;
+}
+
+#cutman-preview-cutter-v14 {
+  position: absolute !important;
+  left: 24px !important;
+  top: 15px !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 0;
+  image-rendering: pixelated;
+  transform-origin: center center !important;
+  z-index: 3;
+}
+
+#cutman-preview-rockbullet-v14 {
+  position: absolute !important;
+  left: 92px !important;
+  top: 18px !important;
+  width: 18px !important;
+  height: 8px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 0;
+  background-image: url("sprites/rock/rock_bullet_01.png");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  z-index: 2;
+}
+
+#cutman-preview-pop-v14 {
+  position: absolute !important;
+  left: 100px !important;
+  top: 18px !important;
+  width: 10px !important;
+  height: 10px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 18%, #ffd700 24% 48%, rgba(255,80,0,0.8) 55%, rgba(255,80,0,0) 78%);
+  transform-origin: center center !important;
+  z-index: 4;
+}
+
+
+/* 컷맨 커터 크기/궤적 보정 v15 */
+#cutman-preview-cutter-v14 {
+  left: 22px !important;
+  top: 12px !important;
+  width: 32px !important;
+  height: 32px !important;
+}
+
+#cutman-preview-rockbullet-v14 {
+  left: 92px !important;
+  top: 18px !important;
+}
+
+#cutman-preview-pop-v14 {
+  left: 102px !important;
+  top: 17px !important;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+
+/* 컷맨 카드 록맨 불릿 크기/소멸 타이밍 보정 v16 */
+#cutman-preview-rockbullet-v14 {
+  width: 30px !important;
+  height: 14px !important;
+  left: 86px !important;
+  top: 16px !important;
+  background-size: 100% 100% !important;
+}
+
+#cutman-preview-pop-v14 {
+  left: 101px !important;
+  top: 17px !important;
+  width: 14px !important;
+  height: 14px !important;
+}
+
+
+/* 보스전 중 탭 잠금 + 컷맨 실제 전투 커터 v17 */
+.tab-btn.boss-battle-tab-locked,
+.tab-btn:disabled.boss-battle-tab-locked {
+  opacity: 0.35 !important;
+  filter: grayscale(1) brightness(0.75);
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+.cutman-boss-cutter {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  z-index: 26;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.65));
+}
+
+.cutman-cutter-erase-pop {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 18%, #ffe66d 24% 46%, rgba(255,105,0,0.9) 58%, rgba(255,105,0,0) 82%);
+  box-shadow: 0 0 7px rgba(255,230,109,0.9), 0 0 13px rgba(255,105,0,0.65);
+  z-index: 30;
+  pointer-events: none;
+  animation: cutmanCutterErasePop 0.26s ease-out forwards;
+}
+
+@keyframes cutmanCutterErasePop {
+  0% { transform: scale(0.25); opacity: 0; }
+  35% { transform: scale(1.4); opacity: 1; }
+  100% { transform: scale(0.35); opacity: 0; }
+}
+
+
+/* 컷맨 보스전은 스나이퍼 죠처럼 제자리 고정 전투 */
+.game-screen.boss-mode .cutman-boss-cutter {
+  image-rendering: pixelated;
+}
+
+
+/* 컷맨 보스전 시각 보정 v20 */
+#enemy-area.boss-enter-area {
+  bottom: var(--boss-ground-bottom, 24px);
+}
+
+.game-screen.boss-mode #enemy-area {
+  height: 52px;
+}
+
+.game-screen.boss-mode #enemy-img {
+  image-rendering: pixelated;
+}
+
+.cutman-dead-blink {
+  animation: cutmanDeadBlink 0.26s step-end 5;
+}
+
+@keyframes cutmanDeadBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.18; }
+}
+
+.cutman-death-fade {
+  animation: cutmanDeathFade 0.72s ease-out forwards;
+}
+
+@keyframes cutmanDeathFade {
+  0% { opacity: 1; filter: brightness(1.1); }
+  45% { opacity: 0.75; filter: brightness(1.3) saturate(1.2); }
+  100% { opacity: 0; filter: brightness(1.55) saturate(1.45); }
+}
+
+.cutman-death-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #ff4040;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #ff4040, 0 0 14px rgba(255, 64, 64, 0.7);
+  z-index: 32;
+  animation: cutmanDeathParticle 1.15s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes cutmanDeathParticle {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--x), var(--y)) scale(0.2);
+    opacity: 0;
+  }
+}
+
+.reward-text {
+  color: #ffd700;
+  width: 260px;
+  max-width: 260px;
+  white-space: normal;
+  word-break: keep-all;
+  line-height: 1.25;
+  text-align: center;
+  font-size: 12px;
+  text-shadow: 0 0 6px #000, 0 0 10px rgba(255, 215, 0, 0.35);
+  animation: rewardFloatUp 1.8s ease-out forwards;
+}
+
+@keyframes rewardFloatUp {
+  0% { transform: translateY(0); opacity: 0; }
+  12% { transform: translateY(-2px); opacity: 1; }
+  75% { transform: translateY(-14px); opacity: 1; }
+  100% { transform: translateY(-22px); opacity: 0; }
+}
+
+
+/* 컷맨 보상 위치 보정 v24 */
+.reward-text {
+  left: 24px;
+  overflow-wrap: anywhere;
+}
+
+
+/* 컷맨 보상 아이콘 + 사망 연출 연장 v25 */
+.reward-inline-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  vertical-align: middle;
+}
+
+.reward-inline-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  vertical-align: middle;
+  transform: translateY(-1px);
+}
+
+.reward-sep {
+  display: inline-block;
+  margin: 0 4px;
+  opacity: 0.92;
+}
+
+.reward-inline-screw {
+  font-weight: 700;
+}
+
+.cutman-dead-blink {
+  animation: cutmanDeadBlink 0.52s step-end 5;
+}
+
+.cutman-death-fade {
+  animation: cutmanDeathFade 1.44s ease-out forwards;
+}
+
+.cutman-death-particle {
+  animation: cutmanDeathParticle 2.2s ease-out forwards;
 }
