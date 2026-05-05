@@ -5,13 +5,17 @@ const defaultData = {
     stones: 0,
     materials: {
         cardChip: 0,
-        superRockChip: 0
+        superRockChip: 0,
+        bluesBusterChip: 0,
+        superForteChip: 0,
+        optionChangeChip: 0
     },
 
     development: {
         currentLabIndex: 0,
         selectedItem: 'superRock',
-        superRockProgress: 0
+        superRockProgress: 0,
+        superRockUnlocked: false
     },
 
     minePickaxeOwned: false,
@@ -56,6 +60,12 @@ const defaultData = {
 
     partnerAtkSpd: 2000,
 
+    cards: {
+        owned: [],
+        equipped: [null, null, null],
+        nextId: 1
+    },
+
     // 동료 공격력 싱크로율(%) - 록맨 버스터 공격력 기준
     partnerSync: {
         blues: 10,
@@ -95,7 +105,8 @@ let gameData = {
     costs: { ...defaultData.costs, ...(savedData.costs || {}) },
     partnerSync: { ...defaultData.partnerSync, ...(savedData.partnerSync || {}) },
     materials: { ...defaultData.materials, ...(savedData.materials || {}) },
-    development: { ...defaultData.development, ...(savedData.development || {}) }
+    development: { ...defaultData.development, ...(savedData.development || {}) },
+    cards: { ...defaultData.cards, ...(savedData.cards || {}) }
 };
 
 if (savedData.partnerFragments && !savedData.rushFragments) {
@@ -113,6 +124,9 @@ gameData.stones = Math.floor(gameData.stones || 0);
 gameData.materials = { ...defaultData.materials, ...(gameData.materials || {}) };
 gameData.materials.cardChip = Math.floor(gameData.materials.cardChip || 0);
 gameData.materials.superRockChip = Math.floor(gameData.materials.superRockChip || 0);
+gameData.materials.bluesBusterChip = Math.floor(gameData.materials.bluesBusterChip || 0);
+gameData.materials.superForteChip = Math.floor(gameData.materials.superForteChip || 0);
+gameData.materials.optionChangeChip = Math.floor(gameData.materials.optionChangeChip || 0);
 gameData.materials = { ...defaultData.materials, ...(gameData.materials || {}) };
 Object.keys(defaultData.materials).forEach(key => {
     gameData.materials[key] = Math.max(0, Math.floor(gameData.materials[key] || 0));
@@ -121,6 +135,20 @@ gameData.development = { ...defaultData.development, ...(gameData.development ||
 gameData.development.currentLabIndex = Math.max(0, Math.min(3, Math.floor(gameData.development.currentLabIndex || 0)));
 gameData.development.selectedItem = gameData.development.selectedItem || 'superRock';
 gameData.development.superRockProgress = Math.max(0, Math.min(30, Math.floor(gameData.development.superRockProgress || 0)));
+
+gameData.cards = { ...defaultData.cards, ...(gameData.cards || {}) };
+if (!Array.isArray(gameData.cards.owned)) gameData.cards.owned = [];
+if (!Array.isArray(gameData.cards.equipped)) gameData.cards.equipped = [null, null, null];
+gameData.cards.equipped = [0, 1, 2].map(i => gameData.cards.equipped[i] || null);
+gameData.cards.nextId = Math.max(1, Math.floor(gameData.cards.nextId || 1));
+gameData.cards.owned = gameData.cards.owned
+    .filter(card => card && card.id && card.type && card.grade)
+    .map(card => ({
+        id: String(card.id),
+        type: card.type,
+        grade: card.grade,
+        value: Math.max(0, Number(card.value || 0))
+    }));
 gameData.minePickaxeOwned = gameData.minePickaxeOwned || false;
 gameData.minePickaxeTier = Math.max(0, Math.floor(gameData.minePickaxeTier || 0));
 gameData.minePickaxeFloorTier = Math.max(0, Math.floor(gameData.minePickaxeFloorTier || 0));
@@ -186,6 +214,72 @@ const SNIPERJOE_DODGE_CHANCE = 0.10;
 // 값이 클수록 빠릅니다. 0.38은 기존 원거리 탄속보다 약간 정돈된 기준입니다.
 const PROJECTILE_MIN_DURATION = 90;
 const PROJECTILE_SPEED_PX_PER_MS = 0.38;
+
+// 전투 밸런스 안전 한계치입니다.
+// 고스테이지에서 적이 너무 빨라지거나, 아군/동료 공속이 과하게 빨라져
+// 근접 캐릭터 위치와 투사체/스프라이트 타이밍이 어긋나는 문제를 막습니다.
+const PLAYER_ATTACK_SPEED_MIN_MS = 450;
+const PARTNER_ATTACK_SPEED_MIN_MS = 700;
+const SPEED_UPGRADE_MAX_LEVEL = 15;
+const CRIT_UPGRADE_MAX_LEVEL = 20;
+const CRIT_CHANCE_MAX_FROM_UPGRADE = 50;
+const EXE_BOMB_STUN_DURATION_MS = 2000;
+const ENEMY_MOVE_SPEED_MAX = 1.05;
+
+
+function getCritChanceForLevel(level) {
+    const lv = Math.max(1, Math.min(CRIT_UPGRADE_MAX_LEVEL, Math.floor(level || 1)));
+    if (lv >= CRIT_UPGRADE_MAX_LEVEL) return CRIT_CHANCE_MAX_FROM_UPGRADE;
+    const progress = (lv - 1) / Math.max(1, CRIT_UPGRADE_MAX_LEVEL - 1);
+    return Math.round((defaultData.critChance + (CRIT_CHANCE_MAX_FROM_UPGRADE - defaultData.critChance) * progress) * 10) / 10;
+}
+
+function clampBattleBalanceValues() {
+    gameData.lv = { ...defaultData.lv, ...(gameData.lv || {}) };
+    gameData.lv.spd = Math.min(SPEED_UPGRADE_MAX_LEVEL, Math.max(1, Math.floor(gameData.lv.spd || 1)));
+    gameData.lv.partnerSpd = Math.min(SPEED_UPGRADE_MAX_LEVEL, Math.max(1, Math.floor(gameData.lv.partnerSpd || 1)));
+    gameData.lv.crit = Math.min(CRIT_UPGRADE_MAX_LEVEL, Math.max(1, Math.floor(gameData.lv.crit || 1)));
+    if (gameData.lv.crit >= CRIT_UPGRADE_MAX_LEVEL) {
+        gameData.critChance = CRIT_CHANCE_MAX_FROM_UPGRADE;
+    } else {
+        gameData.critChance = Math.min(CRIT_CHANCE_MAX_FROM_UPGRADE, Number(gameData.critChance || defaultData.critChance));
+    }
+    gameData.atkSpd = Math.max(PLAYER_ATTACK_SPEED_MIN_MS, Math.floor(gameData.atkSpd || defaultData.atkSpd));
+    gameData.partnerAtkSpd = Math.max(PARTNER_ATTACK_SPEED_MIN_MS, Math.floor(gameData.partnerAtkSpd || defaultData.partnerAtkSpd));
+}
+
+function getEnemyMoveSpeedForStage(stage) {
+    return Math.min(ENEMY_MOVE_SPEED_MAX, 0.22 + stage * 0.025);
+}
+
+function getPlayerAttackInterval() {
+    const bonuses = typeof getEquippedCardBonuses === 'function'
+        ? getEquippedCardBonuses()
+        : { atkSpeed: 0 };
+    const baseInterval = Math.max(PLAYER_ATTACK_SPEED_MIN_MS, Math.floor(gameData.atkSpd || defaultData.atkSpd));
+    const speedBonus = Math.max(0, Math.min(60, Number(bonuses.atkSpeed || 0)));
+    return Math.max(300, Math.floor(baseInterval * (1 - speedBonus / 100)));
+}
+
+function getPartnerAttackInterval(multiplier = 1) {
+    return Math.max(PARTNER_ATTACK_SPEED_MIN_MS, Math.floor((gameData.partnerAtkSpd || defaultData.partnerAtkSpd) * multiplier));
+}
+
+function isSpeedUpgradeType(type) {
+    return type === 'spd' || type === 'partnerSpd';
+}
+
+function isUpgradeCapped(type) {
+    if (isSpeedUpgradeType(type)) {
+        return Math.floor(gameData.lv?.[type] || 1) >= SPEED_UPGRADE_MAX_LEVEL;
+    }
+    if (type === 'crit') {
+        return Math.floor(gameData.lv?.crit || 1) >= CRIT_UPGRADE_MAX_LEVEL || Number(gameData.critChance || 0) >= CRIT_CHANCE_MAX_FROM_UPGRADE;
+    }
+    return false;
+}
+
+clampBattleBalanceValues();
 
 const ENEMY_TYPE_DATA = {
     met: {
@@ -401,8 +495,10 @@ let chaseTimer = null;
 let enemyDead = false;
 let enemyAttacking = false;
 let enemyStunned = false;
+let enemyStunTimer = null;
 let playerDead = false;
 let isBossBattle = false;
+let bossBattleEntryPending = false;
 let currentBossType = null;
 let currentEnemyType = 'met';
 let sniperJoeActionTimer = null;
@@ -410,6 +506,7 @@ let sniperJoeJumping = false;
 let sniperJoeAttacking = false;
 let cutmanBossActionTimer = null;
 let cutmanBossAttacking = false;
+let superRockUnlockPaused = false;
 
 let rockFrame = 1;
 let rockDir = 1;
@@ -464,11 +561,659 @@ let minerFrame = 1;
 let mineAttackAnimating = false;
 let mineEnhancing = false;
 
+const CARD_ANALYZE_SCREW_COST = 500;
+const OPTION_CHIP_STONE_COST = 1000;
+const CARD_GRADE_ORDER = ['N', 'R', 'SR', 'SSR', 'UR'];
+const CARD_GRADE_NAMES = { N: '일반', R: '레어', SR: '슈퍼레어', SSR: '더블슈퍼레어', UR: '울트라레어' };
+const CARD_GRADE_CLASS = { N: 'grade-n', R: 'grade-r', SR: 'grade-sr', SSR: 'grade-ssr', UR: 'grade-ur' };
+const CARD_OPTION_RANGES = {
+    N: [1, 1],
+    R: [1, 3],
+    SR: [4, 6],
+    SSR: [7, 10],
+    UR: [11, 15]
+};
+const CARD_TYPE_DATA = {
+    atkPercent: {
+        name: '공격력 % 카드',
+        icon: 'sprites/card/attack_card.png',
+        optionName: '데미지',
+        suffix: '%',
+        valueMultiplier: 1,
+        description(value) { return `데미지 +${value}%`; }
+    },
+    atkFlat: {
+        name: '공격력 + 카드',
+        icon: 'sprites/card/attack_card.png',
+        optionName: '데미지',
+        suffix: '',
+        valueMultiplier: 5,
+        description(value) { return `데미지 +${value}`; }
+    },
+    critChance: {
+        name: '차지샷 카드',
+        icon: 'sprites/card/crit_card.png',
+        optionName: '차지샷 확률',
+        suffix: '%',
+        valueMultiplier: 1,
+        description(value) { return `차지샷 확률 +${value}%`; }
+    },
+    atkSpeed: {
+        name: '공격속도 카드',
+        icon: 'sprites/card/speed_card.png',
+        optionName: '공격속도',
+        suffix: '%',
+        valueMultiplier: 1,
+        description(value) { return `공격속도 +${value}%`; }
+    }
+};
+const CARD_GRADE_ROLL_TABLE = [
+    { grade: 'N', weight: 650 },
+    { grade: 'R', weight: 250 },
+    { grade: 'SR', weight: 80 },
+    { grade: 'SSR', weight: 18 },
+    { grade: 'UR', weight: 2 }
+];
+let selectedCardGroupKey = null;
+let selectedCardId = null;
+let lastAnalyzedCards = [];
+
+function getCardGradeName(grade) {
+    return CARD_GRADE_NAMES[grade] || grade;
+}
+
+function getCardTypeData(type) {
+    return CARD_TYPE_DATA[type] || CARD_TYPE_DATA.atkPercent;
+}
+
+function getCardIcon(cardOrType) {
+    const type = typeof cardOrType === 'string' ? cardOrType : cardOrType?.type;
+    return getCardTypeData(type).icon || 'sprites/boss/reward/cardchip.png';
+}
+
+function getCardEquipFamily(cardOrType) {
+    const type = typeof cardOrType === 'string' ? cardOrType : cardOrType?.type;
+    if (type === 'atkPercent' || type === 'atkFlat') return 'attack';
+    if (type === 'critChance') return 'crit';
+    if (type === 'atkSpeed') return 'speed';
+    return type || '';
+}
+
+function getEquippedCardByFamily(family, exceptCardId = null) {
+    if (!family) return null;
+    for (const cardId of gameData.cards.equipped) {
+        if (!cardId || cardId === exceptCardId) continue;
+        const card = getOwnedCardById(cardId);
+        if (card && getCardEquipFamily(card) === family) return card;
+    }
+    return null;
+}
+
+function getCardFamilyBlockMessage(card) {
+    const family = getCardEquipFamily(card);
+    if (family === 'attack') return '공격력 카드는 1장만 장착할 수 있습니다.';
+    if (family === 'crit') return '차지샷 카드는 1장만 장착할 수 있습니다.';
+    if (family === 'speed') return '공속 카드는 1장만 장착할 수 있습니다.';
+    return '같은 종류 카드는 1장만 장착할 수 있습니다.';
+}
+
+function rollWeightedValueInRange(min, max) {
+    min = Math.floor(min);
+    max = Math.floor(max);
+    if (max <= min) return min;
+
+    // 낮은 수치일수록 잘 뜨고, 최고 수치는 낮은 확률로 뜨게 합니다.
+    const entries = [];
+    for (let value = min; value <= max; value++) {
+        entries.push({ value, weight: (max - value + 1) * (max - value + 1) });
+    }
+    const total = entries.reduce((sum, item) => sum + item.weight, 0);
+    let roll = Math.random() * total;
+    for (const item of entries) {
+        roll -= item.weight;
+        if (roll <= 0) return item.value;
+    }
+    return min;
+}
+
+function rollCardOptionBaseValue(grade) {
+    const range = CARD_OPTION_RANGES[grade] || CARD_OPTION_RANGES.N;
+    return rollWeightedValueInRange(range[0], range[1]);
+}
+
+function rollCardOptionValue(type, grade) {
+    const data = getCardTypeData(type);
+    return Math.max(1, rollCardOptionBaseValue(grade) * (data.valueMultiplier || 1));
+}
+
+function getCardValue(type, grade) {
+    return rollCardOptionValue(type, grade);
+}
+
+function getCardDescription(card) {
+    const data = getCardTypeData(card?.type);
+    return data.description(Number(card?.value || 0));
+}
+
+function getCardOptionRangeDescription(card) {
+    if (!card) return '';
+    const data = getCardTypeData(card.type);
+    const range = CARD_OPTION_RANGES[card.grade] || CARD_OPTION_RANGES.N;
+    const multiplier = data.valueMultiplier || 1;
+    const min = Math.max(1, range[0] * multiplier);
+    const max = Math.max(min, range[1] * multiplier);
+    const suffix = data.suffix || '';
+    return `${min}${suffix} ~ ${max}${suffix}`;
+}
+
+function rollCardGrade() {
+    const total = CARD_GRADE_ROLL_TABLE.reduce((sum, item) => sum + item.weight, 0);
+    let roll = Math.random() * total;
+    for (const item of CARD_GRADE_ROLL_TABLE) {
+        roll -= item.weight;
+        if (roll <= 0) return item.grade;
+    }
+    return 'N';
+}
+
+function createRandomCard() {
+    const types = Object.keys(CARD_TYPE_DATA);
+    const type = types[Math.floor(Math.random() * types.length)];
+    const grade = rollCardGrade();
+    const id = `card_${Date.now()}_${gameData.cards.nextId++}`;
+    return { id, type, grade, value: getCardValue(type, grade) };
+}
+
+function analyzeCardChips(amount = 1) {
+    amount = Math.max(1, Math.floor(amount || 1));
+    const screwCost = CARD_ANALYZE_SCREW_COST * amount;
+    if ((gameData.materials.cardChip || 0) < amount) return;
+    if ((gameData.screws || 0) < screwCost) return;
+
+    gameData.materials.cardChip -= amount;
+    gameData.screws -= screwCost;
+
+    const gained = [];
+    for (let i = 0; i < amount; i++) {
+        const card = createRandomCard();
+        gameData.cards.owned.push(card);
+        gained.push(card);
+    }
+
+    lastAnalyzedCards = gained.slice();
+    updateUI();
+    saveData();
+    showCardAnalyzePopup(gained);
+}
+
+function showCardAnalyzePopup(cards = []) {
+    lastAnalyzedCards = Array.isArray(cards) ? cards.slice() : [];
+    const popup = document.getElementById('card-analyze-popup');
+    const list = document.getElementById('card-analyze-popup-list');
+    if (!popup || !list) return;
+
+    if (!lastAnalyzedCards.length) {
+        list.innerHTML = '<div class="card-empty-note">획득한 카드가 없습니다.</div>';
+    } else {
+        list.innerHTML = lastAnalyzedCards.map(card => `
+            <div class="card-analyze-popup-card ${CARD_GRADE_CLASS[card.grade] || ''}">
+                <img src="${getCardIcon(card)}" alt="${getCardTypeData(card.type).name}">
+                <b class="card-analyze-grade-label">${card.grade}</b>
+                <strong>${getCardTypeData(card.type).name}</strong>
+                <em>${getCardDescription(card)}</em>
+            </div>
+        `).join('');
+    }
+
+    popup.classList.add('active');
+}
+
+function closeCardAnalyzePopup() {
+    const popup = document.getElementById('card-analyze-popup');
+    if (popup) popup.classList.remove('active');
+}
+
+function exchangeStonesToOptionChips(amount = 1) {
+    amount = Math.max(1, Math.floor(amount || 1));
+    const cost = OPTION_CHIP_STONE_COST * amount;
+    if ((gameData.stones || 0) < cost) return;
+
+    gameData.stones -= cost;
+    gameData.materials.optionChangeChip += amount;
+    showCardResult(`옵션변경칩 +${amount}`);
+    updateUI();
+    saveData();
+}
+
+function getOwnedCardById(cardId) {
+    return gameData.cards.owned.find(card => card.id === cardId) || null;
+}
+
+function isCardEquipped(cardId) {
+    return gameData.cards.equipped.includes(cardId);
+}
+
+function equipCard(cardId) {
+    const card = getOwnedCardById(cardId);
+    if (!card) return false;
+    if (isCardEquipped(cardId)) return true;
+
+    const equippedSameFamily = getEquippedCardByFamily(getCardEquipFamily(card), card.id);
+    if (equippedSameFamily) {
+        showCardResult(getCardFamilyBlockMessage(card));
+        return false;
+    }
+
+    const emptyIndex = gameData.cards.equipped.findIndex(id => !id);
+    if (emptyIndex < 0) {
+        showCardResult('장착 슬롯이 가득 찼습니다.');
+        return false;
+    }
+
+    gameData.cards.equipped[emptyIndex] = cardId;
+    startAutoAttack();
+    updateUI();
+    saveData();
+    return true;
+}
+
+function unequipCard(slotIndex) {
+    slotIndex = Math.max(0, Math.min(2, Math.floor(slotIndex || 0)));
+    gameData.cards.equipped[slotIndex] = null;
+    startAutoAttack();
+    updateUI();
+    saveData();
+}
+
+
+function getSameTypeSameGradeMaterialCards(mainCard) {
+    if (!mainCard) return [];
+    return gameData.cards.owned
+        .filter(card =>
+            card.id !== mainCard.id &&
+            card.type === mainCard.type &&
+            card.grade === mainCard.grade &&
+            !isCardEquipped(card.id)
+        )
+        .slice(0, 2);
+}
+
+function getSameTypeSameGradeMaterialCount(mainCard) {
+    if (!mainCard) return 0;
+    return gameData.cards.owned
+        .filter(card =>
+            card.id !== mainCard.id &&
+            card.type === mainCard.type &&
+            card.grade === mainCard.grade &&
+            !isCardEquipped(card.id)
+        )
+        .length;
+}
+
+function playCardSynthesisEffect(card, previousGrade, nextGrade) {
+    const popup = document.getElementById('card-inventory-popup');
+    const box = popup ? popup.querySelector('.card-popup-box') : null;
+    if (!box || !card) return;
+
+    const effect = document.createElement('div');
+    effect.className = 'card-synthesis-effect';
+    effect.innerHTML = `
+        <div class="card-synthesis-effect-core ${CARD_GRADE_CLASS[nextGrade] || ''}">
+            <div class="card-synthesis-effect-grade-change ${CARD_GRADE_CLASS[nextGrade] || ''}">${previousGrade} → ${nextGrade}</div>
+            <img src="${getCardIcon(card)}" alt="${getCardTypeData(card.type).name}">
+            <div class="card-synthesis-effect-result">${getCardDescription(card)}</div>
+            <div class="card-synthesis-effect-hint">클릭해서 닫기</div>
+        </div>
+    `;
+    const closeEffect = (event) => {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        effect.remove();
+    };
+
+    effect.addEventListener('click', closeEffect);
+    effect.addEventListener('pointerdown', closeEffect);
+    effect.addEventListener('touchstart', closeEffect, { passive: false });
+    box.appendChild(effect);
+}
+
+function synthCard(cardId) {
+    const main = getOwnedCardById(cardId);
+    if (!main) return;
+
+    const gradeIndex = CARD_GRADE_ORDER.indexOf(main.grade);
+    if (gradeIndex < 0 || gradeIndex >= CARD_GRADE_ORDER.length - 1) {
+        showCardResult('이미 최고 등급입니다.');
+        return;
+    }
+
+    if (isCardEquipped(main.id)) {
+        showCardResult('장착 중인 카드는 합성할 수 없습니다.');
+        return;
+    }
+
+    // 같은 종류 + 같은 등급 카드 총 3장으로 합성합니다.
+    // 선택한 메인 카드 1장 + 같은 종류/등급 재료 카드 2장
+    const materials = getSameTypeSameGradeMaterialCards(main);
+
+    if (materials.length < 2) {
+        showCardResult('같은 종류/같은 등급 카드가 총 3장 필요합니다.');
+        return;
+    }
+
+    const previousGrade = main.grade;
+    const nextGrade = CARD_GRADE_ORDER[gradeIndex + 1];
+    const removeIds = new Set(materials.map(card => card.id));
+
+    gameData.cards.owned = gameData.cards.owned.filter(card => !removeIds.has(card.id));
+    main.grade = nextGrade;
+    main.value = getCardValue(main.type, main.grade);
+
+    selectedCardGroupKey = getCardGroupKey(main);
+    selectedCardId = main.id;
+
+    updateUI();
+    saveData();
+    renderCardPopup();
+    playCardSynthesisEffect(main, previousGrade, nextGrade);
+}
+
+function rerollCardOption(cardId) {
+    const card = getOwnedCardById(cardId);
+    if (!card) return false;
+    if ((gameData.materials.optionChangeChip || 0) < 1) {
+        showCardResult('옵션변경칩이 부족합니다.');
+        return false;
+    }
+
+    gameData.materials.optionChangeChip -= 1;
+    card.value = getCardValue(card.type, card.grade);
+    selectedCardGroupKey = getCardGroupKey(card);
+    showCardResult(`옵션변경 완료 / ${getCardDescription(card)}`);
+    updateUI();
+    saveData();
+    return true;
+}
+
+function getEquippedCardBonuses() {
+    const bonuses = { atkPercent: 0, atkFlat: 0, critChance: 0, atkSpeed: 0 };
+    gameData.cards.equipped.forEach(cardId => {
+        const card = getOwnedCardById(cardId);
+        if (!card) return;
+        if (card.type === 'atkPercent') bonuses.atkPercent += Number(card.value || 0);
+        if (card.type === 'atkFlat') bonuses.atkFlat += Number(card.value || 0);
+        if (card.type === 'critChance') bonuses.critChance += Number(card.value || 0);
+        if (card.type === 'atkSpeed') bonuses.atkSpeed += Number(card.value || 0);
+    });
+    return bonuses;
+}
+
+function getCardAdjustedAtk(baseAtk = gameData.atk) {
+    const bonuses = getEquippedCardBonuses();
+    return Math.max(1, Math.floor((Number(baseAtk || 0) + bonuses.atkFlat) * (1 + bonuses.atkPercent / 100)));
+}
+
+function getEffectiveCritChance() {
+    const bonuses = getEquippedCardBonuses();
+    return Math.max(0, Math.min(100, Number(gameData.critChance || 0) + bonuses.critChance));
+}
+
+function getEffectiveRockAttackSpeed() {
+    const bonuses = getEquippedCardBonuses();
+    const baseSpeed = Math.max(MIN_ROCK_ATTACK_SPEED_MS, Number(gameData.atkSpd || 3000));
+    const reduction = Math.max(0, Math.min(60, Number(bonuses.atkSpeed || 0)));
+    return Math.max(300, Math.floor(baseSpeed * (1 - reduction / 100)));
+}
+
+function showCardResult(message) {
+    const result = document.getElementById('card-analysis-result');
+    if (!result) return;
+    result.innerText = message;
+    result.classList.remove('active');
+    void result.offsetWidth;
+    result.classList.add('active');
+    setTimeout(() => result.classList.remove('active'), 1800);
+}
+
+function getCardGroupKey(card) {
+    if (!card) return '';
+    // 인벤토리 겉 목록은 옵션 수치가 달라도 같은 종류/등급이면 하나로 묶습니다.
+    return [card.type, card.grade].join('|');
+}
+
+function getCardInventoryGroups() {
+    const groupMap = new Map();
+    gameData.cards.owned.forEach(card => {
+        const key = getCardGroupKey(card);
+        if (!groupMap.has(key)) groupMap.set(key, []);
+        groupMap.get(key).push(card);
+    });
+
+    const gradeOrder = new Map(CARD_GRADE_ORDER.map((grade, index) => [grade, index]));
+    return Array.from(groupMap.entries()).map(([key, cards]) => ({
+        key,
+        cards,
+        sample: cards[0]
+    })).sort((a, b) => {
+        const gradeDiff = (gradeOrder.get(b.sample.grade) ?? 0) - (gradeOrder.get(a.sample.grade) ?? 0);
+        if (gradeDiff) return gradeDiff;
+        return getCardTypeData(a.sample.type).name.localeCompare(getCardTypeData(b.sample.type).name, 'ko');
+    });
+}
+
+function getSelectedCardGroupCards() {
+    if (!selectedCardGroupKey) return [];
+    return gameData.cards.owned.filter(card => getCardGroupKey(card) === selectedCardGroupKey);
+}
+
+function getCardOptionKindLabel(card) {
+    if (!card) return '';
+    if (card.type === 'atkPercent') return '데미지 %';
+    if (card.type === 'atkFlat') return '데미지 고정';
+    if (card.type === 'critChance') return '차지확률';
+    if (card.type === 'atkSpeed') return '공속';
+    return getCardTypeData(card.type).optionName || '';
+}
+
+function getEquippedSlotIndex(cardId) {
+    return gameData.cards.equipped.findIndex(id => id === cardId);
+}
+
+function unequipCardById(cardId) {
+    const slotIndex = getEquippedSlotIndex(cardId);
+    if (slotIndex < 0) return;
+    gameData.cards.equipped[slotIndex] = null;
+    startAutoAttack();
+    updateUI();
+    saveData();
+}
+
+function selectCardInPopup(cardId) {
+    const cards = getSelectedCardGroupCards();
+    if (!cards.some(card => card.id === cardId)) return;
+    selectedCardId = cardId;
+    renderCardPopup();
+}
+
+function openCardInventoryGroup(groupKey) {
+    selectedCardGroupKey = groupKey;
+    const cards = getSelectedCardGroupCards();
+    selectedCardId = cards[0]?.id || null;
+    const popup = document.getElementById('card-inventory-popup');
+    if (popup) popup.classList.add('active');
+    renderCardPopup();
+}
+
+function closeCardInventoryPopup() {
+    const popup = document.getElementById('card-inventory-popup');
+    if (popup) popup.classList.remove('active');
+}
+
+function getPopupMainCard() {
+    const cards = getSelectedCardGroupCards();
+    if (!cards.length) return null;
+    return cards.find(card => card.id === selectedCardId) || cards[0] || null;
+}
+
+function playCardOptionValueSlideEffect() {
+    const valueEl = document.getElementById('card-selected-option-value');
+    if (!valueEl) return;
+    valueEl.classList.remove('option-value-slide');
+    void valueEl.offsetWidth;
+    valueEl.classList.add('option-value-slide');
+    setTimeout(() => valueEl.classList.remove('option-value-slide'), 420);
+}
+
+function equipCardFromPopup() {
+    const card = getPopupMainCard();
+    if (!card) return;
+
+    if (isCardEquipped(card.id)) {
+        unequipCardById(card.id);
+        showCardResult('장착 해제 완료');
+        renderCardPopup();
+        return;
+    }
+
+    equipCard(card.id);
+    selectedCardId = card.id;
+    renderCardPopup();
+}
+
+function synthCardFromPopup() {
+    const card = getPopupMainCard();
+    if (!card) return;
+    synthCard(card.id);
+    selectedCardId = card.id;
+    renderCardPopup();
+}
+
+function rerollCardOptionFromPopup() {
+    const card = getPopupMainCard();
+    if (!card) return;
+    const changed = rerollCardOption(card.id);
+    selectedCardId = card.id;
+    renderCardPopup();
+    if (changed) setTimeout(playCardOptionValueSlideEffect, 20);
+}
+
+function renderCardPopup() {
+    const popup = document.getElementById('card-inventory-popup');
+    if (!popup || !popup.classList.contains('active')) return;
+
+    const cards = getSelectedCardGroupCards();
+    const title = document.getElementById('card-popup-title');
+    const summary = document.getElementById('card-popup-summary');
+    const list = document.getElementById('card-popup-list');
+    const equipBtn = document.getElementById('card-popup-equip-btn');
+    const synthBtn = document.getElementById('card-popup-synth-btn');
+    const rerollBtn = document.getElementById('card-popup-reroll-btn');
+
+    if (!cards.length) {
+        if (title) title.innerText = '카드 없음';
+        if (summary) summary.innerText = '';
+        if (list) list.innerHTML = '<div class="card-empty-note">카드가 없습니다.</div>';
+        [equipBtn, synthBtn, rerollBtn].forEach(btn => setButtonActive(btn, false));
+        return;
+    }
+
+    if (!cards.some(card => card.id === selectedCardId)) selectedCardId = cards[0].id;
+
+    const selected = getPopupMainCard();
+    const typeData = getCardTypeData(selected.type);
+    const materialCount = getSameTypeSameGradeMaterialCount(selected);
+    const gradeIndex = CARD_GRADE_ORDER.indexOf(selected.grade);
+    const canSynth = !isCardEquipped(selected.id) && gradeIndex >= 0 && gradeIndex < CARD_GRADE_ORDER.length - 1 && materialCount >= 2;
+    const selectedEquipped = isCardEquipped(selected.id);
+    const duplicateFamilyCard = selectedEquipped ? null : getEquippedCardByFamily(getCardEquipFamily(selected), selected.id);
+    const canEquipOrUnequip = selectedEquipped || (!duplicateFamilyCard && gameData.cards.equipped.some(id => !id));
+    const canReroll = !selectedEquipped && (gameData.materials.optionChangeChip || 0) >= 1;
+
+    if (title) title.innerText = `${selected.grade} ${typeData.name}`;
+    if (summary) {
+        const synthMaterialText = gradeIndex >= 0 && gradeIndex < CARD_GRADE_ORDER.length - 1
+            ? `<small class="card-synth-material-note">같은 종류, 같은 등급 카드 3장을 합성하여 다음 등급 카드를 얻을 수 있습니다.</small>`
+            : `<small class="card-synth-material-note">최고 등급</small>`;
+        summary.innerHTML = `
+            <span class="card-selected-option"><span id="card-selected-option-value" class="card-selected-option-main">${getCardDescription(selected)}</span> <em>(${getCardOptionRangeDescription(selected)})</em></span>
+            ${synthMaterialText}
+        `;
+    }
+    if (list) {
+        list.innerHTML = cards.map(card => `
+            <button type="button" class="card-popup-item ${CARD_GRADE_CLASS[card.grade] || ''} ${isCardEquipped(card.id) ? 'equipped' : ''} ${card.id === selected.id ? 'selected' : ''}" onclick="event.preventDefault(); event.stopPropagation(); selectCardInPopup('${card.id}'); return false;">
+                <img src="${getCardIcon(card)}" alt="${getCardTypeData(card.type).name}">
+                <b>${card.grade}</b>
+                <strong>${getCardDescription(card)}</strong>
+                ${isCardEquipped(card.id) ? '<em>장착중</em>' : ''}
+            </button>
+        `).join('');
+    }
+
+    setButtonActive(equipBtn, canEquipOrUnequip);
+    if (equipBtn) {
+        equipBtn.disabled = !canEquipOrUnequip;
+        equipBtn.innerText = selectedEquipped ? '장착해제' : '장착';
+        equipBtn.title = duplicateFamilyCard ? getCardFamilyBlockMessage(selected) : '';
+    }
+    setButtonActive(synthBtn, canSynth);
+    if (synthBtn) {
+        synthBtn.disabled = !canSynth;
+        synthBtn.title = canSynth ? '같은 종류/같은 등급 카드 3장을 합성합니다.' : '선택 카드 포함 같은 종류/같은 등급 카드 총 3장이 필요합니다.';
+    }
+    setButtonActive(rerollBtn, canReroll);
+    if (rerollBtn) rerollBtn.disabled = !canReroll;
+}
+
+function renderCardUI() {
+    const slots = document.getElementById('equipped-card-slots');
+    if (slots) {
+        slots.innerHTML = gameData.cards.equipped.map((cardId, index) => {
+            const card = getOwnedCardById(cardId);
+            if (!card) {
+                return `<div class="equipped-card-slot empty"><div class="slot-title">SLOT ${index + 1}</div><div class="slot-empty">EMPTY</div></div>`;
+            }
+            return `<div class="equipped-card-slot ${CARD_GRADE_CLASS[card.grade] || ''}">
+                <div class="slot-title">SLOT ${index + 1}</div>
+                <div class="card-grade-label">${card.grade}</div>
+                <img class="equipped-card-sprite" src="${getCardIcon(card)}" alt="${getCardTypeData(card.type).name}">
+                <div class="card-name">${getCardTypeData(card.type).name}</div>
+                <div class="card-option">${getCardDescription(card)}</div>
+                <button type="button" class="card-mini-btn active" onclick="event.preventDefault(); event.stopPropagation(); unequipCard(${index}); return false;">해제</button>
+            </div>`;
+        }).join('');
+    }
+
+    const list = document.getElementById('card-inventory-list');
+    if (list) {
+        const groups = getCardInventoryGroups();
+        if (!groups.length) {
+            list.innerHTML = '<div class="card-empty-note">보유 카드가 없습니다. 카드칩 분석을 해주세요.</div>';
+        } else {
+            list.innerHTML = groups.map(group => {
+                const card = group.sample;
+                const equippedCount = group.cards.filter(item => isCardEquipped(item.id)).length;
+                return `<button type="button" class="card-inventory-chip ${CARD_GRADE_CLASS[card.grade] || ''}" onclick="event.preventDefault(); event.stopPropagation(); openCardInventoryGroup('${group.key}'); return false;">
+                    <span class="card-chip-count">×${group.cards.length}</span>
+                    <img src="${getCardIcon(card)}" alt="${getCardTypeData(card.type).name}">
+                    <span class="card-grade-label">${card.grade}</span>
+                    <span class="card-name">${getCardTypeData(card.type).name}</span>
+                    ${equippedCount ? `<span class="card-equipped-count">장착 ${equippedCount}</span>` : ''}
+                </button>`;
+            }).join('');
+        }
+    }
+
+    renderCardPopup();
+}
+
 const BATTLE_TIPS = [
     '스나이퍼 죠는 10스테이지마다 등장합니다.',
     '스나이퍼 죠에게는 버스터 데미지가 반감됩니다.',
     '광산은 일찍 개방할수록 좋아요.',
-    '크리스탈은 파트너 소환뿐만 아니라 여러 곳에 쓰입니다.',
+    'E캔은 파트너 소환뿐만 아니라 여러 곳에 쓰입니다.',
     '파트너를 소환하면 전투가 훨씬 수월해집니다.',
     '동료들은 록맨과의 싱크로율에 따라 강해집니다.',
     '보스전에서 다양한 아이템을 얻을 수 있습니다.',
@@ -491,7 +1236,7 @@ function setupStage() {
     currentEnemyType = getStageEnemyType(s);
 
     enemyMaxHp = Math.floor((120 + s * 75 + Math.pow(s, 1.35) * 25) * 0.66);
-    enemySpeed = 0.22 + s * 0.025;
+    enemySpeed = getEnemyMoveSpeedForStage(s);
     enemyAtk = Math.floor(4 + s * 1.6);
     enemyX = ENEMY_START_X;
 
@@ -510,6 +1255,10 @@ function setupStage() {
     enemyDead = false;
     enemyAttacking = false;
     enemyStunned = false;
+    if (enemyStunTimer) {
+        clearTimeout(enemyStunTimer);
+        enemyStunTimer = null;
+    }
     sniperJoeJumping = false;
     sniperJoeAttacking = false;
     playerDead = false;
@@ -523,7 +1272,8 @@ function setupStage() {
         enemyImg.style.height = '';
         enemyImg.style.transform = '';
         enemyImg.style.marginTop = '18px';
-        enemyImg.classList.remove('boss-enter');
+        enemyImg.classList.remove('boss-enter', 'enemy-stunned');
+        clearEnemyStunVisualEffect();
 
         if (currentEnemyType === 'sniperjoe') {
             enemyImg.src = ENEMY_TYPE_DATA.sniperjoe.idleFrame;
@@ -607,8 +1357,9 @@ function applyStillBattleFrames() {
     const rockexeImg = document.getElementById('rockexe-img');
     const zeroImg = document.getElementById('zero-img');
 
-    if (rockman) rockman.src = 'sprites/rock/rock_st.png';
-    if (rushImg && gameData.rushOwned) rushImg.src = 'sprites/partner/rush/rush_st.png';
+    if (rockman) rockman.src = getRockStandSprite();
+    if (rushImg) rushImg.style.display = isSuperRockUnlocked() ? 'none' : '';
+    if (rushImg && gameData.rushOwned && !isSuperRockUnlocked()) rushImg.src = 'sprites/partner/rush/rush_st.png';
     if (forteImg && gameData.forteOwned && !forteAttacking) forteImg.src = 'sprites/partner/forte/forte_st.png';
     if (xImg && gameData.xOwned && !xAttacking) xImg.src = 'sprites/partner/x/x_st.png';
     if (rockexeImg && gameData.exeRockmanOwned && !rockexeAttacking) rockexeImg.src = 'sprites/partner/rockexe/rockexe_st.png';
@@ -627,7 +1378,8 @@ function startSniperJoeActions() {
     if (!isStillBossBattle()) return;
 
     sniperJoeActionTimer = setInterval(() => {
-        if (!isSniperJoeBattle() || enemyDead || playerDead || sniperJoeJumping || sniperJoeAttacking) return;
+        if (superRockUnlockPaused) return;
+        if (!isSniperJoeBattle() || enemyDead || playerDead || enemyStunned || sniperJoeJumping || sniperJoeAttacking) return;
 
         if (Math.random() < 0.90) fireSniperJoeBullet();
         else playSniperJoeJump();
@@ -654,7 +1406,7 @@ function playSniperJoeJump() {
 }
 
 function fireSniperJoeBullet() {
-    if (!isSniperJoeBattle() || enemyDead || playerDead || sniperJoeAttacking) return;
+    if (!isSniperJoeBattle() || enemyDead || playerDead || enemyStunned || sniperJoeAttacking) return;
 
     const screen = document.querySelector('.game-screen');
     const enemyImg = document.getElementById('enemy-img');
@@ -725,6 +1477,7 @@ function enemyHitsPlayerByBullet() {
 
 
 function animate() {
+    if (superRockUnlockPaused) return;
     const rImg = document.getElementById('rockman-img');
     const eImg = document.getElementById('enemy-img');
 
@@ -755,7 +1508,7 @@ function animate() {
 
     rockFrame += rockDir;
     if (rockFrame === 3 || rockFrame === 1) rockDir *= -1;
-    rImg.src = `sprites/rock/rock_0${rockFrame}.png`;
+    rImg.src = getRockWalkSprite(rockFrame);
 
     if (!enemyDead && !isBossBattle) {
         metFrame = (metFrame % 2) + 1;
@@ -774,7 +1527,15 @@ function animate() {
 
 function animateRush() {
     const rushImg = document.getElementById('rush-img');
-    if (!rushImg || !gameData.rushOwned) return;
+    if (!rushImg) return;
+    const rushArea = document.getElementById('rush-area');
+    if (isSuperRockUnlocked()) {
+        if (rushArea) rushArea.classList.remove('active');
+        rushImg.style.display = 'none';
+        return;
+    }
+    rushImg.style.display = '';
+    if (!gameData.rushOwned) return;
 
     if (isStillBossBattle()) {
         rushImg.src = 'sprites/partner/rush/rush_st.png';
@@ -901,7 +1662,7 @@ function getPartnerDamage(type) {
     if (!data) return 0;
 
     const sync = getPartnerSyncPercent(type) / 100;
-    return Math.max(1, Math.floor(gameData.atk * sync));
+    return Math.max(1, Math.floor(getCardAdjustedAtk(gameData.atk) * sync));
 }
 
 function togglePartnerAttackUpgrade() {
@@ -990,16 +1751,182 @@ function showPartnerUpgradeResult(message) {
     // 문구 출력은 사용하지 않습니다.
 }
 
+const PARTNER_INVENTORY_DATA = {
+    rush: {
+        name: '러쉬',
+        portrait: 'sprites/partner/rush/rush_portrait.png',
+        fragmentsKey: 'rushFragments',
+        ownedKey: 'rushOwned',
+        desc: '- 차지샷 데미지 강화 해금',
+        buyFn: buyRushFragment,
+        summonFn: summonRush
+    },
+    beat: {
+        name: '비트',
+        portrait: 'sprites/partner/beat/beat_portrait.png',
+        fragmentsKey: 'beatFragments',
+        ownedKey: 'beatOwned',
+        desc: '- 동료 공격속도 강화 해금',
+        buyFn: buyBeatFragment,
+        summonFn: summonBeat
+    },
+    blues: {
+        name: '블루스',
+        portrait: 'sprites/partner/blues/blues_portrait.png',
+        fragmentsKey: 'bluesFragments',
+        ownedKey: 'bluesOwned',
+        desc: '- 적 접근시 돌진 공격 + 넉백',
+        buyFn: buyBluesFragment,
+        summonFn: summonBlues
+    },
+    forte: {
+        name: '포르테',
+        portrait: 'sprites/partner/forte/forte_portrait.png',
+        fragmentsKey: 'forteFragments',
+        ownedKey: 'forteOwned',
+        desc: '- 버스터 공격',
+        buyFn: buyForteFragment,
+        summonFn: summonForte
+    },
+    x: {
+        name: '엑스',
+        portrait: 'sprites/partner/x/x_portrait.png',
+        fragmentsKey: 'xFragments',
+        ownedKey: 'xOwned',
+        desc: '- 버스터 공격',
+        buyFn: buyXFragment,
+        summonFn: summonX
+    },
+    zero: {
+        name: '제로',
+        portrait: 'sprites/partner/zero/zero_portrait.png',
+        fragmentsKey: 'zeroFragments',
+        ownedKey: 'zeroOwned',
+        desc: '- 제트세이버 공격',
+        buyFn: buyZeroFragment,
+        summonFn: summonZero
+    },
+    exeRockman: {
+        name: '록맨.EXE',
+        portrait: 'sprites/partner/rockexe/rockexe_portrait.png',
+        fragmentsKey: 'exeRockmanFragments',
+        ownedKey: 'exeRockmanOwned',
+        desc: '- 버스터 공격 / 스턴밤 공격',
+        buyFn: buyExeRockmanFragment,
+        summonFn: summonExeRockman
+    }
+};
+
+let currentPartnerInventoryType = 'rush';
+
+function getPartnerInventoryData(type = currentPartnerInventoryType) {
+    return PARTNER_INVENTORY_DATA[type] || PARTNER_INVENTORY_DATA.rush;
+}
+
+function openPartnerInventoryPopup(type) {
+    clearPartnerInlineJoinStage();
+    currentPartnerInventoryType = type;
+    const popup = document.getElementById('partner-inventory-popup');
+    if (popup) popup.classList.add('active');
+    updatePartnerInventoryPopup();
+}
+
+function closePartnerInventoryPopup() {
+    clearPartnerInlineJoinStage();
+    const popup = document.getElementById('partner-inventory-popup');
+    if (popup) popup.classList.remove('active');
+}
+
+function buyPartnerInventoryFragments(amount) {
+    const data = getPartnerInventoryData();
+    if (!data?.buyFn) return;
+    data.buyFn(amount);
+    updatePartnerInventoryUI();
+}
+
+function summonPartnerFromInventory() {
+    const data = getPartnerInventoryData();
+    if (!data?.summonFn) return;
+    data.summonFn();
+    updatePartnerInventoryUI();
+}
+
+function updatePartnerInventoryPopup() {
+    const data = getPartnerInventoryData();
+    if (!data) return;
+
+    const fragments = Math.max(0, Math.floor(gameData[data.fragmentsKey] || 0));
+    const owned = !!gameData[data.ownedKey];
+
+    const icon = document.getElementById('partner-popup-icon');
+    const title = document.getElementById('partner-popup-title');
+    const desc = document.getElementById('partner-popup-desc');
+    const fragmentsEl = document.getElementById('partner-popup-fragments');
+
+    if (icon) icon.src = data.portrait;
+    if (title) title.innerText = data.name;
+    if (desc) desc.innerText = data.desc;
+    if (fragmentsEl) fragmentsEl.innerText = owned ? 'COMPLETE' : `${fragments} / 100`;
+
+    const buy1 = document.getElementById('partner-popup-buy1');
+    const buy10 = document.getElementById('partner-popup-buy10');
+    const buy100 = document.getElementById('partner-popup-buy100');
+    const summon = document.getElementById('partner-popup-summon');
+
+    const canBuy1 = !owned && gameData.crystals >= 1 && fragments < 100;
+    const canBuy10 = !owned && gameData.crystals >= 10 && fragments <= 90;
+    const canBuy100 = !owned && gameData.crystals >= 100 && fragments === 0;
+    const canSummon = !owned && fragments >= 100;
+
+    setButtonActive(buy1, canBuy1);
+    setButtonActive(buy10, canBuy10);
+    setButtonActive(buy100, canBuy100);
+    setButtonActive(summon, canSummon);
+
+    [buy1, buy10, buy100, summon].forEach(btn => {
+        if (!btn) return;
+        const isSummon = btn === summon;
+        btn.disabled = owned || (!btn.classList.contains('active') && !isSummon) || (isSummon && !canSummon);
+        btn.style.display = owned ? 'none' : '';
+    });
+}
+
+function updatePartnerInventoryUI() {
+    const ecanCount = document.getElementById('partner-e-can-count');
+    if (ecanCount) ecanCount.innerText = Math.floor(gameData.crystals || 0).toLocaleString();
+
+    Object.keys(PARTNER_INVENTORY_DATA).forEach(type => {
+        const data = PARTNER_INVENTORY_DATA[type];
+        const tile = document.getElementById(`partner-tile-${type}`);
+        if (!tile) return;
+
+        const fragments = Math.max(0, Math.floor(gameData[data.fragmentsKey] || 0));
+        const owned = !!gameData[data.ownedKey];
+        const ready = !owned && fragments >= 100;
+        tile.classList.toggle('complete', owned);
+        tile.classList.toggle('ready', ready);
+
+        const badge = document.getElementById(`${type}-complete-badge`);
+        if (badge) badge.classList.toggle('active', owned);
+    });
+
+    const popup = document.getElementById('partner-inventory-popup');
+    if (popup?.classList.contains('active')) {
+        updatePartnerInventoryPopup();
+    }
+}
+
 function startBluesAttack() {
   if (bluesAttackTimer) clearInterval(bluesAttackTimer);
 
   bluesAttackTimer = setInterval(() => {
+    if (superRockUnlockPaused) return;
     if (!gameData.bluesOwned || enemyDead || playerDead || bluesAttacking) return;
 
     if (enemyX > 180) return;
 
     bluesShieldCharge();
-  }, gameData.partnerAtkSpd);
+  }, getPartnerAttackInterval());
 }
 
 function bluesShieldCharge() {
@@ -1079,40 +2006,44 @@ function startForteAttack() {
   if (forteAttackTimer) clearInterval(forteAttackTimer);
 
   forteAttackTimer = setInterval(() => {
+    if (superRockUnlockPaused) return;
     if (!gameData.forteOwned || enemyDead || playerDead || forteAttacking) return;
 
     firePartnerBuster('forte');
-  }, gameData.partnerAtkSpd);
+  }, getPartnerAttackInterval());
 }
 
 function startXAttack() {
   if (xAttackTimer) clearInterval(xAttackTimer);
 
   xAttackTimer = setInterval(() => {
+    if (superRockUnlockPaused) return;
     if (!gameData.xOwned || enemyDead || playerDead || xAttacking) return;
 
     firePartnerBuster('x');
-  }, gameData.partnerAtkSpd);
+  }, getPartnerAttackInterval());
 }
 
 function startExeRockmanAttack() {
   if (rockexeAttackTimer) clearInterval(rockexeAttackTimer);
 
   rockexeAttackTimer = setInterval(() => {
+    if (superRockUnlockPaused) return;
     if (!gameData.exeRockmanOwned || enemyDead || playerDead || rockexeAttacking) return;
 
     firePartnerBuster('exeRockman');
-  }, gameData.partnerAtkSpd);
+  }, getPartnerAttackInterval());
 }
 
 function startZeroAttack() {
   if (zeroAttackTimer) clearInterval(zeroAttackTimer);
 
   zeroAttackTimer = setInterval(() => {
+    if (superRockUnlockPaused) return;
     if (!gameData.zeroOwned || enemyDead || playerDead || zeroAttacking) return;
 
     zeroMeleeAttack();
-  }, Math.floor(gameData.partnerAtkSpd * ZERO_ATTACK_INTERVAL_MULTIPLIER));
+  }, getPartnerAttackInterval(ZERO_ATTACK_INTERVAL_MULTIPLIER));
 }
 
 
@@ -1425,7 +2356,7 @@ function firePartnerBuster(type) {
     if (type === 'x') xAttacking = true;
     if (type === 'exeRockman') rockexeAttacking = true;
 
-    const isChargeShot = Math.random() * 100 < gameData.critChance;
+    const isChargeShot = Math.random() * 100 < getEffectiveCritChance();
     const pos = getPartnerBusterPosition(type);
     if (!pos) {
         if (type === 'forte') forteAttacking = false;
@@ -1481,6 +2412,12 @@ function firePartnerBuster(type) {
         setTimeout(() => {
             if (chargeFrameTimer) clearInterval(chargeFrameTimer);
 
+            if (!bullet.isConnected || bullet.dataset.cutmanErased === '1') {
+                bullet.remove();
+                finishAttack();
+                return;
+            }
+
             let hit = false;
             if (!enemyDead && !playerDead) {
                 hit = applyPartnerDamage(type, isChargeShot);
@@ -1491,6 +2428,12 @@ function firePartnerBuster(type) {
                 const impactPoint = getEnemyImpactPoint();
                 if (impactPoint) {
                     createProjectileExplosion(screen, impactPoint.x, impactPoint.y, data.explosionRadius || 40);
+                }
+
+                // 에그제 치명타 폭탄은 스나이퍼죠 점프 회피 중에도 스턴을 적용합니다.
+                // 데미지는 기존 명중 판정을 따르지만, 폭발 충격 스턴은 별도로 들어갑니다.
+                if (!enemyDead && !playerDead) {
+                    applyEnemyStun(EXE_BOMB_STUN_DURATION_MS);
                 }
             }
 
@@ -1541,6 +2484,7 @@ function startChase() {
     if (chaseTimer) clearInterval(chaseTimer);
 
     chaseTimer = setInterval(() => {
+        if (superRockUnlockPaused) return;
         if (enemyDead || playerDead || enemyStunned) return;
         if (isSniperJoeBattle() || isCutmanBossBattle()) return;
 
@@ -1691,6 +2635,7 @@ function failStage() {
 }
 
 function attack() {
+    if (superRockUnlockPaused) return;
     if (enemyDead || playerDead) return;
 
     const rockman = document.getElementById('rockman-img');
@@ -1699,7 +2644,7 @@ function attack() {
 
     if (!rockman || !enemy || !screen) return;
 
-    const isChargeShot = Math.random() * 100 < gameData.critChance;
+    const isChargeShot = Math.random() * 100 < getEffectiveCritChance();
 
     if (isChargeShot) fireChargeShot(screen, enemy);
     else fireNormalShot(screen, enemy);
@@ -1800,10 +2745,19 @@ function getRockBulletPosition(isChargeShot = false) {
 function createRockBulletElement(isChargeShot = false) {
     const bullet = document.createElement('div');
     bullet.className = isChargeShot ? 'rock-bullet rock-charge-bullet' : 'rock-bullet rock-normal-bullet';
+    if (isChargeShot && isSuperRockUnlocked()) {
+        bullet.classList.add('super-rock-rocket-punch');
+        bullet.style.backgroundImage = `url("${SUPER_ROCK_SPRITES.rocketPunch}")`;
+    }
     return bullet;
 }
 
 function startChargeBulletAnimation(bullet) {
+    if (isSuperRockUnlocked()) {
+        bullet.style.backgroundImage = `url("${SUPER_ROCK_SPRITES.rocketPunch}")`;
+        return null;
+    }
+
     let frame = 1;
     return setInterval(() => {
         frame = frame >= 4 ? 1 : frame + 1;
@@ -1832,6 +2786,10 @@ function fireNormalShot(screen, enemy) {
     );
 
     setTimeout(() => {
+        if (!bullet.isConnected || bullet.dataset.cutmanErased === '1') {
+            bullet.remove();
+            return;
+        }
         const hit = applyDamage(false);
         if (hit && !enemyDead) playEnemyHit(enemy);
         bullet.remove();
@@ -1871,7 +2829,11 @@ function fireChargeShot(screen, enemy) {
         );
 
         setTimeout(() => {
-            clearInterval(chargeBulletTimer);
+            if (chargeBulletTimer) clearInterval(chargeBulletTimer);
+            if (!bullet.isConnected || bullet.dataset.cutmanErased === '1') {
+                bullet.remove();
+                return;
+            }
             const hit = applyDamage(true);
             if (hit && !enemyDead) playEnemyHit(enemy);
             bullet.remove();
@@ -1885,13 +2847,74 @@ function playEnemyHit(enemy) {
     enemy.classList.add('hit-shake');
 }
 
+function clearEnemyStunVisualEffect() {
+    document.querySelectorAll('.enemy-stun-effect').forEach(el => el.remove());
+}
+
+function createEnemyStunVisualEffect() {
+    clearEnemyStunVisualEffect();
+
+    const enemyArea = document.getElementById('enemy-area');
+    if (!enemyArea) return;
+
+    const effect = document.createElement('div');
+    effect.className = 'enemy-stun-effect';
+    effect.innerHTML = `
+        <div class="enemy-stun-ring"></div>
+        <div class="enemy-stun-stars">
+            <span>★</span><span>★</span><span>★</span>
+        </div>
+    `;
+    enemyArea.appendChild(effect);
+}
+
+function applyEnemyStun(duration = EXE_BOMB_STUN_DURATION_MS) {
+    if (enemyDead || playerDead) return;
+
+    const enemy = document.getElementById('enemy-img');
+    enemyStunned = true;
+
+    // 스나이퍼죠가 점프 중일 때도 에그제 폭탄 스턴은 반드시 들어가야 합니다.
+    // 점프 회피 플래그/애니메이션을 즉시 끊고, 스턴 상태 표시를 우선 적용합니다.
+    if (isSniperJoeBattle()) {
+        sniperJoeJumping = false;
+        sniperJoeAttacking = false;
+        if (enemy) {
+            enemy.classList.remove('sniperjoe-jump');
+            enemy.src = ENEMY_TYPE_DATA.sniperjoe.idleFrame;
+        }
+    }
+
+    if (enemy) {
+        enemy.classList.remove('enemy-stunned');
+        void enemy.offsetWidth;
+        enemy.classList.add('enemy-stunned');
+    }
+
+    createEnemyStunVisualEffect();
+
+    if (enemyStunTimer) {
+        clearTimeout(enemyStunTimer);
+        enemyStunTimer = null;
+    }
+
+    enemyStunTimer = setTimeout(() => {
+        enemyStunned = false;
+        enemyStunTimer = null;
+        const latestEnemy = document.getElementById('enemy-img');
+        if (latestEnemy) latestEnemy.classList.remove('enemy-stunned');
+        clearEnemyStunVisualEffect();
+    }, duration);
+}
+
 function applyDamage(isChargeShot) {
     if (enemyDead || playerDead) return;
 
-    let damage = gameData.atk;
+    let damage = getRockAttackBaseDamage();
 
     if (isChargeShot) {
-        damage = Math.floor(damage * gameData.critMultiplier);
+        const chargeMultiplier = isSuperRockUnlocked() ? gameData.critMultiplier * 2 : gameData.critMultiplier;
+        damage = Math.floor(damage * chargeMultiplier);
     }
 
     return applyEnemyDamage(damage, isChargeShot, true);
@@ -1996,7 +3019,7 @@ function killEnemy() {
         const bossData = getBossData(currentBossType);
         const rewards = bossData.rewards || {};
         const screwReward = rollInt(rewards.screwsMin || 120, rewards.screwsMax || 220);
-        let rewardParts = [`+${screwReward}🔩`];
+        let rewardParts = [`+${screwReward}${SCREW_ICON_HTML}`];
 
         gameData.screws += screwReward;
 
@@ -2192,12 +3215,12 @@ function showRewardText(reward) {
     text.className = 'damage-text reward-text';
 
     if (typeof reward === 'number') {
-        text.innerText = `+${reward}🔩`;
+        text.innerHTML = `+${reward}${SCREW_ICON_HTML}`;
     } else if (typeof reward === 'string') {
-        text.innerText = reward;
+        text.innerHTML = reward;
     } else if (reward && typeof reward === 'object') {
         const parts = [];
-        parts.push(`<span class="reward-inline-item reward-inline-screw">+${reward.screws || 0}🔩</span>`);
+        parts.push(`<span class="reward-inline-item reward-inline-screw">+${reward.screws || 0}${SCREW_ICON_HTML}</span>`);
 
         if (reward.cardChip) {
             parts.push(
@@ -2271,6 +3294,7 @@ function getNextCost(type, cost) {
 
 function buyUpgrade(type, amount) {
     for (let i = 0; i < amount; i++) {
+        if (isUpgradeCapped(type)) break;
         if (gameData.screws < gameData.costs[type]) break;
 
         gameData.screws -= gameData.costs[type];
@@ -2279,7 +3303,7 @@ function buyUpgrade(type, amount) {
         if (type === 'atk') gameData.atk += 5;
 
         if (type === 'spd') {
-            if (gameData.atkSpd > 300) gameData.atkSpd -= 200;
+            gameData.atkSpd = Math.max(PLAYER_ATTACK_SPEED_MIN_MS, gameData.atkSpd - 200);
             startAutoAttack();
         }
 
@@ -2288,24 +3312,25 @@ function buyUpgrade(type, amount) {
            gameData.playerHp += 20;
         }
 
-        if (type === 'crit') gameData.critChance += 2;
+        if (type === 'crit') {
+            gameData.critChance = getCritChanceForLevel(gameData.lv.crit);
+        }
 
         if (type === 'critDmg') gameData.critMultiplier += 0.25;
 
         if (type === 'partnerSpd') {
-            if (gameData.partnerAtkSpd > 400) {
-                gameData.partnerAtkSpd -= 120;
-                startBluesAttack();
-                startForteAttack();
-                startXAttack();
-                startExeRockmanAttack();
-                startZeroAttack();
-startMining();
-            }
+            gameData.partnerAtkSpd = Math.max(PARTNER_ATTACK_SPEED_MIN_MS, gameData.partnerAtkSpd - 120);
+            startBluesAttack();
+            startForteAttack();
+            startXAttack();
+            startExeRockmanAttack();
+            startZeroAttack();
+            startMining();
         }
         gameData.costs[type] = getNextCost(type, gameData.costs[type]);
     }
 
+    clampBattleBalanceValues();
     updateUI();
     saveData();
 }
@@ -2323,8 +3348,11 @@ function upgradePartnerAttackSpeed() {
 }
 
 function buyUpgradeMax(type) {
-    while (gameData.screws >= gameData.costs[type]) {
+    while (!isUpgradeCapped(type) && gameData.screws >= gameData.costs[type]) {
+        const beforeLv = gameData.lv[type];
+        const beforeScrews = gameData.screws;
         buyUpgrade(type, 1);
+        if (gameData.lv[type] === beforeLv && gameData.screws === beforeScrews) break;
     }
 }
 
@@ -2444,94 +3472,111 @@ function buyExeRockmanFragment(amount) {
   saveData();
 }
 
+
+
+function stopPartnerInlineJoinTimers() {
+    const timers = [
+        'rushJoinTimer',
+        'beatJoinTimer',
+        'bluesAttackTimer',
+        'forteJoinTimer',
+        'xJoinTimer',
+        'zeroJoinTimer',
+        'rockexeJoinTimer'
+    ];
+
+    // bluesAttackTimer는 실제 전투 공격 타이머이므로 여기서 끊으면 안 됩니다.
+    // 아래에서 소환 연출용 타이머만 직접 정리합니다.
+    if (rushJoinTimer) { clearInterval(rushJoinTimer); rushJoinTimer = null; }
+    if (beatJoinTimer) { clearInterval(beatJoinTimer); beatJoinTimer = null; }
+    if (forteJoinTimer) { clearInterval(forteJoinTimer); forteJoinTimer = null; }
+    if (xJoinTimer) { clearInterval(xJoinTimer); xJoinTimer = null; }
+    if (zeroJoinTimer) { clearInterval(zeroJoinTimer); zeroJoinTimer = null; }
+    if (rockexeJoinTimer) { clearInterval(rockexeJoinTimer); rockexeJoinTimer = null; }
+}
+
+function clearPartnerInlineJoinStage() {
+    stopPartnerInlineJoinTimers();
+    const stage = document.getElementById('partner-inline-join-stage');
+    const text = document.getElementById('partner-inline-join-text');
+    const rushImg = document.getElementById('partner-inline-join-rush-img');
+    const joinImg = document.getElementById('partner-inline-join-img');
+    const popupBox = document.querySelector('#partner-inventory-popup .partner-popup-box');
+
+    if (stage) stage.classList.remove('active');
+    if (text) text.innerText = 'JOIN!';
+    [rushImg, joinImg].forEach(img => {
+        if (!img) return;
+        img.classList.remove('rush-drop', 'join-drop');
+        img.style.display = 'none';
+        img.style.width = '';
+        img.style.height = '';
+        img.style.transform = 'translateX(-50%)';
+    });
+    if (popupBox) popupBox.classList.remove('summoned');
+}
+
+function prepareInlineSummonStage(type) {
+    const popup = document.getElementById('partner-inventory-popup');
+    const stage = document.getElementById('partner-inline-join-stage');
+    const text = document.getElementById('partner-inline-join-text');
+    const rushImg = document.getElementById('partner-inline-join-rush-img');
+    const joinImg = document.getElementById('partner-inline-join-img');
+    const popupBox = document.querySelector('#partner-inventory-popup .partner-popup-box');
+
+    if (!popup || !stage || !text || !rushImg || !joinImg) return null;
+
+    stopPartnerInlineJoinTimers();
+
+    popup.classList.add('active');
+    stage.classList.add('active');
+    if (popupBox) popupBox.classList.add('summoned');
+
+    rushImg.style.display = 'none';
+    joinImg.style.display = 'none';
+    rushImg.classList.remove('rush-drop', 'join-drop');
+    joinImg.classList.remove('rush-drop', 'join-drop');
+
+    const nameMap = {
+        rush: 'RUSH JOIN!',
+        beat: 'BEAT JOIN!',
+        blues: 'BLUES JOIN!',
+        forte: 'FORTE JOIN!',
+        x: 'X JOIN!',
+        zero: 'ZERO JOIN!',
+        exeRockman: 'ROCKMAN.EXE JOIN!'
+    };
+    text.innerText = nameMap[type] || 'JOIN!';
+
+    if (type === 'rush') {
+        rushImg.src = 'sprites/partner/rush/rush_02.png';
+        rushImg.style.display = 'block';
+        return { popup, rushImg, beatImg: joinImg };
+    }
+
+    const firstFrameMap = {
+        beat: 'sprites/partner/beat/beat_01.png',
+        blues: 'sprites/partner/blues/blues_join_01.png',
+        forte: 'sprites/partner/forte/forte_join_01.png',
+        x: 'sprites/partner/x/x_join_01.png',
+        zero: 'sprites/partner/zero/zero_join_01.png',
+        exeRockman: 'sprites/partner/rockexe/rockexe_join_01.png'
+    };
+    joinImg.src = firstFrameMap[type] || 'sprites/partner/beat/beat_01.png';
+    joinImg.style.setProperty('width', type === 'beat' ? '28px' : '54px', 'important');
+    joinImg.style.setProperty('height', type === 'beat' ? '28px' : '54px', 'important');
+    joinImg.style.display = 'block';
+    return { popup, rushImg, beatImg: joinImg };
+}
+
 function getSummonTextElement() {
     return document.getElementById('summon-text') || document.querySelector('.summon-text');
 }
 
 function prepareSummonPopup(type) {
-    const popup = document.getElementById('summon-popup');
-    const text = getSummonTextElement();
-
-    const rushImg = document.getElementById('rush-join-img');
-    let beatImg = document.getElementById('beat-join-img');
-
-    if (!popup || !text || !rushImg) return null;
-
-    if (!beatImg) {
-        beatImg = document.createElement('img');
-        beatImg.id = 'beat-join-img';
-        beatImg.className = 'rush-join-img';
-        beatImg.style.display = 'none';
-
-        const box = document.querySelector('.summon-box');
-        if (box) box.appendChild(beatImg);
-    }
-
-    if (type === 'rush') {
-        text.innerText = 'RUSH JOIN!';
-        rushImg.src = 'sprites/partner/rush/rush_02.png';
-        rushImg.style.display = 'block';
-        beatImg.style.display = 'none';
-    }
-
-    if (type === 'beat') {
-        text.innerText = 'BEAT JOIN!';
-        rushImg.style.display = 'none';
-        beatImg.src = 'sprites/partner/beat/beat_01.png';
-        beatImg.style.display = 'block';
-    }
-
-    if (type === 'blues') {
-        text.innerText = 'BLUES JOIN!';
-        rushImg.style.display = 'none';
-        beatImg.src = 'sprites/partner/blues/blues_join_01.png';
-        beatImg.style.setProperty('width', '54px', 'important');
-        beatImg.style.setProperty('height', '54px', 'important');
-        beatImg.style.display = 'block';
-    }
-
-    if (type === 'forte') {
-        text.innerText = 'FORTE JOIN!';
-        rushImg.style.display = 'none';
-        beatImg.src = 'sprites/partner/forte/forte_01.png';
-        beatImg.style.setProperty('width', '54px', 'important');
-        beatImg.style.setProperty('height', '54px', 'important');
-        beatImg.style.display = 'block';
-    }
-
-    if (type === 'x') {
-        text.innerText = 'X JOIN!';
-        rushImg.style.display = 'none';
-        beatImg.src = 'sprites/partner/x/x_join_01.png';
-        beatImg.style.setProperty('width', '54px', 'important');
-        beatImg.style.setProperty('height', '54px', 'important');
-        beatImg.style.display = 'block';
-    }
-
-    if (type === 'zero') {
-        text.innerText = 'ZERO JOIN!';
-        rushImg.style.display = 'none';
-        beatImg.src = 'sprites/partner/zero/zero_join_01.png';
-        beatImg.style.setProperty('width', '54px', 'important');
-        beatImg.style.setProperty('height', '54px', 'important');
-        beatImg.style.display = 'block';
-    }
-
-    if (type === 'exeRockman') {
-        text.innerText = 'ROCKMAN.EXE JOIN!';
-        rushImg.style.display = 'none';
-        beatImg.src = 'sprites/partner/rockexe/rockexe_join_01.png';
-        beatImg.style.setProperty('width', '54px', 'important');
-        beatImg.style.setProperty('height', '54px', 'important');
-        beatImg.style.display = 'block';
-    }
-
-    popup.classList.add('active');
-    popup.onclick = () => {
-        closeSummonPopup();
-    };
-
-    return { popup, rushImg, beatImg };
+    // 기존 화면 중앙 JOIN 팝업은 동료 인벤토리 팝업에 가려지므로 사용하지 않습니다.
+    // 동료 팝업 안의 빈 공간에서 바로 소환 애니메이션을 재생합니다.
+    return prepareInlineSummonStage(type);
 }
 
 function summonRush() {
@@ -2616,6 +3661,8 @@ function summonBeat() {
         beatImg.style.transform = `translateX(-50%) translateY(${Math.sin(beatFloat / 2) * 4}px)`;
     }, 120);
 
+    updateUI();
+    saveData();
 }
 
 function summonBlues() {
@@ -2657,6 +3704,8 @@ function summonBlues() {
         }
     }, 120);
 
+    updateUI();
+    saveData();
 }
 
 function summonForte() {
@@ -2695,6 +3744,8 @@ function summonForte() {
         }
     }, 120);
 
+    updateUI();
+    saveData();
 }
 
 function summonX() {
@@ -2728,6 +3779,8 @@ function summonX() {
         xJoinIndex = (xJoinIndex + 1) % xJoinPattern.length;
     }, 160);
 
+    updateUI();
+    saveData();
 }
 
 function summonZero() {
@@ -2765,6 +3818,9 @@ function summonZero() {
             beatImg.src = 'sprites/partner/zero/zero_join_08.png';
         }
     }, 120);
+
+    updateUI();
+    saveData();
 }
 
 function summonExeRockman() {
@@ -2881,8 +3937,8 @@ function togglePartnerUpgrade(type) {
 
 
 function updateBossBattleTabLockState() {
-    const isLocked = isBossBattle && !enemyDead && !playerDead;
-    const lockIds = ['mine-tab-btn', 'armor-tab-btn', 'boss-tab-btn', 'partner-tab-btn'];
+    const isLocked = bossBattleEntryPending || (isBossBattle && !enemyDead && !playerDead);
+    const lockIds = ['mine-tab-btn', 'armor-tab-btn', 'boss-tab-btn', 'partner-tab-btn', 'card-tab-btn'];
 
     lockIds.forEach(id => {
         const btn = document.getElementById(id);
@@ -2898,13 +3954,26 @@ function showBossBattleLockedMessage() {
     showStageText('보스전 진행 중');
 }
 
+function setBossEntryWarningPause(paused) {
+    superRockUnlockPaused = !!paused;
+
+    const bg = document.getElementById('scroll-bg');
+    if (bg) {
+        if (paused) bg.classList.add('paused');
+        else if (!isStillBossBattle()) bg.classList.remove('paused');
+    }
+
+    const screen = document.querySelector('.game-screen');
+    if (screen) screen.classList.toggle('boss-warning-paused', !!paused);
+}
+
 
 
 const DEVELOPMENT_LAB_DATA = [
     {
         key: 'classic',
         name: '클래식 보스전',
-        sectionName: '클래식 개발 항목',
+        sectionName: '',
         hint: '클래식 보스전에서 데이터칩을 수급합니다.',
         bg: 'sprites/background/development_lab_bg.png',
         sprite: 'sprites/background/lab_classic.png'
@@ -2936,6 +4005,42 @@ const DEVELOPMENT_LAB_DATA = [
 ];
 
 const DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS = 30;
+
+const SUPER_ROCK_SPRITES = {
+    walk: [
+        'sprites/armor/super-r/super_r_walk_01.png',
+        'sprites/armor/super-r/super_r_walk_02.png',
+        'sprites/armor/super-r/super_r_walk_03.png'
+    ],
+    stand: 'sprites/armor/super-r/super_r_st.png',
+    rocketPunch: 'sprites/armor/super-r/super_r_c_bullet_01.png'
+};
+
+function isSuperRockUnlocked() {
+    return !!gameData.development?.superRockUnlocked;
+}
+
+function getRockStandSprite() {
+    return isSuperRockUnlocked() ? SUPER_ROCK_SPRITES.stand : 'sprites/rock/rock_st.png';
+}
+
+function getRockWalkSprite(frame) {
+    if (isSuperRockUnlocked()) {
+        const index = Math.max(0, Math.min(2, (Math.floor(frame || 1) - 1)));
+        return SUPER_ROCK_SPRITES.walk[index] || SUPER_ROCK_SPRITES.walk[0];
+    }
+    return `sprites/rock/rock_0${frame}.png`;
+}
+
+function getRockChargeBulletSprite() {
+    return isSuperRockUnlocked() ? SUPER_ROCK_SPRITES.rocketPunch : 'sprites/rock/rock_c_bullet_01.png';
+}
+
+function getRockAttackBaseDamage() {
+    const baseAtk = getCardAdjustedAtk(gameData.atk);
+    return isSuperRockUnlocked() ? Math.floor(baseAtk * 1.10) : baseAtk;
+}
+
 
 let superRockDevSpriteAnimTimer = null;
 let superRockDevSpriteAnimToken = 0;
@@ -2972,10 +4077,10 @@ function playSuperRockDevelopmentSpriteIntro(force = false) {
         }
 
         img.src = getSuperRockDevelopmentFrame(frame);
-        superRockDevSpriteAnimTimer = setTimeout(step, 280);
+        superRockDevSpriteAnimTimer = setTimeout(step, 230);
     };
 
-    superRockDevSpriteAnimTimer = setTimeout(step, 280);
+    superRockDevSpriteAnimTimer = setTimeout(step, 230);
 }
 
 function getCurrentDevelopmentLab() {
@@ -3029,6 +4134,31 @@ function selectDevelopmentItem(itemKey) {
     saveData();
 }
 
+
+function showSuperRockDevelopmentNotice(message) {
+    const card = document.getElementById('development-super-rock-card');
+    if (!card) {
+        showStageText(message);
+        return;
+    }
+
+    let notice = card.querySelector('.super-rock-dev-notice');
+    if (!notice) {
+        notice = document.createElement('div');
+        notice.className = 'super-rock-dev-notice';
+        card.appendChild(notice);
+    }
+
+    notice.textContent = message;
+    notice.classList.remove('active');
+    void notice.offsetWidth;
+    notice.classList.add('active');
+
+    setTimeout(() => {
+        notice.classList.remove('active');
+    }, 1400);
+}
+
 function upgradeSuperRockDevelopment(event = null) {
     if (event) {
         event.preventDefault();
@@ -3038,7 +4168,19 @@ function upgradeSuperRockDevelopment(event = null) {
     if (!gameData.development) gameData.development = { ...defaultData.development };
 
     const progress = Math.max(0, Math.min(DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS, Math.floor(gameData.development.superRockProgress || 0)));
-    if (progress >= DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS) return;
+
+    if (progress >= DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS) {
+        if (!gameData.rushOwned) {
+            showSuperRockDevelopmentNotice('러쉬가 필요합니다');
+            updateUI();
+            return;
+        }
+        if (!gameData.development.superRockUnlocked) {
+            completeSuperRockDevelopmentUnlock();
+        }
+        return;
+    }
+
     if (!gameData.materials) gameData.materials = { ...defaultData.materials };
     if ((gameData.materials.superRockChip || 0) <= 0) return;
 
@@ -3055,6 +4197,116 @@ function upgradeSuperRockDevelopment(event = null) {
 
     updateUI();
     saveData();
+}
+
+function freezeBattleForSuperRockUnlock() {
+    superRockUnlockPaused = true;
+    const bg = document.getElementById('scroll-bg');
+    const screen = document.querySelector('.game-screen');
+    if (bg) bg.classList.add('paused');
+    if (screen) screen.classList.add('super-rock-unlock-freeze');
+    stopSniperJoeActions();
+    stopCutmanBossActions();
+}
+
+function unfreezeBattleAfterSuperRockUnlock() {
+    superRockUnlockPaused = false;
+    const screen = document.querySelector('.game-screen');
+    if (screen) screen.classList.remove('super-rock-unlock-freeze');
+    const bg = document.getElementById('scroll-bg');
+    if (bg && !isStillBossBattle()) bg.classList.remove('paused');
+    if (isCutmanBossBattle()) startCutmanBossActions();
+    if (isSniperJoeBattle()) startSniperJoeActions();
+}
+
+let superRockUnlockCloseReady = false;
+
+function closeSuperRockUnlockOverlay(applyUnlock = true) {
+    const overlay = document.getElementById('super-rock-unlock-overlay');
+    const bullet = document.getElementById('super-rock-unlock-bullet');
+    if (!overlay || !overlay.classList.contains('active')) return;
+
+    if (applyUnlock && !gameData.development.superRockUnlocked) {
+        gameData.development.superRockUnlocked = true;
+    }
+
+    overlay.classList.remove('active');
+    superRockUnlockCloseReady = false;
+    if (bullet) bullet.classList.remove('active', 'loop');
+
+    unfreezeBattleAfterSuperRockUnlock();
+    updateUI();
+    saveData();
+
+    const rockman = document.getElementById('rockman-img');
+    if (rockman) rockman.src = getRockStandSprite();
+}
+
+function playSuperRockUnlockAnimation() {
+    const overlay = document.getElementById('super-rock-unlock-overlay');
+    const img = document.getElementById('super-rock-unlock-img');
+    const bullet = document.getElementById('super-rock-unlock-bullet');
+    const text = document.getElementById('super-rock-unlock-text');
+    if (!overlay || !img) return;
+
+    overlay.classList.add('active');
+    overlay.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (superRockUnlockCloseReady) closeSuperRockUnlockOverlay(true);
+    };
+
+    superRockUnlockCloseReady = false;
+    if (text) text.classList.remove('active');
+    if (bullet) bullet.classList.remove('active', 'loop');
+
+    let frame = 1;
+    img.src = getSuperRockDevelopmentFrame(frame);
+
+    const step = () => {
+        frame += 1;
+        if (frame > 7) {
+            img.src = SUPER_ROCK_SPRITES.stand;
+
+            setTimeout(() => {
+                if (bullet) {
+                    bullet.classList.remove('active', 'loop');
+                    void bullet.offsetWidth;
+                    bullet.classList.add('active', 'loop');
+                }
+
+                if (!gameData.development.superRockUnlocked) {
+                    gameData.development.superRockUnlocked = true;
+                    saveData();
+                }
+
+                if (text) {
+                    text.classList.remove('active');
+                    void text.offsetWidth;
+                    text.classList.add('active');
+                }
+
+                superRockUnlockCloseReady = true;
+                updateUI();
+                const rockman = document.getElementById('rockman-img');
+                if (rockman) rockman.src = getRockStandSprite();
+            }, 260);
+            return;
+        }
+
+        img.src = getSuperRockDevelopmentFrame(frame);
+        setTimeout(step, 210);
+    };
+
+    setTimeout(step, 210);
+}
+
+function completeSuperRockDevelopmentUnlock() {
+    showTab('battle');
+    setTimeout(() => {
+        freezeBattleForSuperRockUnlock();
+        playSuperRockUnlockAnimation();
+    }, 80);
 }
 
 function updateDevelopmentLabUI() {
@@ -3078,10 +4330,17 @@ function updateDevelopmentLabUI() {
     if (nameEl) nameEl.innerText = lab.name;
 
     const sectionName = document.getElementById('development-section-name');
-    if (sectionName) sectionName.innerText = lab.sectionName;
+    if (sectionName) sectionName.innerText = lab.sectionName || lab.hint;
 
     const sectionHint = document.getElementById('development-section-hint');
     if (sectionHint) sectionHint.innerText = lab.hint;
+
+    const devSuperRockChipOwned = document.getElementById('dev-superrock-chip-owned');
+    if (devSuperRockChipOwned) devSuperRockChipOwned.innerText = Math.floor(gameData.materials?.superRockChip || 0).toLocaleString();
+    const devBluesBusterChipOwned = document.getElementById('dev-bluesbuster-chip-owned');
+    if (devBluesBusterChipOwned) devBluesBusterChipOwned.innerText = Math.floor(gameData.materials?.bluesBusterChip || 0).toLocaleString();
+    const devSuperForteChipOwned = document.getElementById('dev-superforte-chip-owned');
+    if (devSuperForteChipOwned) devSuperForteChipOwned.innerText = Math.floor(gameData.materials?.superForteChip || 0).toLocaleString();
 
     const classicList = document.getElementById('development-classic-list');
     const placeholderList = document.getElementById('development-placeholder-list');
@@ -3118,11 +4377,20 @@ function updateDevelopmentLabUI() {
     const btn = document.getElementById('super-rock-dev-btn');
     if (btn) {
         const complete = progress >= DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS;
+        const unlocked = !!gameData.development.superRockUnlocked;
+        const hasRush = !!gameData.rushOwned;
         const canUpgrade = !complete && chipCount > 0;
-        btn.disabled = !canUpgrade;
-        btn.classList.toggle('active', canUpgrade);
-        btn.innerText = complete ? '완료' : '개발';
-        btn.title = complete ? '슈퍼록맨 개발 완료' : (canUpgrade ? '슈퍼록맨 데이터칩 1개를 투입합니다.' : '슈퍼록맨 데이터칩이 부족합니다.');
+        const canComplete = complete && !unlocked && hasRush;
+        btn.disabled = !(canUpgrade || canComplete || (complete && !unlocked && !hasRush));
+        btn.classList.toggle('active', canUpgrade || canComplete);
+        btn.classList.remove('rush-required');
+        btn.innerText = complete ? (unlocked ? '완료됨' : '완료') : '개발';
+        btn.removeAttribute('data-tooltip');
+        btn.title = unlocked
+            ? '슈퍼록맨 개발 완료'
+            : (complete
+                ? (hasRush ? '슈퍼록맨 개발을 완료합니다.' : '러쉬가 필요합니다')
+                : (canUpgrade ? '슈퍼록맨 데이터칩 1개를 투입합니다.' : '슈퍼록맨 데이터칩이 부족합니다.'));
     }
 
     const superRockCard = document.getElementById('development-super-rock-card');
@@ -3134,7 +4402,7 @@ function updateDevelopmentLabUI() {
 
 
 function showTab(tabName) {
-    if (isBossBattle && !enemyDead && !playerDead && tabName !== 'battle') {
+    if ((bossBattleEntryPending || (isBossBattle && !enemyDead && !playerDead)) && tabName !== 'battle') {
         updateBossBattleTabLockState();
         showBossBattleLockedMessage();
         return;
@@ -3147,7 +4415,7 @@ function showTab(tabName) {
         tabName = 'battle';
     }
 
-    ['battle', 'partner', 'armor', 'boss', 'mine'].forEach(name => {
+    ['battle', 'partner', 'card', 'armor', 'boss', 'mine'].forEach(name => {
         const tab = document.getElementById(name + '-tab');
         const btn = document.getElementById(name + '-tab-btn');
 
@@ -3256,9 +4524,13 @@ function selectBossCard(bossKey = 'classic_cutman') {
     if (!bossData) return;
 
     if (gameData.crystals < bossData.entryCost) {
-        showBossCardMessage('크리스탈 부족');
+        showBossCardMessage('E캔 부족');
         return;
     }
+
+    bossBattleEntryPending = true;
+    setBossEntryWarningPause(true);
+    updateBossBattleTabLockState();
 
     const card =
         document.getElementById('boss-card-cutman') ||
@@ -3305,17 +4577,75 @@ function showBossWarning(callback) {
   }, 3000);
 }
 
+function clearBattleProjectilesAndTransientEffects() {
+  document.querySelectorAll(
+    '.enemy-bullet, .sniperjoe-bullet, .cutman-boss-cutter, .cutman-cutter-erase-pop, ' +
+    '.projectile-explosion, .projectile-explosion-particle, .death-particle, ' +
+    '.rockman-death-particle, .cutman-death-particle, .damage-text'
+  ).forEach(el => el.remove());
+}
+
+function resetBattleStateForBossEntry() {
+  stopSniperJoeActions();
+  stopCutmanBossActions();
+  clearBattleProjectilesAndTransientEffects();
+
+  enemyDead = false;
+  enemyAttacking = false;
+  enemyStunned = false;
+  if (enemyStunTimer) {
+    clearTimeout(enemyStunTimer);
+    enemyStunTimer = null;
+  }
+  sniperJoeJumping = false;
+  sniperJoeAttacking = false;
+  cutmanBossAttacking = false;
+  playerDead = false;
+
+  gameData.playerMaxHp = Math.floor(100 + (gameData.lv.hp - 1) * 20);
+  gameData.playerHp = gameData.playerMaxHp;
+
+  const rockman = document.getElementById('rockman-img');
+  if (rockman) {
+    rockman.classList.remove('rockman-death-hide', 'ally-hit-flash');
+    rockman.src = getRockStandSprite();
+  }
+
+  ['rush-img', 'beat-img', 'blues-img', 'forte-img', 'x-img', 'rockexe-img', 'zero-img'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('ally-hit-flash');
+  });
+
+  const enemyImg = document.getElementById('enemy-img');
+  if (enemyImg) {
+    enemyImg.classList.remove('sniperjoe-jump', 'hit-shake', 'enemy-death', 'boss-enter', 'cutman-dead-blink', 'cutman-death-fade', 'enemy-stunned');
+    clearEnemyStunVisualEffect();
+    enemyImg.style.opacity = '1';
+    enemyImg.style.transform = '';
+  }
+
+  const enemyArea = document.getElementById('enemy-area');
+  if (enemyArea) {
+    enemyArea.classList.remove('sniperjoe-area', 'sniperjoe-enter-area', 'boss-enter-area');
+    enemyArea.style.removeProperty('--sniperjoe-ground-bottom');
+  }
+}
+
 function enterBossBattle(bossKey = 'classic_cutman') {
   const bossData = getBossData(bossKey);
   if (!bossData) return;
 
   if (gameData.crystals < bossData.entryCost) {
-    showBossCardMessage('크리스탈 부족');
+    bossBattleEntryPending = false;
+    setBossEntryWarningPause(false);
+    updateBossBattleTabLockState();
+    showBossCardMessage('E캔 부족');
     updateUI();
     return;
   }
 
   gameData.crystals -= bossData.entryCost;
+  resetBattleStateForBossEntry();
   saveData();
   updateUI();
 
@@ -3323,10 +4653,12 @@ function enterBossBattle(bossKey = 'classic_cutman') {
 
   showBossWarning(() => {
 
+    resetBattleStateForBossEntry();
+    bossBattleEntryPending = false;
+    setBossEntryWarningPause(false);
     isBossBattle = true;
     currentBossType = bossKey;
     currentEnemyType = null;
-    stopSniperJoeActions();
 
     const screen = document.querySelector('.game-screen');
     if (screen) {
@@ -3343,7 +4675,8 @@ function enterBossBattle(bossKey = 'classic_cutman') {
       enemyImg.style.width = (bossData.width || 60) + 'px';
       enemyImg.style.height = (bossData.height || 60) + 'px';
       enemyImg.style.marginTop = (bossData.marginTop ?? -15) + 'px';
-      enemyImg.classList.remove('boss-enter');
+      enemyImg.classList.remove('boss-enter', 'enemy-stunned');
+        clearEnemyStunVisualEffect();
       void enemyImg.offsetWidth;
       enemyImg.classList.add('boss-enter');
     }
@@ -3362,18 +4695,22 @@ function enterBossBattle(bossKey = 'classic_cutman') {
     enemyMaxHp = bossData.hp || 5000;
     enemyHp = enemyMaxHp;
     enemyAtk = bossData.atk || 20;
-    enemySpeed = bossKey === 'classic_cutman' ? 0 : (bossData.speed || 0.18);
+    enemySpeed = bossKey === 'classic_cutman' ? 0 : Math.min(ENEMY_MOVE_SPEED_MAX, (bossData.speed || 0.18));
     enemyX = bossData.startX ?? BOSS_START_X;
 
     enemyDead = false;
     enemyAttacking = false;
     enemyStunned = false;
+    if (enemyStunTimer) {
+      clearTimeout(enemyStunTimer);
+      enemyStunTimer = null;
+    }
     playerDead = false;
 
     updateEnemyPosition();
 
     const rockmanImg = document.getElementById('rockman-img');
-    if (rockmanImg) rockmanImg.src = 'sprites/rock/rock_st.png';
+    if (rockmanImg) rockmanImg.src = getRockStandSprite();
 
     applyStillBattleFrames();
     updateBossBattleTabLockState();
@@ -3413,12 +4750,13 @@ function startCutmanBossActions() {
     const interval = bossData.attackInterval || 1850;
 
     cutmanBossActionTimer = setInterval(() => {
-        if (!isBossBattle || currentBossType !== 'classic_cutman' || enemyDead || playerDead || cutmanBossAttacking) return;
+        if (superRockUnlockPaused) return;
+        if (!isBossBattle || currentBossType !== 'classic_cutman' || enemyDead || playerDead || enemyStunned || cutmanBossAttacking) return;
         fireCutmanBossCutter();
     }, interval);
 
     setTimeout(() => {
-        if (isBossBattle && currentBossType === 'classic_cutman' && !enemyDead && !playerDead) {
+        if (isBossBattle && currentBossType === 'classic_cutman' && !enemyDead && !playerDead && !enemyStunned) {
             fireCutmanBossCutter();
         }
     }, 1800);
@@ -3469,13 +4807,16 @@ function erasePlayerProjectilesAtCutter(cutter, screen) {
             const centerX = rect.left - screenRect.left + rect.width / 2;
             const centerY = rect.top - screenRect.top + rect.height / 2;
             createCutmanCutterErasePop(screen, centerX, centerY);
+            projectile.dataset.cutmanErased = '1';
+            projectile.getAnimations?.().forEach(animation => animation.cancel());
             projectile.remove();
         }
     });
 }
 
 function fireCutmanBossCutter() {
-    if (!isBossBattle || currentBossType !== 'classic_cutman' || enemyDead || playerDead || cutmanBossAttacking) return;
+    if (superRockUnlockPaused) return;
+        if (!isBossBattle || currentBossType !== 'classic_cutman' || enemyDead || playerDead || enemyStunned || cutmanBossAttacking) return;
 
     const screen = document.querySelector('.game-screen');
     const enemyImg = document.getElementById('enemy-img');
@@ -3544,10 +4885,12 @@ function fireCutmanBossCutter() {
 
 function startAutoAttack() {
     if (attackTimer) clearInterval(attackTimer);
-    attackTimer = setInterval(attack, gameData.atkSpd);
+    attackTimer = setInterval(attack, getPlayerAttackInterval());
 }
 
 const STONE_ICON_HTML = '<img src="sprites/mine/stone.png" class="result-resource-icon stone-resource-icon" alt="돌">';
+const SCREW_ICON_HTML = '<img src="sprites/item/screw.png" class="result-resource-icon item-resource-icon" alt="나사">';
+const CRYSTAL_ICON_HTML = '<img src="sprites/item/e_can.png" class="result-resource-icon item-resource-icon" alt="E캔">';
 
 const PICKAXE_NAMES = ['록괭이', '록괭이X', '록괭이.EXE', '록괭대시', '퍼스트괭이', '기가괭이', '맥스괭이', '포스괭이', '팔콘괭이', '얼티밋괭이'];
 
@@ -3764,7 +5107,7 @@ function clearMineRock() {
     gameData.mineRockMaxHp = getMineRockMaxHp();
     gameData.mineRockHp = gameData.mineRockMaxHp;
 
-    showMineResult(`+${screwReward}🔩 / +${stoneReward}${STONE_ICON_HTML}`);
+    showMineResult(`+${screwReward}${SCREW_ICON_HTML} / +${stoneReward}${STONE_ICON_HTML}`);
 }
 
 function showMineDamageText(damage) {
@@ -3861,6 +5204,8 @@ function updateUI() {
     document.getElementById('screws').innerText = Math.floor(gameData.screws).toLocaleString();
     document.getElementById('crystals').innerText = Math.floor(gameData.crystals).toLocaleString();
 
+    updatePartnerInventoryUI();
+
     const stonesEl = document.getElementById('stones');
     if (stonesEl) stonesEl.innerText = Math.floor(gameData.stones || 0).toLocaleString();
 
@@ -3878,17 +5223,32 @@ function updateUI() {
 
         if (!lvEl || !btn1 || !btn10 || !btnMax) return;
 
-        lvEl.innerText = gameData.lv[type];
+        const capped = isUpgradeCapped(type);
+        const maxLevelText = type === 'crit' ? CRIT_UPGRADE_MAX_LEVEL : SPEED_UPGRADE_MAX_LEVEL;
+        lvEl.innerText = capped && (isSpeedUpgradeType(type) || type === 'crit') ? `${maxLevelText} MAX` : gameData.lv[type];
+
+        const maxedAndHidden = capped && (isSpeedUpgradeType(type) || type === 'crit');
+        [btn1, btn10, btnMax].forEach(btn => {
+            btn.style.display = maxedAndHidden ? 'none' : '';
+            btn.disabled = maxedAndHidden;
+        });
+
+        if (maxedAndHidden) {
+            setButtonActive(btn1, false);
+            setButtonActive(btn10, false);
+            setButtonActive(btnMax, false);
+            return;
+        }
 
         const cost1 = calcCost(type, 1);
         const cost10 = calcCost(type, 10);
 
-        btn1.dataset.cost = `필요 🔩 ${cost1.toLocaleString()}`;
-        btn10.dataset.cost = `필요 🔩 ${cost10.toLocaleString()}`;
+        btn1.dataset.cost = capped ? '최대치 도달' : `필요 나사 ${cost1.toLocaleString()}`;
+        btn10.dataset.cost = capped ? '최대치 도달' : `필요 나사 ${cost10.toLocaleString()}`;
 
-        setButtonActive(btn1, gameData.screws >= cost1);
-        setButtonActive(btn10, gameData.screws >= cost10);
-        setButtonActive(btnMax, gameData.screws >= cost1);
+        setButtonActive(btn1, !capped && gameData.screws >= cost1);
+        setButtonActive(btn10, !capped && gameData.screws >= cost10);
+        setButtonActive(btnMax, !capped && gameData.screws >= cost1);
     });
 
     setButtonActive(document.getElementById('exchange-btn1'), gameData.screws >= 100);
@@ -4053,8 +5413,11 @@ if (exeRockmanCard && exeRockmanBadge) {
 
     const rushImg = document.getElementById('rush-img');
 
+if (partnerArea && isSuperRockUnlocked()) {
+    partnerArea.classList.remove('active');
+}
 if (rushImg) {
-    rushImg.style.display = gameData.rushOwned ? 'block' : 'none';
+    rushImg.style.display = (gameData.rushOwned && !isSuperRockUnlocked()) ? 'block' : 'none';
 }
 
     if (beatArea) {
@@ -4201,6 +5564,20 @@ setButtonActive(document.getElementById('mine-tier-up-btn'), !mineEnhancing && g
 
 
 
+
+const cardTabCardChipCount = document.getElementById('card-tab-card-chip-count');
+if (cardTabCardChipCount) cardTabCardChipCount.innerText = Math.floor(gameData.materials.cardChip || 0).toLocaleString();
+const optionChangeChipCount = document.getElementById('option-change-chip-count');
+if (optionChangeChipCount) optionChangeChipCount.innerText = Math.floor(gameData.materials.optionChangeChip || 0).toLocaleString();
+const cardTabScrewsCount = document.getElementById('card-tab-screws-count');
+if (cardTabScrewsCount) cardTabScrewsCount.innerText = Math.floor(gameData.screws || 0).toLocaleString();
+
+setButtonActive(document.getElementById('card-analyze-1-btn'), (gameData.materials.cardChip || 0) >= 1 && (gameData.screws || 0) >= CARD_ANALYZE_SCREW_COST);
+setButtonActive(document.getElementById('card-analyze-10-btn'), (gameData.materials.cardChip || 0) >= 10 && (gameData.screws || 0) >= CARD_ANALYZE_SCREW_COST * 10);
+setButtonActive(document.getElementById('option-chip-exchange-1-btn'), (gameData.stones || 0) >= OPTION_CHIP_STONE_COST);
+setButtonActive(document.getElementById('option-chip-exchange-10-btn'), (gameData.stones || 0) >= OPTION_CHIP_STONE_COST * 10);
+renderCardUI();
+
     updateBossBattleTabLockState();
 }
 
@@ -4284,6 +5661,9 @@ function devCheat() {
     gameData.stones += 1000;
     gameData.materials.cardChip += 30;
     gameData.materials.superRockChip += 30;
+    gameData.materials.bluesBusterChip = Math.floor(gameData.materials.bluesBusterChip || 0) + 30;
+    gameData.materials.superForteChip = Math.floor(gameData.materials.superForteChip || 0) + 30;
+    gameData.materials.optionChangeChip += 3;
 
     updateUI();
     saveData();
@@ -4347,7 +5727,7 @@ function normalizeCutmanBossCardUI() {
 
     line.innerHTML = `
         <span class="reward-text-label">획득 가능 :</span>
-        <span class="boss-reward-item">나사 <span class="boss-reward-emoji">🔩</span></span>
+        <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
         <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
         <span class="boss-reward-item">슈퍼록맨 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
     `;
