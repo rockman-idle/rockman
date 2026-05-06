@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=cutman_screw_safe_v36">
+<link rel="stylesheet" href="style.css?v=status_reboot_title_v52">
 </head>
 
 <body>
@@ -191,15 +191,66 @@
     </div>
 </div>
 
+<div id="transcend-overlay" class="transcend-overlay" onclick="closeTranscendOverlay()">
+    <div class="transcend-overlay-box">
+        <div id="transcend-overlay-title" class="transcend-overlay-title">리부트 완료</div>
+        <div class="transcend-overlay-core">REBOOT</div>
+        <div id="transcend-overlay-desc" class="transcend-overlay-desc">리부트 코어를 획득했습니다.</div>
+        <div class="transcend-overlay-hint">클릭해서 닫기</div>
+    </div>
+</div>
+
+<div id="pickaxe-register-popup" class="pickaxe-register-popup" onclick="event.preventDefault(); event.stopPropagation(); closePickaxeRegisterConfirm(); return false;">
+  <div class="pickaxe-register-box" onclick="event.stopPropagation()">
+    <button type="button" class="pickaxe-register-close" onclick="event.preventDefault(); event.stopPropagation(); closePickaxeRegisterConfirm(); return false;">×</button>
+    <div class="pickaxe-register-title">곡괭이 등록 확인</div>
+    <div id="pickaxe-register-slot-text" class="pickaxe-register-help">현재 곡괭이를 등록하시겠습니까?</div>
+
+    <div class="pickaxe-register-flow">
+      <div class="pickaxe-register-card delete-card">
+        <div class="pickaxe-register-card-label">현재 곡괭이 · 등록 후 삭제</div>
+        <div class="pickaxe-register-current">
+          <img id="pickaxe-register-current-img" src="sprites/mine/pickaxe/pickaxe_01.png" alt="현재 곡괭이">
+          <div>
+            <b id="pickaxe-register-current-name">록괭이 +0</b>
+            <span id="pickaxe-register-current-damage">기본 데미지 0 / 등록 보너스 +0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pickaxe-register-arrow">↓ 등록</div>
+
+      <div id="pickaxe-register-old-box" class="pickaxe-register-card target-card">
+        <div class="pickaxe-register-card-label">등록 슬롯 · 덮어쓰기 대상</div>
+        <div class="pickaxe-register-current old">
+          <img id="pickaxe-register-old-img" src="sprites/mine/pickaxe/pickaxe_01.png" alt="등록 슬롯 곡괭이">
+          <div>
+            <b id="pickaxe-register-old-name">EMPTY</b>
+            <span id="pickaxe-register-old-damage">빈 슬롯</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pickaxe-register-warning">등록하면 현재 들고 있는 곡괭이는 사라지고, 곡괭이 제작 버튼이 다시 활성화됩니다.</div>
+    <div class="pickaxe-register-actions">
+      <button type="button" class="pickaxe-register-no" onclick="event.preventDefault(); event.stopPropagation(); closePickaxeRegisterConfirm(); return false;">취소</button>
+      <button type="button" class="pickaxe-register-yes" onclick="event.preventDefault(); event.stopPropagation(); confirmPickaxeRegister(); return false;">등록</button>
+    </div>
+  </div>
+</div>
+
 <div class="container">
 <div class="tab-bookmark-left">
     <button id="battle-tab-btn" class="tab-btn left-tab-btn active" onclick="showTab('battle')">전투</button>
     <button id="mine-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('mine')">광산</button>
     <button id="armor-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('armor')">개발실</button>
     <button id="boss-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('boss')">보스전</button>
+    <button id="transcend-tab-btn" class="tab-btn left-tab-btn transcend-tab-btn" onclick="showTab('transcend')">리부트</button>
 </div>
 
 <div class="tab-bookmark">
+    <button id="status-tab-btn" class="tab-btn status-right-tab-btn" onclick="showTab('status')">상태</button>
     <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">동료</button>
     <button id="card-tab-btn" class="tab-btn" onclick="showTab('card')">카드</button>
 </div>
@@ -213,13 +264,13 @@
         <div class="partner-attack-upgrade-box visible">
             <div id="partner-attack-upgrade-header" class="partner-attack-upgrade-header active">
                 <span>동료 싱크로율</span>
-                <span class="partner-attack-cost"><img class="inline-item-icon crystal-icon" src="sprites/item/e_can.png" alt="E캔"> 30</span>
+                <span class="partner-attack-cost"><img class="inline-item-icon crystal-icon" src="sprites/item/e_can.png" alt="E캔"> 100</span>
             </div>
 
             <div id="partner-attack-upgrade-panel" class="partner-attack-upgrade-panel active">
                 <div class="partner-attack-help">
                     록맨의 버스터 공격력과 싱크로됩니다.<br>
-                    <span class="partner-attack-help-sub">강화 성공 시 +2~10%</span>
+                    <span class="partner-attack-help-sub">강화 성공 시 +2~5%</span>
                 </div>
                 <div id="partner-upgrade-result" class="partner-upgrade-result"></div>
 
@@ -295,6 +346,7 @@
 
         <div class="battle-info">
             <div>STAGE <span id="stage">1</span></div>
+            <div>리부트 <span id="battle-transcend-count">0</span>회</div>
             <div>HP <span id="player-hp-text">100</span> / <span id="player-max-hp-text">100</span></div>
         </div>
 
@@ -419,59 +471,67 @@
     <div id="partner-tab" class="tab-content">
         <div class="partner-panel partner-inventory-panel">
             <h2 class="section-heading-pixel">PARTNER</h2>
-            <p class="partner-desc partner-inventory-help">E캔으로 동료 조각을 구매하고 동료를 소환할 수 있습니다.</p>
+            <p class="partner-desc partner-inventory-help">E캔으로 동료 데이터를 제작하고, 전송가능 동료 수만큼 동료를 소환할 수 있습니다.</p>
 
             <div class="partner-resource-row">
                 <div class="partner-resource-box"><img src="sprites/item/e_can.png" class="resource-icon" alt="E캔"> E캔 <b id="partner-e-can-count">0</b></div>
+            </div>
+
+            <div class="partner-blueprint-box">
+                <div class="partner-blueprint-info">
+                    <b>동료 전송장치</b>
+                    <span>전송가능 동료 수 <strong id="partner-blueprint-slot-text">0 / 1</strong></span>
+                </div>
+                <button type="button" id="partner-blueprint-craft-btn" class="partner-popup-btn" onclick="craftPartnerBlueprint()">전송장치 제작</button>
             </div>
 
             <div id="partner-inventory-grid" class="partner-inventory-grid">
                 <button type="button" id="partner-tile-rush" class="partner-inventory-card" onclick="openPartnerInventoryPopup('rush')">
                     <img src="sprites/partner/rush/rush_portrait.png" class="partner-inventory-icon" alt="러쉬">
                     <span class="partner-inventory-name">러쉬</span>
-                    <span class="partner-inventory-fragments"><span id="rush-fragments">0</span> / 100</span>
+                    <span class="partner-inventory-fragments"><span id="rush-fragments">DATA 미제작</span></span>
                     <span id="rush-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
                 </button>
 
                 <button type="button" id="partner-tile-beat" class="partner-inventory-card" onclick="openPartnerInventoryPopup('beat')">
                     <img src="sprites/partner/beat/beat_portrait.png" class="partner-inventory-icon" alt="비트">
                     <span class="partner-inventory-name">비트</span>
-                    <span class="partner-inventory-fragments"><span id="beat-fragments">0</span> / 100</span>
+                    <span class="partner-inventory-fragments"><span id="beat-fragments">DATA 미제작</span></span>
                     <span id="beat-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
                 </button>
 
                 <button type="button" id="partner-tile-blues" class="partner-inventory-card" onclick="openPartnerInventoryPopup('blues')">
                     <img src="sprites/partner/blues/blues_portrait.png" class="partner-inventory-icon" alt="블루스">
                     <span class="partner-inventory-name">블루스</span>
-                    <span class="partner-inventory-fragments"><span id="blues-fragments">0</span> / 100</span>
+                    <span class="partner-inventory-fragments"><span id="blues-fragments">DATA 미제작</span></span>
                     <span id="blues-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
                 </button>
 
                 <button type="button" id="partner-tile-forte" class="partner-inventory-card" onclick="openPartnerInventoryPopup('forte')">
                     <img src="sprites/partner/forte/forte_portrait.png" class="partner-inventory-icon" alt="포르테">
                     <span class="partner-inventory-name">포르테</span>
-                    <span class="partner-inventory-fragments"><span id="forte-fragments">0</span> / 100</span>
+                    <span class="partner-inventory-fragments"><span id="forte-fragments">DATA 미제작</span></span>
                     <span id="forte-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
                 </button>
 
                 <button type="button" id="partner-tile-x" class="partner-inventory-card" onclick="openPartnerInventoryPopup('x')">
                     <img src="sprites/partner/x/x_portrait.png" class="partner-inventory-icon" alt="엑스">
                     <span class="partner-inventory-name">엑스</span>
-                    <span class="partner-inventory-fragments"><span id="x-fragments">0</span> / 100</span>
+                    <span class="partner-inventory-fragments"><span id="x-fragments">DATA 미제작</span></span>
                     <span id="x-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
                 </button>
 
                 <button type="button" id="partner-tile-zero" class="partner-inventory-card" onclick="openPartnerInventoryPopup('zero')">
                     <img src="sprites/partner/zero/zero_portrait.png" class="partner-inventory-icon" alt="제로">
                     <span class="partner-inventory-name">제로</span>
-                    <span class="partner-inventory-fragments"><span id="zero-fragments">0</span> / 100</span>
+                    <span class="partner-inventory-fragments"><span id="zero-fragments">DATA 미제작</span></span>
                     <span id="zero-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
                 </button>
 
                 <button type="button" id="partner-tile-exeRockman" class="partner-inventory-card" onclick="openPartnerInventoryPopup('exeRockman')">
                     <img src="sprites/partner/rockexe/rockexe_portrait.png" class="partner-inventory-icon" alt="록맨.EXE">
                     <span class="partner-inventory-name">록맨.EXE</span>
-                    <span class="partner-inventory-fragments"><span id="exeRockman-fragments">0</span> / 100</span>
+                    <span class="partner-inventory-fragments"><span id="exeRockman-fragments">DATA 미제작</span></span>
                     <span id="exeRockman-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
                 </button>
             </div>
@@ -484,7 +544,6 @@
                         <div class="partner-popup-info">
                             <div id="partner-popup-title" class="partner-popup-title">러쉬</div>
                             <div id="partner-popup-desc" class="partner-popup-desc">- 차지샷 데미지 강화 해금</div>
-                            <div id="partner-popup-fragments" class="partner-popup-fragments">0 / 100</div>
                         </div>
                     </div>
                     <div id="partner-inline-join-stage" class="partner-inline-join-stage" aria-live="polite">
@@ -493,10 +552,15 @@
                         <img id="partner-inline-join-img" class="partner-inline-join-img" src="sprites/partner/beat/beat_01.png" alt="동료 소환" style="display:none;">
                     </div>
                     <div class="partner-popup-actions">
-                        <button type="button" id="partner-popup-buy1" class="partner-popup-btn" onclick="event.preventDefault(); event.stopPropagation(); buyPartnerInventoryFragments(1); return false;">조각 1개</button>
-                        <button type="button" id="partner-popup-buy10" class="partner-popup-btn" onclick="event.preventDefault(); event.stopPropagation(); buyPartnerInventoryFragments(10); return false;">조각 10개</button>
-                        <button type="button" id="partner-popup-buy100" class="partner-popup-btn" onclick="event.preventDefault(); event.stopPropagation(); buyPartnerInventoryFragments(100); return false;">조각 100개</button>
-                        <button type="button" id="partner-popup-summon" class="partner-popup-btn partner-popup-summon" onclick="event.preventDefault(); event.stopPropagation(); summonPartnerFromInventory(); return false;">소환</button>
+                        <button type="button" id="partner-popup-buy100" class="partner-popup-btn partner-popup-buy" onclick="event.preventDefault(); event.stopPropagation(); buyPartnerInventoryFragments(100); return false;">
+                            <span class="partner-popup-btn-title">데이터 제작</span>
+                            <span class="partner-popup-btn-cost"><img src="sprites/item/e_can.png" class="btn-item-icon" alt="E캔"> <b id="partner-popup-buy100-cost">100</b></span>
+                        </button>
+                        <button type="button" id="partner-popup-summon" class="partner-popup-btn partner-popup-summon" onclick="event.preventDefault(); event.stopPropagation(); summonPartnerFromInventory(); return false;">
+                            <span class="partner-popup-btn-title">소환</span>
+                            <span class="partner-popup-btn-cost partner-popup-btn-cost-plain" id="partner-popup-summon-sub">READY</span>
+                        </button>
+                        <button type="button" id="partner-popup-speed-upgrade" class="partner-popup-btn partner-popup-speed" onclick="event.preventDefault(); event.stopPropagation(); upgradePartnerSpeedFromPopup(); return false;">공속 강화</button>
                     </div>
                 </div>
             </div>
@@ -705,7 +769,7 @@
         <div class="boss-card-main">
           <div class="boss-card-topline">
             <div class="boss-card-name">컷맨</div>
-            <div class="boss-entry-cost"><img class="boss-resource-icon crystal-icon-small" src="sprites/item/e_can.png" alt="E캔"> 30</div>
+            <div class="boss-entry-cost"><img class="boss-resource-icon crystal-icon-small" src="sprites/item/e_can.png" alt="E캔"> 100</div>
           </div>
 
           <div class="boss-card-preview">
@@ -757,6 +821,12 @@
         <img id="miner-img" src="sprites/mine/pickelman_01.png" class="miner-img" alt="피켈맨">
       </div>
 
+      <div class="mine-pickaxe-slot-panel" aria-label="등록 곡괭이 슬롯">
+        <button id="mine-pickaxe-slot-0" class="mine-pickaxe-slot empty" onclick="event.preventDefault(); event.stopPropagation(); registerCurrentPickaxe(0); return false;"><em>등록</em></button>
+        <button id="mine-pickaxe-slot-1" class="mine-pickaxe-slot empty" onclick="event.preventDefault(); event.stopPropagation(); registerCurrentPickaxe(1); return false;"><em>등록</em></button>
+        <button id="mine-pickaxe-slot-2" class="mine-pickaxe-slot empty" onclick="event.preventDefault(); event.stopPropagation(); registerCurrentPickaxe(2); return false;"><em>등록</em></button>
+      </div>
+
       <div id="mine-rock-area" class="mine-rock-area">
         <img id="mine-rock-img" src="sprites/mine/stone.png" class="mine-rock-img" alt="돌">
       </div>
@@ -776,7 +846,7 @@
           <img id="mine-pickaxe-img" src="sprites/mine/pickaxe/pickaxe_01.png" class="mine-pickaxe-img" alt="곡괭이">
           <span id="mine-pickaxe-enhance-badge" class="mine-pickaxe-enhance-badge">+0</span>
         </div>
-        <div class="mine-pickaxe-damage">광질 데미지 <b id="mine-damage">0</b></div>
+        <div class="mine-pickaxe-damage">광질 데미지 <b id="mine-damage">0</b> <span id="mine-registered-bonus-inline" class="mine-registered-bonus-inline">+0</span></div>
       </div>
 
       <div class="mine-enhance-side">
@@ -797,7 +867,42 @@
       <div>- 강화 실패 시 강화가 1단계 하락합니다.</div>
       <div>- 5강 단위는 보호선이라 5강 아래로 떨어지지 않습니다.</div>
       <div>- +7강부터 실패 시 5% 확률로 곡괭이가 파괴됩니다.</div>
-      <div>- 다음 곡괭이로 업그레이드한 뒤에는 파괴되어도 마지막 업그레이드 곡괭이로 복구됩니다.</div>
+      <div>- 등록 슬롯을 누르면 확인창이 뜨고, 예를 누르면 현재 곡괭이가 해당 슬롯에 덮어쓰기 등록됩니다.</div>
+      <div>- 등록한 곡괭이 데미지의 10%가 현재 곡괭이에 추가됩니다.</div>
+      <div>- 등록한 곡괭이는 보관되지만, 현재 들고 있던 곡괭이는 사라집니다.</div>
+      <div>- 리부트 시 현재 강화 중인 곡괭이는 초기화되지만, 등록 곡괭이는 유지됩니다.</div>
+    </div>
+  </div>
+</div>
+
+
+<div id="status-tab" class="tab-content">
+  <div class="system-panel status-panel">
+    <h2 class="section-heading-pixel status-heading">STATUS</h2>
+
+    <div class="status-section">
+      <div class="status-legend"><span class="status-card-bonus">보라색: 카드</span><span class="status-transcend-bonus">노란색: 리부트</span></div>
+      <div id="status-stat-rows" class="status-stat-rows"></div>
+    </div>
+  </div>
+</div>
+
+<div id="transcend-tab" class="tab-content">
+  <div class="system-panel transcend-panel">
+    <h2 class="section-heading-pixel reboot-heading">REBOOT</h2>
+
+    <div class="status-section transcend-section">
+      <div id="transcend-info" class="transcend-info">리부트 가능 스테이지: 200</div>
+      <button type="button" id="transcend-btn" class="transcend-btn" onclick="performTranscend()">REBOOT!</button>
+      <div class="transcend-help">리부트하면 스테이지/기본 강화/현재 곡괭이가 초기화됩니다.<br>카드, 개발실, 등록 곡괭이는 유지됩니다.</div>
+
+      <div class="transcend-upgrade-grid">
+        <div class="transcend-upgrade-row"><span>공격력</span><b id="transcend-atk-lv">0 / 20</b><em>비용 <i id="transcend-atk-cost">1</i></em><button id="transcend-atk-btn" onclick="upgradeTranscendStat('atk')">강화</button></div>
+        <div class="transcend-upgrade-row"><span>체력</span><b id="transcend-hp-lv">0 / 20</b><em>비용 <i id="transcend-hp-cost">1</i></em><button id="transcend-hp-btn" onclick="upgradeTranscendStat('hp')">강화</button></div>
+        <div class="transcend-upgrade-row"><span>나사 획득</span><b id="transcend-screw-lv">0 / 20</b><em>비용 <i id="transcend-screw-cost">1</i></em><button id="transcend-screw-btn" onclick="upgradeTranscendStat('screw')">강화</button></div>
+        <div class="transcend-upgrade-row"><span>동료 공격</span><b id="transcend-partner-lv">0 / 20</b><em>비용 <i id="transcend-partner-cost">1</i></em><button id="transcend-partner-btn" onclick="upgradeTranscendStat('partner')">강화</button></div>
+        <div class="transcend-upgrade-row"><span>카드칩 보너스</span><b id="transcend-cardChip-lv">0 / 20</b><em>비용 <i id="transcend-cardChip-cost">1</i></em><button id="transcend-cardChip-btn" onclick="upgradeTranscendStat('cardChip')">강화</button></div>
+      </div>
     </div>
   </div>
 </div>
@@ -807,11 +912,11 @@
         <button class="reset-btn" onclick="resetGame()">[데이터 초기화]</button>
         <button class="reset-btn" onclick="devCheat()">[DEV 치트]</button>
     </div>
-    <div class="credit-text">햇밤</div>
+    <div class="credit-text secret-stage-jump" title="테스트용 스테이지 이동" onclick="secretJumpToStage(250)">햇밤</div>
 </div>
 </div>
 
-<script src="game.js?v=cutman_screw_safe_v36"></script>
+<script src="game.js?v=status_reboot_title_v52"></script>
 
 
 </body>

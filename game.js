@@ -18,10 +18,35 @@ const defaultData = {
         superRockUnlocked: false
     },
 
+    transcend: {
+        count: 0,
+        points: 0,
+        atkLv: 0,
+        hpLv: 0,
+        screwLv: 0,
+        partnerLv: 0,
+        cardChipLv: 0
+    },
+
+    partnerBlueprints: {
+        slots: 1
+    },
+
+    partnerSpeedLv: {
+        blues: 0,
+        forte: 0,
+        x: 0,
+        zero: 0,
+        exeRockman: 0
+    },
+
+    cardFlatNerfV38Migrated: false,
+
     minePickaxeOwned: false,
     minePickaxeTier: 0,
     minePickaxeFloorTier: 0,
     minePickaxeEnhance: 0,
+    registeredPickaxes: [null, null, null],
     mineRockMaxHp: 80,
     mineRockHp: 80,
 
@@ -106,6 +131,10 @@ let gameData = {
     partnerSync: { ...defaultData.partnerSync, ...(savedData.partnerSync || {}) },
     materials: { ...defaultData.materials, ...(savedData.materials || {}) },
     development: { ...defaultData.development, ...(savedData.development || {}) },
+    transcend: { ...defaultData.transcend, ...(savedData.transcend || {}) },
+    partnerBlueprints: { ...defaultData.partnerBlueprints, ...(savedData.partnerBlueprints || {}) },
+    partnerSpeedLv: { ...defaultData.partnerSpeedLv, ...(savedData.partnerSpeedLv || {}) },
+    registeredPickaxes: Array.isArray(savedData.registeredPickaxes) ? savedData.registeredPickaxes : defaultData.registeredPickaxes.slice(),
     cards: { ...defaultData.cards, ...(savedData.cards || {}) }
 };
 
@@ -136,6 +165,17 @@ gameData.development.currentLabIndex = Math.max(0, Math.min(3, Math.floor(gameDa
 gameData.development.selectedItem = gameData.development.selectedItem || 'superRock';
 gameData.development.superRockProgress = Math.max(0, Math.min(30, Math.floor(gameData.development.superRockProgress || 0)));
 
+gameData.transcend = { ...defaultData.transcend, ...(gameData.transcend || {}) };
+['count', 'points', 'atkLv', 'hpLv', 'screwLv', 'partnerLv', 'cardChipLv'].forEach(key => {
+    gameData.transcend[key] = Math.max(0, Math.floor(gameData.transcend[key] || 0));
+});
+gameData.partnerBlueprints = { ...defaultData.partnerBlueprints, ...(gameData.partnerBlueprints || {}) };
+gameData.partnerBlueprints.slots = Math.max(1, Math.min(7, Math.floor(gameData.partnerBlueprints.slots || 1)));
+gameData.partnerSpeedLv = { ...defaultData.partnerSpeedLv, ...(gameData.partnerSpeedLv || {}) };
+Object.keys(defaultData.partnerSpeedLv).forEach(key => {
+    gameData.partnerSpeedLv[key] = Math.max(0, Math.min(10, Math.floor(gameData.partnerSpeedLv[key] || 0)));
+});
+
 gameData.cards = { ...defaultData.cards, ...(gameData.cards || {}) };
 if (!Array.isArray(gameData.cards.owned)) gameData.cards.owned = [];
 if (!Array.isArray(gameData.cards.equipped)) gameData.cards.equipped = [null, null, null];
@@ -154,6 +194,14 @@ gameData.minePickaxeTier = Math.max(0, Math.floor(gameData.minePickaxeTier || 0)
 gameData.minePickaxeFloorTier = Math.max(0, Math.floor(gameData.minePickaxeFloorTier || 0));
 if (gameData.minePickaxeTier < gameData.minePickaxeFloorTier) gameData.minePickaxeTier = gameData.minePickaxeFloorTier;
 gameData.minePickaxeEnhance = Math.max(0, Math.floor(gameData.minePickaxeEnhance || 0));
+if (!Array.isArray(gameData.registeredPickaxes)) gameData.registeredPickaxes = [null, null, null];
+gameData.registeredPickaxes = [0, 1, 2].map(index => {
+    const item = gameData.registeredPickaxes[index];
+    if (!item) return null;
+    const tier = Math.max(0, Math.min(9, Math.floor(item.tier || 0)));
+    const enhance = Math.max(0, Math.min(10, Math.floor(item.enhance || 0)));
+    return { tier, enhance };
+});
 gameData.mineRockMaxHp = Math.max(1, Math.floor(gameData.mineRockMaxHp || 80));
 gameData.mineRockHp = Math.max(1, Math.floor(gameData.mineRockHp || gameData.mineRockMaxHp));
 gameData.rushFragments = Math.floor(gameData.rushFragments || 0);
@@ -170,6 +218,7 @@ gameData.zeroFragments = Math.floor(gameData.zeroFragments || 0);
 gameData.zeroOwned = gameData.zeroOwned || false;
 gameData.exeRockmanFragments = Math.floor(gameData.exeRockmanFragments || 0);
 gameData.exeRockmanOwned = gameData.exeRockmanOwned || false;
+gameData.partnerBlueprints.slots = Math.min(7, Math.max(gameData.partnerBlueprints.slots || 1, ['rushOwned','beatOwned','bluesOwned','forteOwned','xOwned','zeroOwned','exeRockmanOwned'].reduce((count, key) => count + (gameData[key] ? 1 : 0), 0)));
 gameData.partnerAtkSpd = gameData.partnerAtkSpd || 2000;
 gameData.partnerSync = { ...defaultData.partnerSync, ...(gameData.partnerSync || {}) };
 Object.keys(defaultData.partnerSync).forEach(key => {
@@ -223,8 +272,16 @@ const PARTNER_ATTACK_SPEED_MIN_MS = 700;
 const SPEED_UPGRADE_MAX_LEVEL = 15;
 const CRIT_UPGRADE_MAX_LEVEL = 20;
 const CRIT_CHANCE_MAX_FROM_UPGRADE = 50;
-const EXE_BOMB_STUN_DURATION_MS = 2000;
-const ENEMY_MOVE_SPEED_MAX = 1.05;
+const EXE_BOMB_STUN_DURATION_MS = 900;
+const EXE_BOMB_BOSS_STUN_DURATION_MS = 350;
+const EXE_BOMB_STUN_CHANCE = 0.35;
+const ENEMY_MOVE_SPEED_MAX = 0.92;
+const TRANSCEND_REQUIRED_STAGE = 200;
+const TRANSCEND_POINT_PER_STAGE = 50;
+const TRANSCEND_MAX_LEVEL = 20;
+const PARTNER_BLUEPRINT_MAX_SLOTS = 7;
+const PARTNER_SPEED_MAX_LEVEL = 10;
+const PARTNER_SPEED_REDUCTION_PER_LEVEL = 0.04;
 
 
 function getCritChanceForLevel(level) {
@@ -249,7 +306,7 @@ function clampBattleBalanceValues() {
 }
 
 function getEnemyMoveSpeedForStage(stage) {
-    return Math.min(ENEMY_MOVE_SPEED_MAX, 0.22 + stage * 0.025);
+    return Math.min(ENEMY_MOVE_SPEED_MAX, 0.20 + stage * 0.012);
 }
 
 function getPlayerAttackInterval() {
@@ -263,6 +320,27 @@ function getPlayerAttackInterval() {
 
 function getPartnerAttackInterval(multiplier = 1) {
     return Math.max(PARTNER_ATTACK_SPEED_MIN_MS, Math.floor((gameData.partnerAtkSpd || defaultData.partnerAtkSpd) * multiplier));
+}
+
+function getPartnerAttackIntervalForType(type, multiplier = 1) {
+    const level = Math.max(0, Math.min(PARTNER_SPEED_MAX_LEVEL, Math.floor(gameData.partnerSpeedLv?.[type] || 0)));
+    const reduction = Math.min(0.40, level * PARTNER_SPEED_REDUCTION_PER_LEVEL);
+    return Math.max(PARTNER_ATTACK_SPEED_MIN_MS, Math.floor(getPartnerAttackInterval(multiplier) * (1 - reduction)));
+}
+
+function getTranscendBonus(type) {
+    const t = gameData.transcend || defaultData.transcend;
+    if (type === 'atk') return Math.max(0, Math.floor(t.atkLv || 0)) * 0.05;
+    if (type === 'hp') return Math.max(0, Math.floor(t.hpLv || 0)) * 0.08;
+    if (type === 'screw') return Math.max(0, Math.floor(t.screwLv || 0)) * 0.05;
+    if (type === 'partner') return Math.max(0, Math.floor(t.partnerLv || 0)) * 0.05;
+    if (type === 'cardChip') return Math.max(0, Math.floor(t.cardChipLv || 0)) * 0.03;
+    return 0;
+}
+
+function getEffectivePlayerMaxHp() {
+    const baseHp = 100 + (Math.max(1, Math.floor(gameData.lv?.hp || 1)) - 1) * 35;
+    return Math.max(1, Math.floor(baseHp * (1 + getTranscendBonus('hp'))));
 }
 
 function isSpeedUpgradeType(type) {
@@ -302,7 +380,7 @@ const BOSS_BATTLE_DATA = {
     classic_cutman: {
         group: 'classic',
         name: '컷맨',
-        entryCost: 30,
+        entryCost: 100,
         hp: 5000,
         atk: 20,
         speed: 0.18,
@@ -564,6 +642,7 @@ let mineEnhancing = false;
 const CARD_ANALYZE_SCREW_COST = 500;
 const OPTION_CHIP_STONE_COST = 1000;
 const CARD_GRADE_ORDER = ['N', 'R', 'SR', 'SSR', 'UR'];
+const CARD_SYNTH_REQUIREMENTS = { N: 3, R: 4, SR: 5, SSR: 6 };
 const CARD_GRADE_NAMES = { N: '일반', R: '레어', SR: '슈퍼레어', SSR: '더블슈퍼레어', UR: '울트라레어' };
 const CARD_GRADE_CLASS = { N: 'grade-n', R: 'grade-r', SR: 'grade-sr', SSR: 'grade-ssr', UR: 'grade-ur' };
 const CARD_OPTION_RANGES = {
@@ -587,7 +666,7 @@ const CARD_TYPE_DATA = {
         icon: 'sprites/card/attack_card.png',
         optionName: '데미지',
         suffix: '',
-        valueMultiplier: 5,
+        valueMultiplier: 2,
         description(value) { return `데미지 +${value}`; }
     },
     critChance: {
@@ -633,7 +712,8 @@ function getCardIcon(cardOrType) {
 
 function getCardEquipFamily(cardOrType) {
     const type = typeof cardOrType === 'string' ? cardOrType : cardOrType?.type;
-    if (type === 'atkPercent' || type === 'atkFlat') return 'attack';
+    if (type === 'atkPercent') return 'attackPercent';
+    if (type === 'atkFlat') return 'attackFlat';
     if (type === 'critChance') return 'crit';
     if (type === 'atkSpeed') return 'speed';
     return type || '';
@@ -651,7 +731,8 @@ function getEquippedCardByFamily(family, exceptCardId = null) {
 
 function getCardFamilyBlockMessage(card) {
     const family = getCardEquipFamily(card);
-    if (family === 'attack') return '공격력 카드는 1장만 장착할 수 있습니다.';
+    if (family === 'attackPercent') return '공격력 % 카드는 1장만 장착할 수 있습니다.';
+    if (family === 'attackFlat') return '공격력 + 카드는 1장만 장착할 수 있습니다.';
     if (family === 'crit') return '차지샷 카드는 1장만 장착할 수 있습니다.';
     if (family === 'speed') return '공속 카드는 1장만 장착할 수 있습니다.';
     return '같은 종류 카드는 1장만 장착할 수 있습니다.';
@@ -688,6 +769,28 @@ function rollCardOptionValue(type, grade) {
 
 function getCardValue(type, grade) {
     return rollCardOptionValue(type, grade);
+}
+
+function getMaxCardOptionValue(type, grade) {
+    const data = getCardTypeData(type);
+    const range = CARD_OPTION_RANGES[grade] || CARD_OPTION_RANGES.N;
+    return Math.max(1, Math.floor((range[1] || 1) * (data.valueMultiplier || 1)));
+}
+
+function migrateAtkFlatCardNerfV38() {
+    if (gameData.cardFlatNerfV38Migrated) return;
+    let changed = false;
+    gameData.cards.owned.forEach(card => {
+        if (!card || card.type !== 'atkFlat') return;
+        const maxValue = getMaxCardOptionValue(card.type, card.grade);
+        const currentValue = Math.max(1, Math.floor(Number(card.value || 1)));
+        if (currentValue > maxValue) {
+            card.value = maxValue;
+            changed = true;
+        }
+    });
+    gameData.cardFlatNerfV38Migrated = true;
+    if (changed) saveData();
 }
 
 function getCardDescription(card) {
@@ -835,7 +938,12 @@ function getSameTypeSameGradeMaterialCards(mainCard) {
             card.grade === mainCard.grade &&
             !isCardEquipped(card.id)
         )
-        .slice(0, 2);
+        .slice(0, Math.max(0, getCardSynthesisRequirement(mainCard) - 1));
+}
+
+function getCardSynthesisRequirement(cardOrGrade) {
+    const grade = typeof cardOrGrade === 'string' ? cardOrGrade : cardOrGrade?.grade;
+    return CARD_SYNTH_REQUIREMENTS[grade] || 0;
 }
 
 function getSameTypeSameGradeMaterialCount(mainCard) {
@@ -894,12 +1002,12 @@ function synthCard(cardId) {
         return;
     }
 
-    // 같은 종류 + 같은 등급 카드 총 3장으로 합성합니다.
-    // 선택한 메인 카드 1장 + 같은 종류/등급 재료 카드 2장
+    const requiredCards = getCardSynthesisRequirement(main);
+    const requiredMaterials = Math.max(0, requiredCards - 1);
     const materials = getSameTypeSameGradeMaterialCards(main);
 
-    if (materials.length < 2) {
-        showCardResult('같은 종류/같은 등급 카드가 총 3장 필요합니다.');
+    if (materials.length < requiredMaterials) {
+        showCardResult(`같은 종류/같은 등급 카드가 총 ${requiredCards}장 필요합니다.`);
         return;
     }
 
@@ -952,7 +1060,7 @@ function getEquippedCardBonuses() {
 
 function getCardAdjustedAtk(baseAtk = gameData.atk) {
     const bonuses = getEquippedCardBonuses();
-    return Math.max(1, Math.floor((Number(baseAtk || 0) + bonuses.atkFlat) * (1 + bonuses.atkPercent / 100)));
+    return Math.max(1, Math.floor((Number(baseAtk || 0) + bonuses.atkFlat) * (1 + bonuses.atkPercent / 100) * (1 + getTranscendBonus('atk'))));
 }
 
 function getEffectiveCritChance() {
@@ -962,7 +1070,7 @@ function getEffectiveCritChance() {
 
 function getEffectiveRockAttackSpeed() {
     const bonuses = getEquippedCardBonuses();
-    const baseSpeed = Math.max(MIN_ROCK_ATTACK_SPEED_MS, Number(gameData.atkSpd || 3000));
+    const baseSpeed = Math.max(PLAYER_ATTACK_SPEED_MIN_MS, Number(gameData.atkSpd || 3000));
     const reduction = Math.max(0, Math.min(60, Number(bonuses.atkSpeed || 0)));
     return Math.max(300, Math.floor(baseSpeed * (1 - reduction / 100)));
 }
@@ -1125,7 +1233,8 @@ function renderCardPopup() {
     const typeData = getCardTypeData(selected.type);
     const materialCount = getSameTypeSameGradeMaterialCount(selected);
     const gradeIndex = CARD_GRADE_ORDER.indexOf(selected.grade);
-    const canSynth = !isCardEquipped(selected.id) && gradeIndex >= 0 && gradeIndex < CARD_GRADE_ORDER.length - 1 && materialCount >= 2;
+    const synthRequirement = getCardSynthesisRequirement(selected);
+    const canSynth = !isCardEquipped(selected.id) && gradeIndex >= 0 && gradeIndex < CARD_GRADE_ORDER.length - 1 && materialCount >= Math.max(0, synthRequirement - 1);
     const selectedEquipped = isCardEquipped(selected.id);
     const duplicateFamilyCard = selectedEquipped ? null : getEquippedCardByFamily(getCardEquipFamily(selected), selected.id);
     const canEquipOrUnequip = selectedEquipped || (!duplicateFamilyCard && gameData.cards.equipped.some(id => !id));
@@ -1134,7 +1243,7 @@ function renderCardPopup() {
     if (title) title.innerText = `${selected.grade} ${typeData.name}`;
     if (summary) {
         const synthMaterialText = gradeIndex >= 0 && gradeIndex < CARD_GRADE_ORDER.length - 1
-            ? `<small class="card-synth-material-note">같은 종류, 같은 등급 카드 3장을 합성하여 다음 등급 카드를 얻을 수 있습니다.</small>`
+            ? `<small class="card-synth-material-note">같은 종류, 같은 등급 카드 ${synthRequirement}장을 합성하여 다음 등급 카드를 얻을 수 있습니다.</small>`
             : `<small class="card-synth-material-note">최고 등급</small>`;
         summary.innerHTML = `
             <span class="card-selected-option"><span id="card-selected-option-value" class="card-selected-option-main">${getCardDescription(selected)}</span> <em>(${getCardOptionRangeDescription(selected)})</em></span>
@@ -1161,7 +1270,7 @@ function renderCardPopup() {
     setButtonActive(synthBtn, canSynth);
     if (synthBtn) {
         synthBtn.disabled = !canSynth;
-        synthBtn.title = canSynth ? '같은 종류/같은 등급 카드 3장을 합성합니다.' : '선택 카드 포함 같은 종류/같은 등급 카드 총 3장이 필요합니다.';
+        synthBtn.title = canSynth ? `같은 종류/같은 등급 카드 ${synthRequirement}장을 합성합니다.` : `선택 카드 포함 같은 종류/같은 등급 카드 총 ${synthRequirement}장이 필요합니다.`;
     }
     setButtonActive(rerollBtn, canReroll);
     if (rerollBtn) rerollBtn.disabled = !canReroll;
@@ -1223,6 +1332,7 @@ let battleTipIndex = 0;
 let battleTipTimer = null;
 let partnerSyncEnhancing = false;
 
+migrateAtkFlatCardNerfV38();
 setupStage();
 
 function setupStage() {
@@ -1235,21 +1345,21 @@ function setupStage() {
 
     currentEnemyType = getStageEnemyType(s);
 
-    enemyMaxHp = Math.floor((120 + s * 75 + Math.pow(s, 1.35) * 25) * 0.66);
+    enemyMaxHp = Math.floor((130 + s * 78 + Math.pow(s, 1.32) * 27) * 0.78);
     enemySpeed = getEnemyMoveSpeedForStage(s);
-    enemyAtk = Math.floor(4 + s * 1.6);
+    enemyAtk = Math.floor(4 + s * 0.78 + Math.pow(s, 1.05) * 0.18);
     enemyX = ENEMY_START_X;
 
     if (currentEnemyType === 'sniperjoe') {
         enemyMaxHp = Math.floor(enemyMaxHp * 1.25);
         enemySpeed = 0;
-        enemyAtk = Math.floor(enemyAtk * 1.15 + 4);
+        enemyAtk = Math.floor(enemyAtk * 1.08 + 3);
         enemyX = SNIPERJOE_START_X;
     }
 
     enemyHp = enemyMaxHp;
 
-    gameData.playerMaxHp = Math.floor(100 + (gameData.lv.hp - 1) * 20);
+    gameData.playerMaxHp = getEffectivePlayerMaxHp();
     gameData.playerHp = gameData.playerMaxHp;
 
     enemyDead = false;
@@ -1637,9 +1747,9 @@ function animateZero() {
 }
 
 
-const PARTNER_SYNC_UPGRADE_COST = 30;
+const PARTNER_SYNC_UPGRADE_COST = 100;
 const PARTNER_SYNC_UPGRADE_MIN_GAIN = 2;
-const PARTNER_SYNC_UPGRADE_MAX_GAIN = 10;
+const PARTNER_SYNC_UPGRADE_MAX_GAIN = 5;
 
 function getPartnerSyncPercent(type) {
     const data = PARTNER_ATTACK_DATA[type];
@@ -1662,7 +1772,7 @@ function getPartnerDamage(type) {
     if (!data) return 0;
 
     const sync = getPartnerSyncPercent(type) / 100;
-    return Math.max(1, Math.floor(getCardAdjustedAtk(gameData.atk) * sync));
+    return Math.max(1, Math.floor(getCardAdjustedAtk(gameData.atk) * sync * (1 + getTranscendBonus('partner'))));
 }
 
 function togglePartnerAttackUpgrade() {
@@ -1751,6 +1861,90 @@ function showPartnerUpgradeResult(message) {
     // 문구 출력은 사용하지 않습니다.
 }
 
+
+const PARTNER_OWNED_KEYS = ['rushOwned', 'beatOwned', 'bluesOwned', 'forteOwned', 'xOwned', 'zeroOwned', 'exeRockmanOwned'];
+const PARTNER_BLUEPRINT_COSTS = [
+    null,
+    { type: 'screws', amount: 800 },
+    { type: 'screws', amount: 3200 },
+    { type: 'crystals', amount: 25 },
+    { type: 'crystals', amount: 60 },
+    { type: 'crystals', amount: 120 },
+    { type: 'crystals', amount: 220 }
+];
+
+function getOwnedPartnerCount() {
+    return PARTNER_OWNED_KEYS.reduce((count, key) => count + (gameData[key] ? 1 : 0), 0);
+}
+
+function getPartnerSlotLimit() {
+    return Math.max(1, Math.min(PARTNER_BLUEPRINT_MAX_SLOTS, Math.floor(gameData.partnerBlueprints?.slots || 1)));
+}
+
+function canSummonMorePartners() {
+    return getOwnedPartnerCount() < getPartnerSlotLimit();
+}
+
+function showPartnerSlotMessage(message) {
+    const desc = document.getElementById('partner-popup-desc');
+    if (desc) {
+        desc.innerText = message;
+        desc.classList.remove('partner-popup-warn');
+        void desc.offsetWidth;
+        desc.classList.add('partner-popup-warn');
+    }
+}
+
+function guardPartnerBlueprintSlot() {
+    if (canSummonMorePartners()) return true;
+    showPartnerSlotMessage('전송장치가 부족합니다. 전송장치를 제작하면 전송가능 동료 수가 늘어납니다.');
+    return false;
+}
+
+function getNextPartnerBlueprintCost() {
+    const slots = getPartnerSlotLimit();
+    if (slots >= PARTNER_BLUEPRINT_MAX_SLOTS) return null;
+    return PARTNER_BLUEPRINT_COSTS[slots] || { type: 'crystals', amount: 250 };
+}
+
+function craftPartnerBlueprint() {
+    const cost = getNextPartnerBlueprintCost();
+    if (!cost) return;
+    if ((gameData[cost.type] || 0) < cost.amount) return;
+
+    gameData[cost.type] -= cost.amount;
+    gameData.partnerBlueprints.slots = Math.min(PARTNER_BLUEPRINT_MAX_SLOTS, getPartnerSlotLimit() + 1);
+    updateUI();
+    saveData();
+}
+
+function getPartnerSpeedUpgradeCost(type) {
+    const lv = Math.max(0, Math.floor(gameData.partnerSpeedLv?.[type] || 0));
+    return 20 + lv * 12;
+}
+
+function upgradePartnerSpeedFromPopup() {
+    const type = currentPartnerInventoryType;
+    const data = getPartnerInventoryData(type);
+    if (!data || !gameData[data.ownedKey]) return;
+    if (!Object.prototype.hasOwnProperty.call(gameData.partnerSpeedLv, type)) return;
+    const lv = Math.max(0, Math.floor(gameData.partnerSpeedLv[type] || 0));
+    if (lv >= PARTNER_SPEED_MAX_LEVEL) return;
+
+    const cost = getPartnerSpeedUpgradeCost(type);
+    if ((gameData.crystals || 0) < cost) return;
+
+    gameData.crystals -= cost;
+    gameData.partnerSpeedLv[type] = lv + 1;
+    startBluesAttack();
+    startForteAttack();
+    startXAttack();
+    startExeRockmanAttack();
+    startZeroAttack();
+    updateUI();
+    saveData();
+}
+
 const PARTNER_INVENTORY_DATA = {
     rush: {
         name: '러쉬',
@@ -1766,7 +1960,7 @@ const PARTNER_INVENTORY_DATA = {
         portrait: 'sprites/partner/beat/beat_portrait.png',
         fragmentsKey: 'beatFragments',
         ownedKey: 'beatOwned',
-        desc: '- 동료 공격속도 강화 해금',
+        desc: '- 동료별 공속 강화 기능 해금',
         buyFn: buyBeatFragment,
         summonFn: summonBeat
     },
@@ -1851,6 +2045,13 @@ function summonPartnerFromInventory() {
     updatePartnerInventoryUI();
 }
 
+function getPartnerDataStatusLabel(progress, owned = false) {
+    if (owned) return 'DATA COMPLETE';
+    const value = Math.max(0, Math.floor(progress || 0));
+    if (value >= 100) return 'DATA READY';
+    return 'DATA 미제작';
+}
+
 function updatePartnerInventoryPopup() {
     const data = getPartnerInventoryData();
     if (!data) return;
@@ -1866,34 +2067,82 @@ function updatePartnerInventoryPopup() {
     if (icon) icon.src = data.portrait;
     if (title) title.innerText = data.name;
     if (desc) desc.innerText = data.desc;
-    if (fragmentsEl) fragmentsEl.innerText = owned ? 'COMPLETE' : `${fragments} / 100`;
+    if (fragmentsEl) fragmentsEl.innerText = getPartnerDataStatusLabel(fragments, owned);
 
     const buy1 = document.getElementById('partner-popup-buy1');
     const buy10 = document.getElementById('partner-popup-buy10');
     const buy100 = document.getElementById('partner-popup-buy100');
     const summon = document.getElementById('partner-popup-summon');
+    const speedBtn = document.getElementById('partner-popup-speed-upgrade');
+    const buy100CostText = document.getElementById('partner-popup-buy100-cost');
+    const summonSub = document.getElementById('partner-popup-summon-sub');
 
-    const canBuy1 = !owned && gameData.crystals >= 1 && fragments < 100;
-    const canBuy10 = !owned && gameData.crystals >= 10 && fragments <= 90;
-    const canBuy100 = !owned && gameData.crystals >= 100 && fragments === 0;
-    const canSummon = !owned && fragments >= 100;
+    const remainingFragments = Math.max(0, 100 - fragments);
+    const bulkBuyCost = remainingFragments > 0 ? remainingFragments : 100;
+    const canBuy100 = !owned && fragments < 100 && gameData.crystals >= bulkBuyCost;
+    const canSummon = !owned && fragments >= 100 && canSummonMorePartners();
 
-    setButtonActive(buy1, canBuy1);
-    setButtonActive(buy10, canBuy10);
     setButtonActive(buy100, canBuy100);
     setButtonActive(summon, canSummon);
+
+    if (buy100CostText) buy100CostText.innerText = bulkBuyCost.toLocaleString();
+    if (buy100) {
+        buy100.title = fragments > 0 && fragments < 100 ? '기존 저장 데이터가 남아 있어 부족한 데이터만 제작합니다.' : '';
+    }
+
+    if (summon) {
+        const summonBlocked = !canSummonMorePartners() && !owned;
+        const summonTitle = summon.querySelector('.partner-popup-btn-title');
+        if (summonTitle) summonTitle.innerText = summonBlocked ? '전송 불가' : '소환';
+        if (summonSub) summonSub.innerText = summonBlocked ? '전송가능 수 부족' : 'READY';
+        summon.title = summonBlocked ? '동료 전송장치를 제작해 전송가능 동료 수를 늘려야 합니다.' : ''; 
+    }
+
+    if (speedBtn) {
+        const speedLv = Math.max(0, Math.floor(gameData.partnerSpeedLv?.[currentPartnerInventoryType] || 0));
+        const canSpeed = owned && Object.prototype.hasOwnProperty.call(gameData.partnerSpeedLv, currentPartnerInventoryType) && speedLv < PARTNER_SPEED_MAX_LEVEL && (gameData.crystals || 0) >= getPartnerSpeedUpgradeCost(currentPartnerInventoryType);
+        speedBtn.style.display = owned && Object.prototype.hasOwnProperty.call(gameData.partnerSpeedLv, currentPartnerInventoryType) ? '' : 'none';
+        speedBtn.innerText = speedLv >= PARTNER_SPEED_MAX_LEVEL ? '공속 MAX' : `공속 강화 LV.${speedLv} / E캔 ${getPartnerSpeedUpgradeCost(currentPartnerInventoryType)}`;
+        speedBtn.disabled = !canSpeed;
+        setButtonActive(speedBtn, canSpeed);
+    }
 
     [buy1, buy10, buy100, summon].forEach(btn => {
         if (!btn) return;
         const isSummon = btn === summon;
         btn.disabled = owned || (!btn.classList.contains('active') && !isSummon) || (isSummon && !canSummon);
-        btn.style.display = owned ? 'none' : '';
+        if (btn === buy1 || btn === buy10) {
+            btn.style.display = 'none';
+        } else if (btn === buy100) {
+            btn.style.display = owned || fragments >= 100 ? 'none' : '';
+        } else {
+            btn.style.display = owned ? 'none' : '';
+        }
     });
 }
 
 function updatePartnerInventoryUI() {
     const ecanCount = document.getElementById('partner-e-can-count');
     if (ecanCount) ecanCount.innerText = Math.floor(gameData.crystals || 0).toLocaleString();
+
+    const slotText = document.getElementById('partner-blueprint-slot-text');
+    if (slotText) slotText.innerText = `${getOwnedPartnerCount()} / ${getPartnerSlotLimit()}`;
+    const nextCost = getNextPartnerBlueprintCost();
+    const blueprintBtn = document.getElementById('partner-blueprint-craft-btn');
+    if (blueprintBtn) {
+        if (!nextCost) {
+            blueprintBtn.innerText = '전송장치 MAX';
+            blueprintBtn.disabled = true;
+            setButtonActive(blueprintBtn, false);
+        } else {
+            const iconSrc = nextCost.type === 'screws' ? 'sprites/item/screw.png' : 'sprites/item/e_can.png';
+            const label = nextCost.type === 'screws' ? '나사' : 'E캔';
+            blueprintBtn.innerHTML = `전송장치 제작 <img src="${iconSrc}" class="btn-item-icon" alt="${label}">${nextCost.amount.toLocaleString()}`;
+            const canCraft = (gameData[nextCost.type] || 0) >= nextCost.amount;
+            blueprintBtn.disabled = !canCraft;
+            setButtonActive(blueprintBtn, canCraft);
+        }
+    }
 
     Object.keys(PARTNER_INVENTORY_DATA).forEach(type => {
         const data = PARTNER_INVENTORY_DATA[type];
@@ -1926,7 +2175,7 @@ function startBluesAttack() {
     if (enemyX > 180) return;
 
     bluesShieldCharge();
-  }, getPartnerAttackInterval());
+  }, getPartnerAttackIntervalForType('blues'));
 }
 
 function bluesShieldCharge() {
@@ -2010,7 +2259,7 @@ function startForteAttack() {
     if (!gameData.forteOwned || enemyDead || playerDead || forteAttacking) return;
 
     firePartnerBuster('forte');
-  }, getPartnerAttackInterval());
+  }, getPartnerAttackIntervalForType('forte'));
 }
 
 function startXAttack() {
@@ -2021,7 +2270,7 @@ function startXAttack() {
     if (!gameData.xOwned || enemyDead || playerDead || xAttacking) return;
 
     firePartnerBuster('x');
-  }, getPartnerAttackInterval());
+  }, getPartnerAttackIntervalForType('x'));
 }
 
 function startExeRockmanAttack() {
@@ -2032,7 +2281,7 @@ function startExeRockmanAttack() {
     if (!gameData.exeRockmanOwned || enemyDead || playerDead || rockexeAttacking) return;
 
     firePartnerBuster('exeRockman');
-  }, getPartnerAttackInterval());
+  }, getPartnerAttackIntervalForType('exeRockman'));
 }
 
 function startZeroAttack() {
@@ -2043,7 +2292,7 @@ function startZeroAttack() {
     if (!gameData.zeroOwned || enemyDead || playerDead || zeroAttacking) return;
 
     zeroMeleeAttack();
-  }, getPartnerAttackInterval(ZERO_ATTACK_INTERVAL_MULTIPLIER));
+  }, getPartnerAttackIntervalForType('zero', ZERO_ATTACK_INTERVAL_MULTIPLIER));
 }
 
 
@@ -2430,10 +2679,9 @@ function firePartnerBuster(type) {
                     createProjectileExplosion(screen, impactPoint.x, impactPoint.y, data.explosionRadius || 40);
                 }
 
-                // 에그제 치명타 폭탄은 스나이퍼죠 점프 회피 중에도 스턴을 적용합니다.
-                // 데미지는 기존 명중 판정을 따르지만, 폭발 충격 스턴은 별도로 들어갑니다.
-                if (!enemyDead && !playerDead) {
-                    applyEnemyStun(EXE_BOMB_STUN_DURATION_MS);
+                // 에그제 스턴밤은 확률 발동으로 변경했습니다. 보스전에서는 스턴 시간이 더 짧습니다.
+                if (!enemyDead && !playerDead && Math.random() < EXE_BOMB_STUN_CHANCE) {
+                    applyEnemyStun(isBossBattle ? EXE_BOMB_BOSS_STUN_DURATION_MS : EXE_BOMB_STUN_DURATION_MS);
                 }
             }
 
@@ -2870,6 +3118,7 @@ function createEnemyStunVisualEffect() {
 
 function applyEnemyStun(duration = EXE_BOMB_STUN_DURATION_MS) {
     if (enemyDead || playerDead) return;
+    duration = Math.max(120, Math.floor(isBossBattle ? Math.min(duration, EXE_BOMB_BOSS_STUN_DURATION_MS) : duration));
 
     const enemy = document.getElementById('enemy-img');
     enemyStunned = true;
@@ -2955,7 +3204,7 @@ function giveBossBattleReward(displayDelay = 0) {
     const bossData = getBossData(currentBossType);
     const rewards = bossData?.rewards || {};
 
-    const screws = rollInt(rewards.screwsMin || 180, rewards.screwsMax || 320);
+    const screws = Math.floor(rollInt(rewards.screwsMin || 180, rewards.screwsMax || 320) * (1 + getTranscendBonus('screw')));
     gameData.screws += screws;
 
     const rewardData = {
@@ -2965,7 +3214,7 @@ function giveBossBattleReward(displayDelay = 0) {
     };
 
     if (Math.random() < (rewards.cardChipChance ?? 0.78)) {
-        const amount = rollInt(rewards.cardChipMin || 1, rewards.cardChipMax || 2);
+        const amount = Math.max(1, Math.floor(rollInt(rewards.cardChipMin || 1, rewards.cardChipMax || 2) * (1 + getTranscendBonus('cardChip'))));
         gameData.materials.cardChip += amount;
         rewardData.cardChip = amount;
     }
@@ -3024,7 +3273,7 @@ function killEnemy() {
         gameData.screws += screwReward;
 
         if (Math.random() < (rewards.cardChipChance || 0)) {
-            const amount = rollInt(rewards.cardChipMin || 1, rewards.cardChipMax || 1);
+            const amount = Math.max(1, Math.floor(rollInt(rewards.cardChipMin || 1, rewards.cardChipMax || 1) * (1 + getTranscendBonus('cardChip'))));
             gameData.materials.cardChip += amount;
             rewardParts.push(`카드칩 +${amount}`);
         }
@@ -3048,7 +3297,7 @@ function killEnemy() {
         return;
     }
 
-    const reward = Math.floor(80 + gameData.stage * 20);
+    const reward = Math.floor((80 + gameData.stage * 20) * (1 + getTranscendBonus('screw')));
     gameData.screws += reward;
 
     playEnemyDeathEffect();
@@ -3286,7 +3535,7 @@ function calcCost(type, amount) {
 function getNextCost(type, cost) {
     if (type === 'atk') return Math.floor(cost * 1.5);
     if (type === 'spd') return Math.floor(cost * 2);
-    if (type === 'hp') return Math.floor(cost * 1.6);
+    if (type === 'hp') return Math.floor(cost * 1.42);
     if (type === 'crit') return Math.floor(cost * 1.8);
     if (type === 'critDmg') return Math.floor(cost * 1.7);
     if (type === 'partnerSpd') return Math.floor(cost * 1.7);
@@ -3308,8 +3557,8 @@ function buyUpgrade(type, amount) {
         }
 
         if (type === 'hp') {
-           gameData.playerMaxHp += 20;
-           gameData.playerHp += 20;
+           gameData.playerMaxHp = getEffectivePlayerMaxHp();
+           gameData.playerHp = gameData.playerMaxHp;
         }
 
         if (type === 'crit') {
@@ -3582,6 +3831,7 @@ function prepareSummonPopup(type) {
 function summonRush() {
     if (gameData.rushOwned) return;
     if (gameData.rushFragments < RUSH_REQUIRED_FRAGMENTS) return;
+    if (!guardPartnerBlueprintSlot()) return;
 
     gameData.rushOwned = true;
 
@@ -3624,6 +3874,7 @@ rushImg.classList.add('join-drop');
 function summonBeat() {
     if (gameData.beatOwned) return;
     if (gameData.beatFragments < BEAT_REQUIRED_FRAGMENTS) return;
+    if (!guardPartnerBlueprintSlot()) return;
 
     gameData.beatOwned = true;
 
@@ -3668,6 +3919,7 @@ function summonBeat() {
 function summonBlues() {
     if (gameData.bluesOwned) return;
     if (gameData.bluesFragments < BLUES_REQUIRED_FRAGMENTS) return;
+    if (!guardPartnerBlueprintSlot()) return;
 
     gameData.bluesOwned = true;
 
@@ -3711,6 +3963,7 @@ function summonBlues() {
 function summonForte() {
     if (gameData.forteOwned) return;
     if (gameData.forteFragments < FORTE_REQUIRED_FRAGMENTS) return;
+    if (!guardPartnerBlueprintSlot()) return;
 
     gameData.forteOwned = true;
 
@@ -3751,6 +4004,7 @@ function summonForte() {
 function summonX() {
     if (gameData.xOwned) return;
     if (gameData.xFragments < X_REQUIRED_FRAGMENTS) return;
+    if (!guardPartnerBlueprintSlot()) return;
 
     gameData.xOwned = true;
 
@@ -3786,6 +4040,7 @@ function summonX() {
 function summonZero() {
     if (gameData.zeroOwned) return;
     if (gameData.zeroFragments < ZERO_REQUIRED_FRAGMENTS) return;
+    if (!guardPartnerBlueprintSlot()) return;
 
     gameData.zeroOwned = true;
 
@@ -3826,6 +4081,7 @@ function summonZero() {
 function summonExeRockman() {
     if (gameData.exeRockmanOwned) return;
     if (gameData.exeRockmanFragments < EXE_ROCKMAN_REQUIRED_FRAGMENTS) return;
+    if (!guardPartnerBlueprintSlot()) return;
 
     gameData.exeRockmanOwned = true;
 
@@ -4415,7 +4671,7 @@ function showTab(tabName) {
         tabName = 'battle';
     }
 
-    ['battle', 'partner', 'card', 'armor', 'boss', 'mine'].forEach(name => {
+    ['battle', 'partner', 'card', 'armor', 'boss', 'mine', 'status', 'transcend'].forEach(name => {
         const tab = document.getElementById(name + '-tab');
         const btn = document.getElementById(name + '-tab-btn');
 
@@ -4899,6 +5155,10 @@ const PICKAXE_NAMES = ['록괭이', '록괭이X', '록괭이.EXE', '록괭대시
 const PICKAXE_BASE_DAMAGES = [8, 44, 80, 116, 152, 188, 224, 260, 296, 332];
 const PICKAXE_ENHANCE_DAMAGE = 3;
 const PICKAXE_MAX_TIER = PICKAXE_NAMES.length - 1;
+const REGISTERED_PICKAXE_SLOT_COUNT = 3;
+const REGISTERED_PICKAXE_DAMAGE_RATE = 0.10;
+const MINE_REWARD_NERF_RATE = 0.75;
+let pendingPickaxeRegisterSlot = null;
 
 function getPickaxeTierIndex() {
     return Math.min(gameData.minePickaxeTier, PICKAXE_NAMES.length - 1);
@@ -4913,12 +5173,129 @@ function getPickaxeSprite() {
     return `sprites/mine/pickaxe/pickaxe_${spriteIndex}.png`;
 }
 
+function getBasePickaxeDamage(tier = gameData.minePickaxeTier, enhance = gameData.minePickaxeEnhance) {
+    const tierIndex = Math.max(0, Math.min(PICKAXE_MAX_TIER, Math.floor(tier || 0)));
+    const safeEnhance = Math.max(0, Math.min(10, Math.floor(enhance || 0)));
+    const baseDamage = PICKAXE_BASE_DAMAGES[tierIndex] || PICKAXE_BASE_DAMAGES[0];
+    return Math.floor(baseDamage + safeEnhance * PICKAXE_ENHANCE_DAMAGE);
+}
+
+function getRegisteredPickaxeSingleBonusDamage(item) {
+    if (!item) return 0;
+    return Math.floor(getBasePickaxeDamage(item.tier, item.enhance) * REGISTERED_PICKAXE_DAMAGE_RATE);
+}
+
+function getRegisteredPickaxeBonusDamage() {
+    if (!Array.isArray(gameData.registeredPickaxes)) gameData.registeredPickaxes = [null, null, null];
+    return gameData.registeredPickaxes.reduce((sum, item) => {
+        return sum + getRegisteredPickaxeSingleBonusDamage(item);
+    }, 0);
+}
+
+function getMiningDamageBaseOnly() {
+    if (!gameData.minePickaxeOwned) return 0;
+    return getBasePickaxeDamage(gameData.minePickaxeTier, gameData.minePickaxeEnhance);
+}
+
 function getMiningDamage() {
     if (!gameData.minePickaxeOwned) return 0;
+    return Math.floor(getMiningDamageBaseOnly() + getRegisteredPickaxeBonusDamage());
+}
 
-    const tierIndex = getPickaxeTierIndex();
-    const baseDamage = PICKAXE_BASE_DAMAGES[tierIndex] || PICKAXE_BASE_DAMAGES[0];
-    return Math.floor(baseDamage + gameData.minePickaxeEnhance * PICKAXE_ENHANCE_DAMAGE);
+function getRegisteredPickaxeName(item) {
+    if (!item) return 'EMPTY';
+    const tier = Math.max(0, Math.min(PICKAXE_MAX_TIER, Math.floor(item.tier || 0)));
+    return PICKAXE_NAMES[tier] || '록괭이';
+}
+
+function getRegisteredPickaxeSprite(item) {
+    if (!item) return 'sprites/mine/pickaxe/pickaxe_01.png';
+    const tier = Math.max(0, Math.min(PICKAXE_MAX_TIER, Math.floor(item.tier || 0)));
+    return `sprites/mine/pickaxe/pickaxe_${String(tier + 1).padStart(2, '0')}.png`;
+}
+
+function registerCurrentPickaxe(slotIndex) {
+    slotIndex = Math.max(0, Math.min(REGISTERED_PICKAXE_SLOT_COUNT - 1, Math.floor(slotIndex || 0)));
+    if (!gameData.minePickaxeOwned) {
+        showMineResult('등록할 곡괭이가 없습니다. 곡괭이를 먼저 제작해주세요.');
+        return;
+    }
+    openPickaxeRegisterConfirm(slotIndex);
+}
+
+function openPickaxeRegisterConfirm(slotIndex) {
+    pendingPickaxeRegisterSlot = Math.max(0, Math.min(REGISTERED_PICKAXE_SLOT_COUNT - 1, Math.floor(slotIndex || 0)));
+    const popup = document.getElementById('pickaxe-register-popup');
+    const currentImg = document.getElementById('pickaxe-register-current-img');
+    const currentName = document.getElementById('pickaxe-register-current-name');
+    const currentDamage = document.getElementById('pickaxe-register-current-damage');
+    const oldBox = document.getElementById('pickaxe-register-old-box');
+    const oldImg = document.getElementById('pickaxe-register-old-img');
+    const oldName = document.getElementById('pickaxe-register-old-name');
+    const oldDamage = document.getElementById('pickaxe-register-old-damage');
+    const slotText = document.getElementById('pickaxe-register-slot-text');
+    const item = gameData.registeredPickaxes?.[pendingPickaxeRegisterSlot] || null;
+
+    if (currentImg) currentImg.src = getPickaxeSprite();
+    if (currentName) currentName.innerText = `${getPickaxeName()} +${gameData.minePickaxeEnhance}`;
+    if (currentDamage) currentDamage.innerText = `기본 데미지 ${getMiningDamageBaseOnly().toLocaleString()} / 등록 보너스 +${Math.floor(getMiningDamageBaseOnly() * REGISTERED_PICKAXE_DAMAGE_RATE).toLocaleString()}`;
+    if (slotText) {
+        slotText.innerText = item
+            ? `등록된 ${getRegisteredPickaxeName(item)} 위에 현재 ${getPickaxeName()}를 등록하시겠습니까?`
+            : `빈 슬롯에 현재 ${getPickaxeName()}를 등록하시겠습니까?`;
+    }
+
+    if (oldBox) oldBox.style.display = '';
+    if (item) {
+        if (oldImg) {
+            oldImg.src = getRegisteredPickaxeSprite(item);
+            oldImg.style.visibility = '';
+        }
+        if (oldName) oldName.innerText = `${getRegisteredPickaxeName(item)} +${item.enhance}`;
+        if (oldDamage) oldDamage.innerText = `현재 슬롯의 곡괭이는 덮어쓰기됩니다. / 보너스 +${Math.floor(getBasePickaxeDamage(item.tier, item.enhance) * REGISTERED_PICKAXE_DAMAGE_RATE).toLocaleString()}`;
+    } else {
+        if (oldImg) oldImg.style.visibility = 'hidden';
+        if (oldName) oldName.innerText = 'EMPTY';
+        if (oldDamage) oldDamage.innerText = '빈 슬롯에 새로 등록됩니다.';
+    }
+
+    if (popup) popup.classList.add('active');
+}
+
+function closePickaxeRegisterConfirm() {
+    pendingPickaxeRegisterSlot = null;
+    const popup = document.getElementById('pickaxe-register-popup');
+    if (popup) popup.classList.remove('active');
+}
+
+function confirmPickaxeRegister() {
+    if (pendingPickaxeRegisterSlot === null) return;
+    if (!gameData.minePickaxeOwned) {
+        closePickaxeRegisterConfirm();
+        showMineResult('등록할 곡괭이가 없습니다.');
+        return;
+    }
+
+    const slotIndex = pendingPickaxeRegisterSlot;
+    const registeredName = getPickaxeName();
+    const registeredEnhance = Math.max(0, Math.floor(gameData.minePickaxeEnhance || 0));
+
+    gameData.registeredPickaxes[slotIndex] = {
+        tier: Math.max(0, Math.min(PICKAXE_MAX_TIER, Math.floor(gameData.minePickaxeTier || 0))),
+        enhance: registeredEnhance
+    };
+
+    gameData.minePickaxeOwned = false;
+    gameData.minePickaxeTier = Math.max(0, Math.floor(gameData.minePickaxeFloorTier || 0));
+    gameData.minePickaxeEnhance = 0;
+    gameData.mineRockMaxHp = getMineRockMaxHp();
+    gameData.mineRockHp = gameData.mineRockMaxHp;
+
+    closePickaxeRegisterConfirm();
+    showMineBigResult('등록 완료', 'success');
+    showMineResult(`${registeredName} +${registeredEnhance} 등록 완료 / 새 곡괭이를 제작할 수 있습니다.`);
+    updateUI();
+    saveData();
 }
 
 function getMineRockMaxHp() {
@@ -5099,8 +5476,8 @@ function mineAttack() {
 }
 
 function clearMineRock() {
-    const screwReward = Math.floor(8 + gameData.minePickaxeTier * 5 + gameData.minePickaxeEnhance * 1.5);
-    const stoneReward = Math.floor(3 + gameData.minePickaxeTier * 3 + Math.max(1, Math.floor(gameData.minePickaxeEnhance / 2)));
+    const screwReward = Math.max(1, Math.floor((8 + gameData.minePickaxeTier * 5 + gameData.minePickaxeEnhance * 1.5) * MINE_REWARD_NERF_RATE));
+    const stoneReward = Math.max(1, Math.floor((3 + gameData.minePickaxeTier * 3 + Math.max(1, Math.floor(gameData.minePickaxeEnhance / 2))) * MINE_REWARD_NERF_RATE));
 
     gameData.screws += screwReward;
     gameData.stones += stoneReward;
@@ -5193,6 +5570,174 @@ function startBattleTips() {
     battleTipTimer = setInterval(showBattleTip, 4800);
 }
 
+
+function getTranscendPointReward() {
+    if (gameData.stage < TRANSCEND_REQUIRED_STAGE) return 0;
+    return Math.max(1, Math.floor(gameData.stage / TRANSCEND_POINT_PER_STAGE));
+}
+
+function getTranscendUpgradeCost(type) {
+    const lv = Math.max(0, Math.floor(gameData.transcend?.[`${type}Lv`] || 0));
+    return 1 + Math.floor(lv / 3);
+}
+
+function upgradeTranscendStat(type) {
+    const key = `${type}Lv`;
+    if (!gameData.transcend || !Object.prototype.hasOwnProperty.call(gameData.transcend, key)) return;
+    const lv = Math.max(0, Math.floor(gameData.transcend[key] || 0));
+    if (lv >= TRANSCEND_MAX_LEVEL) return;
+    const cost = getTranscendUpgradeCost(type);
+    if ((gameData.transcend.points || 0) < cost) return;
+
+    gameData.transcend.points -= cost;
+    gameData.transcend[key] = lv + 1;
+    gameData.playerMaxHp = getEffectivePlayerMaxHp();
+    gameData.playerHp = Math.min(gameData.playerMaxHp, Math.max(1, gameData.playerHp || gameData.playerMaxHp));
+    updateUI();
+    saveData();
+}
+
+function performTranscend() {
+    const reward = getTranscendPointReward();
+    if (reward <= 0) return;
+
+    gameData.transcend.count += 1;
+    gameData.transcend.points += reward;
+
+    gameData.stage = 1;
+    gameData.screws = 0;
+    gameData.atk = defaultData.atk;
+    gameData.atkSpd = defaultData.atkSpd;
+    gameData.critChance = defaultData.critChance;
+    gameData.critMultiplier = defaultData.critMultiplier;
+    gameData.partnerAtkSpd = defaultData.partnerAtkSpd;
+    gameData.minePickaxeOwned = false;
+    gameData.minePickaxeTier = 0;
+    gameData.minePickaxeFloorTier = 0;
+    gameData.minePickaxeEnhance = 0;
+    gameData.mineRockMaxHp = 80;
+    gameData.mineRockHp = 80;
+    gameData.lv = { ...defaultData.lv };
+    gameData.costs = { ...defaultData.costs };
+    gameData.playerMaxHp = getEffectivePlayerMaxHp();
+    gameData.playerHp = gameData.playerMaxHp;
+
+    clampBattleBalanceValues();
+    setupStage();
+    startAutoAttack();
+    startBluesAttack();
+    startForteAttack();
+    startXAttack();
+    startExeRockmanAttack();
+    startZeroAttack();
+    showTranscendOverlay(reward);
+    updateUI();
+    saveData();
+}
+
+function showTranscendOverlay(points) {
+    const overlay = document.getElementById('transcend-overlay');
+    const title = document.getElementById('transcend-overlay-title');
+    const desc = document.getElementById('transcend-overlay-desc');
+    if (!overlay) {
+        showStageText(`리부트 +${points}`);
+        return;
+    }
+    if (title) title.innerText = `리부트 ${gameData.transcend.count}회 달성`; 
+    if (desc) desc.innerHTML = `스테이지/기본 강화/현재 곡괭이가 초기화되었습니다.<br>카드, 개발실, 등록 곡괭이는 유지됩니다.<br>리부트 코어 <b>+${points}</b> 획득!`;
+    overlay.classList.add('active');
+}
+
+function closeTranscendOverlay() {
+    const overlay = document.getElementById('transcend-overlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function getStatusAttackBreakdown() {
+    const bonuses = getEquippedCardBonuses();
+    const base = Math.max(1, Math.floor(gameData.atk || 0));
+    const withCard = Math.max(1, Math.floor((base + bonuses.atkFlat) * (1 + bonuses.atkPercent / 100)));
+    const total = getCardAdjustedAtk(gameData.atk);
+    return {
+        base,
+        card: Math.max(0, withCard - base),
+        transcend: Math.max(0, total - withCard),
+        total
+    };
+}
+
+function getStatusHpBreakdown() {
+    const base = Math.max(1, Math.floor(100 + (Math.max(1, Math.floor(gameData.lv?.hp || 1)) - 1) * 35));
+    const total = getEffectivePlayerMaxHp();
+    return {
+        base,
+        card: 0,
+        transcend: Math.max(0, total - base),
+        total
+    };
+}
+
+function formatStatusBreakdown(parts) {
+    const cardPart = parts.card > 0 ? ` <span class="status-card-bonus">(+${parts.card.toLocaleString()})</span>` : '';
+    const transcendPart = parts.transcend > 0 ? ` <span class="status-transcend-bonus">(+${parts.transcend.toLocaleString()})</span>` : '';
+    return `${parts.total.toLocaleString()} <small>= ${parts.base.toLocaleString()}${cardPart}${transcendPart}</small>`;
+}
+
+function updateStatusUI() {
+    const bonuses = getEquippedCardBonuses();
+    const rows = document.getElementById('status-stat-rows');
+    if (rows) {
+        const atkParts = getStatusAttackBreakdown();
+        const hpParts = getStatusHpBreakdown();
+        const partnerRows = ['blues','forte','x','zero','exeRockman'].map(type => {
+            const data = PARTNER_ATTACK_DATA[type];
+            if (!data) return '';
+            const owned = gameData[data.ownedKey];
+            return `<div class="status-row"><span>${data.name} 공격력</span><b>${owned ? getPartnerDamage(type).toLocaleString() : '미소환'}</b></div>`;
+        }).join('');
+        rows.innerHTML = `
+            <div class="status-row"><span>현재 스테이지</span><b>${gameData.stage.toLocaleString()}</b></div>
+            <div class="status-row"><span>리부트 횟수</span><b>${gameData.transcend.count.toLocaleString()}회</b></div>
+            <div class="status-row status-formula-row"><span>공격력</span><b>${formatStatusBreakdown(atkParts)}</b></div>
+            <div class="status-row"><span>공격속도</span><b>${(getPlayerAttackInterval() / 1000).toFixed(2)}초 <em>카드 포함</em></b></div>
+            <div class="status-row status-formula-row"><span>체력</span><b>${formatStatusBreakdown(hpParts)}</b></div>
+            <div class="status-row"><span>차지샷 확률</span><b>${getEffectiveCritChance().toFixed(1)}%</b></div>
+            <div class="status-row"><span>차지샷 배율</span><b>${gameData.critMultiplier.toFixed(2)}배</b></div>
+            <div class="status-row"><span>카드 공격력 보너스</span><b><span class="status-card-bonus">+${bonuses.atkFlat} / +${bonuses.atkPercent}%</span></b></div>
+            <div class="status-row"><span>카드 공속 보너스</span><b><span class="status-card-bonus">+${bonuses.atkSpeed}%</span></b></div>
+            <div class="status-row"><span>리부트 공격력 보너스</span><b><span class="status-transcend-bonus">+${Math.round(getTranscendBonus('atk') * 100)}%</span></b></div>
+            <div class="status-row"><span>리부트 체력 보너스</span><b><span class="status-transcend-bonus">+${Math.round(getTranscendBonus('hp') * 100)}%</span></b></div>
+            <div class="status-row"><span>리부트 나사 보너스</span><b><span class="status-transcend-bonus">+${Math.round(getTranscendBonus('screw') * 100)}%</span></b></div>
+            <div class="status-row"><span>리부트 동료공격 보너스</span><b><span class="status-transcend-bonus">+${Math.round(getTranscendBonus('partner') * 100)}%</span></b></div>
+            ${partnerRows}
+        `;
+    }
+
+    const transcendInfo = document.getElementById('transcend-info');
+    if (transcendInfo) {
+        const reward = getTranscendPointReward();
+        transcendInfo.innerHTML = `<div class="transcend-count-line"><b>${gameData.transcend.count.toLocaleString()}</b> 리부트</div>리부트 가능 스테이지: ${TRANSCEND_REQUIRED_STAGE}<br>현재 획득 예정 코어: <b>${reward}</b><br>보유 리부트 코어: <b>${gameData.transcend.points}</b>`;
+    }
+    const transcendBtn = document.getElementById('transcend-btn');
+    setButtonActive(transcendBtn, getTranscendPointReward() > 0);
+    if (transcendBtn) transcendBtn.disabled = getTranscendPointReward() <= 0;
+
+    ['atk','hp','screw','partner','cardChip'].forEach(type => {
+        const lvEl = document.getElementById(`transcend-${type}-lv`);
+        const costEl = document.getElementById(`transcend-${type}-cost`);
+        const btn = document.getElementById(`transcend-${type}-btn`);
+        const lv = Math.max(0, Math.floor(gameData.transcend?.[`${type}Lv`] || 0));
+        const cost = getTranscendUpgradeCost(type);
+        if (lvEl) lvEl.innerText = `${lv} / ${TRANSCEND_MAX_LEVEL}`;
+        if (costEl) costEl.innerText = lv >= TRANSCEND_MAX_LEVEL ? 'MAX' : cost;
+        setButtonActive(btn, lv < TRANSCEND_MAX_LEVEL && gameData.transcend.points >= cost);
+        if (btn) btn.disabled = !(lv < TRANSCEND_MAX_LEVEL && gameData.transcend.points >= cost);
+    });
+
+    const battleTrans = document.getElementById('battle-transcend-count');
+    if (battleTrans) battleTrans.innerText = gameData.transcend.count.toLocaleString();
+}
+
 function updateUI() {
     document.getElementById('stage').innerText = gameData.stage;
     document.getElementById('player-hp-text').innerText = Math.floor(gameData.playerHp);
@@ -5256,7 +5801,7 @@ function updateUI() {
     setButtonActive(document.getElementById('exchange-btn100'), gameData.screws >= 10000);
 
     const rushFragmentsEl = document.getElementById('rush-fragments');
-    if (rushFragmentsEl) rushFragmentsEl.innerText = gameData.rushFragments;
+    if (rushFragmentsEl) rushFragmentsEl.innerText = getPartnerDataStatusLabel(gameData.rushFragments, gameData.rushOwned);
 
     setButtonActive(document.getElementById('rush-buy1'), !gameData.rushOwned && gameData.crystals >= 1 && gameData.rushFragments < 100);
     setButtonActive(document.getElementById('rush-buy10'), !gameData.rushOwned && gameData.crystals >= 10 && gameData.rushFragments <= 90);
@@ -5277,14 +5822,14 @@ function updateUI() {
     }
 
     const beatFragmentsEl = document.getElementById('beat-fragments');
-    if (beatFragmentsEl) beatFragmentsEl.innerText = gameData.beatFragments;
+    if (beatFragmentsEl) beatFragmentsEl.innerText = getPartnerDataStatusLabel(gameData.beatFragments, gameData.beatOwned);
 
     setButtonActive(document.getElementById('beat-buy1'), !gameData.beatOwned && gameData.crystals >= 1 && gameData.beatFragments < 100);
     setButtonActive(document.getElementById('beat-buy10'), !gameData.beatOwned && gameData.crystals >= 10 && gameData.beatFragments <= 90);
     setButtonActive(document.getElementById('beat-buy100'), !gameData.beatOwned && gameData.crystals >= 100 && gameData.beatFragments === 0);
     setButtonActive(document.getElementById('beat-summon-btn'), !gameData.beatOwned && gameData.beatFragments >= 100);
 const bluesFragmentsEl = document.getElementById('blues-fragments');
-if (bluesFragmentsEl) bluesFragmentsEl.innerText = gameData.bluesFragments;
+if (bluesFragmentsEl) bluesFragmentsEl.innerText = getPartnerDataStatusLabel(gameData.bluesFragments, gameData.bluesOwned);
 
 setButtonActive(document.getElementById('blues-buy1'), !gameData.bluesOwned && gameData.crystals >= 1 && gameData.bluesFragments < 100);
 setButtonActive(document.getElementById('blues-buy10'), !gameData.bluesOwned && gameData.crystals >= 10 && gameData.bluesFragments <= 90);
@@ -5292,7 +5837,7 @@ setButtonActive(document.getElementById('blues-buy100'), !gameData.bluesOwned &&
 setButtonActive(document.getElementById('blues-summon-btn'), !gameData.bluesOwned && gameData.bluesFragments >= 100);
 
 const forteFragmentsEl = document.getElementById('forte-fragments');
-if (forteFragmentsEl) forteFragmentsEl.innerText = gameData.forteFragments;
+if (forteFragmentsEl) forteFragmentsEl.innerText = getPartnerDataStatusLabel(gameData.forteFragments, gameData.forteOwned);
 
 setButtonActive(document.getElementById('forte-buy1'), !gameData.forteOwned && gameData.crystals >= 1 && gameData.forteFragments < 100);
 setButtonActive(document.getElementById('forte-buy10'), !gameData.forteOwned && gameData.crystals >= 10 && gameData.forteFragments <= 90);
@@ -5300,7 +5845,7 @@ setButtonActive(document.getElementById('forte-buy100'), !gameData.forteOwned &&
 setButtonActive(document.getElementById('forte-summon-btn'), !gameData.forteOwned && gameData.forteFragments >= 100);
 
 const xFragmentsEl = document.getElementById('x-fragments');
-if (xFragmentsEl) xFragmentsEl.innerText = gameData.xFragments;
+if (xFragmentsEl) xFragmentsEl.innerText = getPartnerDataStatusLabel(gameData.xFragments, gameData.xOwned);
 
 setButtonActive(document.getElementById('x-buy1'), !gameData.xOwned && gameData.crystals >= 1 && gameData.xFragments < 100);
 setButtonActive(document.getElementById('x-buy10'), !gameData.xOwned && gameData.crystals >= 10 && gameData.xFragments <= 90);
@@ -5308,7 +5853,7 @@ setButtonActive(document.getElementById('x-buy100'), !gameData.xOwned && gameDat
 setButtonActive(document.getElementById('x-summon-btn'), !gameData.xOwned && gameData.xFragments >= 100);
 
 const zeroFragmentsEl = document.getElementById('zero-fragments');
-if (zeroFragmentsEl) zeroFragmentsEl.innerText = gameData.zeroFragments;
+if (zeroFragmentsEl) zeroFragmentsEl.innerText = getPartnerDataStatusLabel(gameData.zeroFragments, gameData.zeroOwned);
 
 setButtonActive(document.getElementById('zero-buy1'), !gameData.zeroOwned && gameData.crystals >= 1 && gameData.zeroFragments < 100);
 setButtonActive(document.getElementById('zero-buy10'), !gameData.zeroOwned && gameData.crystals >= 10 && gameData.zeroFragments <= 90);
@@ -5316,7 +5861,7 @@ setButtonActive(document.getElementById('zero-buy100'), !gameData.zeroOwned && g
 setButtonActive(document.getElementById('zero-summon-btn'), !gameData.zeroOwned && gameData.zeroFragments >= 100);
 
 const exeRockmanFragmentsEl = document.getElementById('exeRockman-fragments');
-if (exeRockmanFragmentsEl) exeRockmanFragmentsEl.innerText = gameData.exeRockmanFragments;
+if (exeRockmanFragmentsEl) exeRockmanFragmentsEl.innerText = getPartnerDataStatusLabel(gameData.exeRockmanFragments, gameData.exeRockmanOwned);
 
 setButtonActive(document.getElementById('exeRockman-buy1'), !gameData.exeRockmanOwned && gameData.crystals >= 1 && gameData.exeRockmanFragments < 100);
 setButtonActive(document.getElementById('exeRockman-buy10'), !gameData.exeRockmanOwned && gameData.crystals >= 10 && gameData.exeRockmanFragments <= 90);
@@ -5494,11 +6039,8 @@ if (zeroImg) {
 const partnerUpgrade = document.querySelector('.partner-upgrade');
 
 if (partnerUpgrade) {
-  if (gameData.beatOwned) {
-    partnerUpgrade.classList.add('active');
-  } else {
-    partnerUpgrade.classList.remove('active');
-  }
+  // 비트 보유 효과는 전체 공속 버튼이 아니라, 동료 팝업의 개별 공속 강화로 이동했습니다.
+  partnerUpgrade.classList.remove('active');
 }
 const forteUpgradeEls = document.querySelectorAll('.forte-upgrade');
 forteUpgradeEls.forEach(el => {
@@ -5532,13 +6074,43 @@ const mineEnhance = document.getElementById('mine-pickaxe-enhance');
 if (mineEnhance) mineEnhance.innerText = gameData.minePickaxeOwned ? `+${gameData.minePickaxeEnhance}` : '+0';
 
 const mineEnhanceBadge = document.getElementById('mine-pickaxe-enhance-badge');
-if (mineEnhanceBadge) mineEnhanceBadge.innerText = gameData.minePickaxeOwned ? `+${gameData.minePickaxeEnhance}` : '+0';
+if (mineEnhanceBadge) {
+    mineEnhanceBadge.innerText = gameData.minePickaxeOwned ? `+${gameData.minePickaxeEnhance}` : '';
+    mineEnhanceBadge.style.display = gameData.minePickaxeOwned ? '' : 'none';
+}
 
 const minePickaxeImg = document.getElementById('mine-pickaxe-img');
-if (minePickaxeImg) minePickaxeImg.src = getPickaxeSprite();
+if (minePickaxeImg) {
+    if (gameData.minePickaxeOwned) {
+        minePickaxeImg.src = getPickaxeSprite();
+        minePickaxeImg.style.display = '';
+    } else {
+        minePickaxeImg.removeAttribute('src');
+        minePickaxeImg.style.display = 'none';
+    }
+}
 
 const mineDamage = document.getElementById('mine-damage');
-if (mineDamage) mineDamage.innerText = getMiningDamage().toLocaleString();
+const mineRegisteredBonusInline = document.getElementById('mine-registered-bonus-inline');
+const mineBaseDamage = getMiningDamageBaseOnly();
+const mineBonusDamage = gameData.minePickaxeOwned ? getRegisteredPickaxeBonusDamage() : 0;
+if (mineDamage) mineDamage.innerText = mineBaseDamage.toLocaleString();
+if (mineRegisteredBonusInline) {
+    mineRegisteredBonusInline.innerText = mineBonusDamage > 0 ? `+${mineBonusDamage.toLocaleString()}` : '';
+    mineRegisteredBonusInline.style.display = mineBonusDamage > 0 ? 'inline-block' : 'none';
+}
+
+[0, 1, 2].forEach(index => {
+    const slot = document.getElementById(`mine-pickaxe-slot-${index}`);
+    if (!slot) return;
+    const item = gameData.registeredPickaxes?.[index] || null;
+    slot.classList.toggle('empty', !item);
+    if (!item) {
+        slot.innerHTML = `<em>등록</em>`;
+        return;
+    }
+    slot.innerHTML = `<img src="${getRegisteredPickaxeSprite(item)}" alt="등록 곡괭이"><b>+${item.enhance}</b><em>+${getRegisteredPickaxeSingleBonusDamage(item)}</em><small>${getRegisteredPickaxeName(item)}</small>`;
+});
 
 const mineChance = document.getElementById('mine-enhance-chance');
 if (mineChance) mineChance.innerText = `${getMineEnhanceChance()}%`;
@@ -5577,6 +6149,7 @@ setButtonActive(document.getElementById('card-analyze-10-btn'), (gameData.materi
 setButtonActive(document.getElementById('option-chip-exchange-1-btn'), (gameData.stones || 0) >= OPTION_CHIP_STONE_COST);
 setButtonActive(document.getElementById('option-chip-exchange-10-btn'), (gameData.stones || 0) >= OPTION_CHIP_STONE_COST * 10);
 renderCardUI();
+updateStatusUI();
 
     updateBossBattleTabLockState();
 }
@@ -5653,6 +6226,25 @@ function resetGame() {
         sessionStorage.clear();
         location.replace(location.pathname + '?reset=' + Date.now());
     }
+}
+
+function secretJumpToStage(targetStage = 250) {
+    const target = Math.max(1, Math.floor(targetStage || 250));
+    gameData.stage = target;
+    gameData.playerMaxHp = getEffectivePlayerMaxHp();
+    gameData.playerHp = gameData.playerMaxHp;
+
+    setupStage();
+    startAutoAttack();
+    startBluesAttack();
+    startForteAttack();
+    startXAttack();
+    startExeRockmanAttack();
+    startZeroAttack();
+
+    showStageText(`TEST STAGE ${target}`);
+    updateUI();
+    saveData();
 }
 
 function devCheat() {

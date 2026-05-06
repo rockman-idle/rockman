@@ -2292,7 +2292,7 @@ body {
   top: 55px;
 }
 
-/* 우측 날개 버튼이 기존 탭 버튼과 정확히 줄 맞도록 고정 */
+/* 우측 날개 버튼: 상태/동료/카드 탭 아래로 내려 카드 탭을 가리지 않게 고정 */
 .tab-btn {
   box-sizing: border-box;
   min-height: 44px;
@@ -2304,7 +2304,7 @@ body {
 .partner-sync-wing {
   position: absolute;
   right: -388px;
-  top: 155px;
+  top: 212px;
   width: 388px;
   min-height: 0;
   z-index: 80;
@@ -5947,21 +5947,60 @@ h2.section-heading-pixel {
 
 .partner-popup-actions {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 7px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .partner-popup-btn {
-  min-height: 32px;
-  padding: 6px 5px;
+  min-height: 52px;
+  padding: 7px 6px;
   background: #080c10;
   color: #7faec0;
   border: 1px solid #233a47;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 11px;
   font-weight: 900;
   cursor: pointer;
   font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  line-height: 1.12;
+}
+
+.partner-popup-btn-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.partner-popup-btn-cost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: #d8f6ff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.partner-popup-btn-cost b {
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.partner-popup-btn-cost .btn-item-icon {
+  width: 15px;
+  height: 15px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  vertical-align: -2px;
+}
+
+.partner-popup-btn-cost-plain {
+  color: #ffe98a;
 }
 
 .partner-popup-btn.active {
@@ -5971,9 +6010,14 @@ h2.section-heading-pixel {
   box-shadow: 0 0 8px rgba(0, 212, 255, 0.65);
 }
 
+.partner-popup-buy.active {
+  color: #001018;
+  background: linear-gradient(to bottom, #00d4ff, #62edff);
+}
+
 .partner-popup-summon.active {
   color: #000;
-  background: #ffd700;
+  background: linear-gradient(to bottom, #ffd700, #fff0a0);
   border-color: #ffd700;
   box-shadow: 0 0 8px rgba(255, 215, 0, 0.72);
 }
@@ -6058,9 +6102,6 @@ h2.section-heading-pixel {
 .partner-popup-box.summoned .partner-popup-actions,
 .partner-popup-box.summoned #partner-popup-desc {
   display: none;
-}
-.partner-popup-box.summoned #partner-popup-fragments {
-  color: #ffd700;
 }
 
 
@@ -7238,4 +7279,922 @@ h2.section-heading-pixel {
   vertical-align: middle;
   margin-left: 2px;
   filter: drop-shadow(0 0 3px rgba(0,0,0,0.85));
+}
+
+/* v37 밸런스/루프: 상태 탭, 리부트, 동료 전송장치 */
+.partner-blueprint-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 8px 0 12px;
+  padding: 8px;
+  background: #071018;
+  border: 1px solid #176f8c;
+  border-radius: 6px;
+  box-shadow: inset 0 0 10px rgba(0, 212, 255, 0.12);
+}
+
+.partner-blueprint-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  color: #b8f3ff;
+  font-size: 11px;
+}
+
+.partner-blueprint-info b {
+  color: #00d4ff;
+  font-size: 13px;
+}
+
+.partner-blueprint-info strong {
+  color: #fff;
+}
+
+.partner-popup-speed {
+  grid-column: 1 / -1;
+}
+
+.partner-popup-warn {
+  color: #ffd700 !important;
+  animation: partnerWarnFlash 0.65s ease-out;
+}
+
+@keyframes partnerWarnFlash {
+  0% { transform: translateX(0); filter: brightness(1); }
+  25% { transform: translateX(-3px); filter: brightness(1.8); }
+  50% { transform: translateX(3px); filter: brightness(1.3); }
+  100% { transform: translateX(0); filter: brightness(1); }
+}
+
+.status-panel {
+  min-height: 520px;
+}
+
+.status-section {
+  margin-bottom: 12px;
+  padding: 10px;
+  background: #070707;
+  border: 1px solid #333;
+  border-radius: 7px;
+}
+
+.status-section-title {
+  margin-bottom: 8px;
+  color: #00d4ff;
+  font-size: 14px;
+  font-weight: 900;
+  text-align: left;
+  text-shadow: 0 0 7px rgba(0, 212, 255, 0.75);
+}
+
+.status-stat-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 7px;
+  background: #101010;
+  border: 1px solid #252525;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 11px;
+  text-align: left;
+}
+
+.status-row b {
+  color: #fff;
+  font-size: 12px;
+  text-align: right;
+}
+
+.status-row em {
+  display: block;
+  margin-top: 1px;
+  color: #00d4ff;
+  font-style: normal;
+  font-size: 9px;
+}
+
+.transcend-section {
+  border-color: #7137ff;
+  background: radial-gradient(circle at 50% 0%, rgba(113, 55, 255, 0.18), #070707 46%);
+}
+
+.transcend-info {
+  padding: 8px;
+  color: #dbcfff;
+  background: #0e0820;
+  border: 1px solid #4d2ac0;
+  border-radius: 5px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.transcend-info b {
+  color: #fff2a0;
+}
+
+.transcend-btn {
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+  background: #111;
+  color: #8f77ff;
+  border: 2px solid #4d2ac0;
+  border-radius: 5px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.transcend-btn.active {
+  color: #fff;
+  background: #7137ff;
+  border-color: #b6a3ff;
+  box-shadow: 0 0 12px rgba(113, 55, 255, 0.9);
+}
+
+.transcend-help {
+  color: #aaa;
+  font-size: 10px;
+  line-height: 1.45;
+  margin-bottom: 8px;
+}
+
+.transcend-upgrade-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.transcend-upgrade-row {
+  display: grid;
+  grid-template-columns: 1fr 58px 58px 48px;
+  align-items: center;
+  gap: 5px;
+  padding: 6px;
+  background: #0f0b1d;
+  border: 1px solid #2d1b67;
+  border-radius: 5px;
+  color: #ddd;
+  font-size: 11px;
+  text-align: left;
+}
+
+.transcend-upgrade-row b,
+.transcend-upgrade-row em {
+  color: #fff;
+  font-style: normal;
+  text-align: center;
+  font-size: 10px;
+}
+
+.transcend-upgrade-row button {
+  padding: 4px 5px;
+  background: #111;
+  color: #8f77ff;
+  border: 1px solid #4d2ac0;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.transcend-upgrade-row button.active {
+  color: #fff;
+  background: #7137ff;
+  border-color: #b6a3ff;
+  box-shadow: 0 0 7px rgba(113, 55, 255, 0.85);
+}
+
+.transcend-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.86);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.transcend-overlay.active {
+  display: flex;
+}
+
+.transcend-overlay-box {
+  width: min(420px, 92vw);
+  padding: 22px 18px;
+  border: 3px solid #b6a3ff;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 20%, #24105f, #05030b 62%);
+  box-shadow: 0 0 28px rgba(113, 55, 255, 0.95), inset 0 0 22px rgba(255, 255, 255, 0.08);
+  text-align: center;
+  animation: transcendOverlayPop 0.35s ease-out;
+}
+
+@keyframes transcendOverlayPop {
+  0% { transform: scale(0.82); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.transcend-overlay-title {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 900;
+  text-shadow: 0 0 12px #b6a3ff;
+}
+
+.transcend-overlay-core {
+  margin: 12px 0;
+  color: #fff2a0;
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px #fff, 0 0 22px #7137ff;
+  animation: transcendCorePulse 1.05s ease-in-out infinite;
+}
+
+@keyframes transcendCorePulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.05); filter: brightness(1.45); }
+}
+
+.transcend-overlay-desc {
+  color: #dbcfff;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.transcend-overlay-desc b {
+  color: #fff2a0;
+}
+
+.transcend-overlay-hint {
+  margin-top: 12px;
+  color: #777;
+  font-size: 11px;
+}
+
+/* v38 테스트 비밀 기능: 햇밤 문구 클릭 */
+.secret-stage-jump {
+  cursor: pointer;
+}
+
+.secret-stage-jump:hover {
+  color: #777;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.35);
+}
+
+
+/* v39: 상태/리부트 탭 버튼 노출 */
+#status-tab-btn {
+  line-height: 1.15;
+  font-size: 11px;
+}
+
+
+/* v40 상태/리부트 탭 분리 */
+.tab-bookmark-left .transcend-tab-btn {
+  margin-top: 0;
+  color: #d7a500;
+  border-color: #5d4600;
+}
+.tab-bookmark-left .transcend-tab-btn.active,
+#transcend-tab-btn.active {
+  color: #000;
+  background: #ffd700;
+  border-color: #ffd700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.9);
+}
+.status-right-tab-btn {
+  color: #b58cff;
+  border-color: #4d2ac0;
+}
+.status-right-tab-btn.active {
+  color: #fff;
+  background: #7137ff;
+  border-color: #b6a3ff;
+  box-shadow: 0 0 8px rgba(113, 55, 255, 0.9);
+}
+.status-legend {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: -2px 0 7px;
+  font-size: 10px;
+  font-weight: 900;
+}
+.status-card-bonus {
+  color: #c987ff !important;
+  text-shadow: 0 0 6px rgba(155, 77, 255, 0.75);
+}
+.status-transcend-bonus {
+  color: #ffd700 !important;
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.75);
+}
+.status-formula-row b small {
+  display: block;
+  margin-top: 2px;
+  color: #aaa;
+  font-size: 9.5px;
+  font-weight: 900;
+}
+.transcend-panel {
+  min-height: 430px;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.16), #050505 44%);
+  border-color: #5d4600;
+}
+.transcend-panel h2,
+.transcend-panel .status-section-title {
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+}
+.transcend-section {
+  border-color: #8c6a00 !important;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 215, 0, 0.16), #070707 46%) !important;
+}
+.transcend-info {
+  color: #fff3b0 !important;
+  background: #181300 !important;
+  border-color: #8c6a00 !important;
+}
+.transcend-count-line {
+  margin-bottom: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+}
+.transcend-btn {
+  color: #ffd700 !important;
+  border-color: #8c6a00 !important;
+}
+.transcend-btn.active {
+  color: #000 !important;
+  background: #ffd700 !important;
+  border-color: #fff2a0 !important;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.95) !important;
+}
+.transcend-upgrade-row {
+  background: #141000 !important;
+  border-color: #5d4600 !important;
+}
+.transcend-upgrade-row button {
+  color: #ffd700 !important;
+  border-color: #8c6a00 !important;
+}
+.transcend-upgrade-row button.active {
+  color: #000 !important;
+  background: #ffd700 !important;
+  border-color: #fff2a0 !important;
+  box-shadow: 0 0 7px rgba(255, 215, 0, 0.85) !important;
+}
+
+/* v40 등록 곡괭이 슬롯 */
+.mine-pickaxe-slot-panel {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 12;
+}
+.mine-pickaxe-slot {
+  position: relative;
+  width: 43px;
+  height: 43px;
+  padding: 2px;
+  background: rgba(5, 5, 5, 0.9);
+  border: 1px solid #7a5b00;
+  border-radius: 5px;
+  color: #ffd700;
+  cursor: pointer;
+  image-rendering: pixelated;
+  box-shadow: inset 0 0 6px rgba(255, 215, 0, 0.12);
+}
+.mine-pickaxe-slot:hover {
+  border-color: #ffd700;
+  box-shadow: 0 0 7px rgba(255, 215, 0, 0.55);
+}
+.mine-pickaxe-slot span {
+  position: absolute;
+  left: 3px;
+  top: 2px;
+  color: #fff2a0;
+  font-size: 8px;
+  font-weight: 900;
+}
+.mine-pickaxe-slot img {
+  position: absolute;
+  left: 8px;
+  top: 7px;
+  width: 27px;
+  height: 27px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.mine-pickaxe-slot b {
+  position: absolute;
+  right: 2px;
+  top: 1px;
+  color: #fff;
+  font-size: 9px;
+}
+.mine-pickaxe-slot em {
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+  color: #7dffb0;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+}
+.mine-pickaxe-slot.empty em {
+  left: 0;
+  right: 0;
+  top: 17px;
+  bottom: auto;
+  color: #777;
+  font-size: 9px;
+}
+.mine-registered-bonus-line {
+  margin-top: 3px;
+  color: #9dffbf;
+  font-size: 10px;
+  font-weight: 900;
+}
+.mine-registered-bonus-line b,
+.mine-registered-bonus {
+  color: #00ff66;
+  text-shadow: 0 0 5px rgba(0, 255, 102, 0.75);
+}
+
+
+/* v41 곡괭이 등록 확인 팝업 / 슬롯 표기 정리 */
+.mine-pickaxe-slot span {
+  display: none !important;
+}
+.mine-pickaxe-slot {
+  min-height: 28px;
+  padding: 3px 2px;
+}
+.mine-pickaxe-slot img {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+.mine-pickaxe-slot strong {
+  display: block;
+  max-width: 44px;
+  color: #fff3b0;
+  font-size: 8px;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mine-pickaxe-slot b {
+  display: inline-block;
+  color: #ffd700;
+  font-size: 10px;
+}
+.mine-pickaxe-slot em {
+  display: block;
+  color: #9dffbf;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+}
+.mine-pickaxe-slot.empty em {
+  color: #777;
+  font-size: 10px;
+}
+
+.pickaxe-register-popup {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.76);
+}
+.pickaxe-register-popup.active {
+  display: flex;
+}
+.pickaxe-register-box {
+  position: relative;
+  width: min(360px, calc(100vw - 28px));
+  padding: 14px;
+  background: #090909;
+  border: 2px solid #ffd700;
+  border-radius: 8px;
+  box-shadow: 0 0 18px rgba(255, 215, 0, 0.45), inset 0 0 18px rgba(255, 215, 0, 0.08);
+  text-align: left;
+}
+.pickaxe-register-close {
+  position: absolute;
+  right: 8px;
+  top: 6px;
+  background: none;
+  border: none;
+  color: #ffd700;
+  font-size: 22px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.pickaxe-register-title {
+  color: #ffd700;
+  font-size: 17px;
+  font-weight: 900;
+  text-align: center;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+}
+.pickaxe-register-help {
+  margin: 7px 0 9px;
+  color: #fff3b0;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+.pickaxe-register-current {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  gap: 9px;
+  align-items: center;
+  padding: 8px;
+  background: #111;
+  border: 1px solid #5d4600;
+  border-radius: 6px;
+}
+.pickaxe-register-current.old {
+  border-color: #333;
+  background: #070707;
+}
+.pickaxe-register-current img {
+  width: 50px;
+  height: 50px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+.pickaxe-register-current b {
+  display: block;
+  color: #fff;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.pickaxe-register-current span {
+  display: block;
+  color: #9dffbf;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.pickaxe-register-arrow {
+  margin: 8px 0 4px;
+  color: #aaa;
+  font-size: 10px;
+  font-weight: 900;
+}
+.pickaxe-register-warning {
+  margin-top: 9px;
+  padding: 7px;
+  color: #ff9999;
+  background: #180808;
+  border: 1px solid #703030;
+  border-radius: 5px;
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 900;
+  text-align: center;
+}
+.pickaxe-register-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.pickaxe-register-actions button {
+  flex: 1;
+  padding: 8px 6px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.pickaxe-register-no {
+  color: #aaa;
+  background: #111;
+  border: 1px solid #333;
+}
+.pickaxe-register-yes {
+  color: #000;
+  background: #ffd700;
+  border: 1px solid #ffd700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.65);
+}
+
+/* v42 곡괭이 등록 팝업 흐름/버튼 문구 정리 */
+.pickaxe-register-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.pickaxe-register-card-label {
+  margin: 0 0 4px;
+  color: #ffd700;
+  font-size: 10px;
+  font-weight: 900;
+}
+.pickaxe-register-card.delete-card .pickaxe-register-current {
+  border-color: #7a2727;
+  background: #160909;
+}
+.pickaxe-register-card.target-card .pickaxe-register-current {
+  border-color: #5d4600;
+  background: #0c0c08;
+}
+.pickaxe-register-arrow {
+  margin: 0;
+  color: #ffd700;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+  text-shadow: 0 0 7px rgba(255, 215, 0, 0.8);
+}
+.pickaxe-register-current.old #pickaxe-register-old-name {
+  color: #fff3b0;
+}
+
+/* v42 등록 슬롯: 이름은 칸 밖 아래쪽에 표시 */
+.mine-pickaxe-slot-panel {
+  gap: 8px;
+}
+.mine-pickaxe-slot {
+  width: 45px;
+  height: 45px;
+  overflow: visible;
+  margin-bottom: 15px;
+}
+.mine-pickaxe-slot img {
+  left: 8px;
+  top: 5px;
+  width: 28px;
+  height: 28px;
+}
+.mine-pickaxe-slot b {
+  right: 2px;
+  top: 0px;
+}
+.mine-pickaxe-slot em {
+  right: 2px;
+  bottom: 1px;
+  max-width: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mine-pickaxe-slot small {
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  top: 47px;
+  color: #fff3b0;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1.05;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+.mine-pickaxe-slot.empty small {
+  display: none;
+}
+.mine-pickaxe-stage:has(#mine-pickaxe-img[style*="display: none"]) {
+  background: #030303;
+}
+
+/* v42 동료 전송장치 버튼 아이콘 간격 */
+#partner-blueprint-craft-btn .btn-item-icon {
+  margin: 0 3px 0 6px;
+  vertical-align: -3px;
+}
+
+
+/* v43 광산 카드 내 등록 보너스 복구 */
+.mine-registered-bonus-inline {
+  margin-left: 4px;
+  color: #00ff66;
+  font-size: 12px;
+  font-weight: 900;
+  text-shadow: 0 0 5px rgba(0, 255, 102, 0.75);
+}
+
+/* v45: 카드 탭이 동료 싱크로율 날개에 가려지지 않도록 우측 탭을 최상단 표시 */
+.tab-bookmark {
+  z-index: 95;
+}
+.partner-sync-wing {
+  z-index: 82;
+}
+
+/* v46: 우측 카드 탭과 동료 싱크로율 날개 겹침 최종 보정
+   상태/동료/카드 3개 탭 아래로 싱크로율 버튼을 확실히 내립니다. */
+.tab-bookmark {
+  z-index: 120 !important;
+}
+
+.partner-sync-wing {
+  top: 214px !important;
+  z-index: 70 !important;
+}
+
+.partner-sync-wing-btn {
+  z-index: 71 !important;
+}
+
+.partner-sync-wing-panel {
+  z-index: 69 !important;
+}
+
+/* v47: 상태/리부트 탭 상단 고딕 타이틀 */
+.section-heading-gothic {
+  margin: 0 0 12px;
+  color: #00d4ff;
+  font-family: "Malgun Gothic", "Noto Sans KR", Arial, sans-serif;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  text-align: center;
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.85);
+}
+.section-heading-gothic.reboot-heading {
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.9);
+}
+
+
+/* v48: 상태/리부트 탭 타이틀 양식 정리 */
+.section-heading-gothic.status-heading {
+  color: #b77cff;
+  font-family: "Malgun Gothic", "Noto Sans KR", Arial, sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 8px rgba(183, 124, 255, 0.9), 0 0 14px rgba(113, 55, 255, 0.55);
+}
+.section-heading-gothic.reboot-heading {
+  color: #ffd700 !important;
+  font-family: "Malgun Gothic", "Noto Sans KR", Arial, sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.95), 0 0 14px rgba(255, 170, 0, 0.5) !important;
+}
+#status-tab .status-section-title,
+#transcend-tab .status-section-title {
+  display: none !important;
+}
+#transcend-tab .transcend-help {
+  margin: 10px 0 12px;
+  color: #f0e6b0;
+  font-size: 13px !important;
+  line-height: 1.75 !important;
+  font-weight: 900;
+  text-align: left;
+}
+#transcend-tab .transcend-btn {
+  padding: 12px 10px !important;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+}
+
+/* v50: 동료 데이터 제작 UI 정리 */
+.partner-popup-fragments {
+  display: none !important;
+}
+
+.partner-inventory-fragments {
+  color: #9dffbf;
+  border-color: #145c2e;
+  background: #061208;
+}
+
+.partner-inventory-card.ready .partner-inventory-fragments {
+  color: #ffd700;
+  border-color: #7a5b00;
+  background: #120f00;
+}
+
+.partner-inventory-card.complete .partner-inventory-fragments {
+  color: #00d4ff;
+  border-color: #00d4ff;
+  background: #061018;
+}
+
+
+/* v51: STATUS / REBOOT 최상단 타이틀 최종 강제 적용
+   기존 .system-panel h2 및 과거 제목 override보다 높은 선택자 + !important로 고정합니다. */
+#status-tab > .status-panel > h2.section-heading-gothic.status-heading,
+#status-tab .status-panel .status-heading,
+#status-tab h2.status-heading {
+  display: block !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  margin: 0 0 14px 0 !important;
+  padding: 0 !important;
+  color: #b77cff !important;
+  background: transparent !important;
+  border: 0 !important;
+  font-family: "Arial Black", "Malgun Gothic", "Noto Sans KR", Arial, sans-serif !important;
+  font-size: 27px !important;
+  line-height: 32px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.5px !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  text-shadow:
+    1px 0 0 #4d2ac0,
+    -1px 0 0 #4d2ac0,
+    0 1px 0 #4d2ac0,
+    0 -1px 0 #eadcff,
+    2px 2px 0 rgba(20, 0, 45, 0.9),
+    0 0 8px rgba(183, 124, 255, 0.95),
+    0 0 15px rgba(113, 55, 255, 0.6) !important;
+}
+
+#transcend-tab > .transcend-panel > h2.section-heading-gothic.reboot-heading,
+#transcend-tab .transcend-panel .reboot-heading,
+#transcend-tab h2.reboot-heading {
+  display: block !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  margin: 0 0 14px 0 !important;
+  padding: 0 !important;
+  color: #ffd700 !important;
+  background: transparent !important;
+  border: 0 !important;
+  font-family: "Arial Black", "Malgun Gothic", "Noto Sans KR", Arial, sans-serif !important;
+  font-size: 29px !important;
+  line-height: 34px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.5px !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  text-shadow:
+    1px 0 0 #8a5200,
+    -1px 0 0 #8a5200,
+    0 1px 0 #8a5200,
+    0 -1px 0 #fff9a8,
+    2px 2px 0 rgba(35, 18, 0, 0.9),
+    0 0 8px rgba(255, 215, 0, 0.95),
+    0 0 15px rgba(255, 170, 0, 0.6) !important;
+}
+
+/* 상태/리부트 탭 안쪽 파란 소제목은 계속 숨김 유지 */
+#status-tab .status-section-title,
+#transcend-tab .status-section-title {
+  display: none !important;
+}
+
+
+/* v52: STATUS / REBOOT 제목을 다른 탭 상단 제목 양식과 동일하게 재통일
+   - 기존 v51의 Arial Black 외곽선 스타일을 덮어쓰고
+   - PARTNER / CARD / MINE 계열과 같은 고딕 제목 규격을 사용합니다. */
+#status-tab .status-panel > h2.section-heading-pixel.status-heading,
+#transcend-tab .transcend-panel > h2.section-heading-pixel.reboot-heading {
+  display: block !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  margin: 0 0 12px 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  font-family: Arial, 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif !important;
+  font-size: 24px !important;
+  line-height: 29px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.5px !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+}
+
+#status-tab .status-panel > h2.section-heading-pixel.status-heading {
+  color: #c987ff !important;
+  text-shadow: 0 0 8px rgba(201, 135, 255, 0.85), 0 0 14px rgba(201, 135, 255, 0.45) !important;
+}
+
+#transcend-tab .transcend-panel > h2.section-heading-pixel.reboot-heading {
+  color: #ffd700 !important;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.9), 0 0 14px rgba(255, 215, 0, 0.45) !important;
 }
