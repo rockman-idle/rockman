@@ -25,7 +25,8 @@ const defaultData = {
         hpLv: 0,
         screwLv: 0,
         partnerLv: 0,
-        cardChipLv: 0
+        cardChipLv: 0,
+        syncBaseLv: 0
     },
 
     partnerBlueprints: {
@@ -276,9 +277,12 @@ const EXE_BOMB_STUN_DURATION_MS = 900;
 const EXE_BOMB_BOSS_STUN_DURATION_MS = 350;
 const EXE_BOMB_STUN_CHANCE = 0.35;
 const ENEMY_MOVE_SPEED_MAX = 0.92;
-const TRANSCEND_REQUIRED_STAGE = 200;
+const TRANSCEND_REQUIRED_STAGE = 100;
 const TRANSCEND_POINT_PER_STAGE = 50;
 const TRANSCEND_MAX_LEVEL = 20;
+const REBOOT_SYNC_BASE_MIN = 10;
+const REBOOT_SYNC_BASE_GAIN = 5;
+const REBOOT_SYNC_BASE_MAX = 100;
 const PARTNER_BLUEPRINT_MAX_SLOTS = 7;
 const PARTNER_SPEED_MAX_LEVEL = 10;
 const PARTNER_SPEED_REDUCTION_PER_LEVEL = 0.04;
@@ -336,6 +340,19 @@ function getTranscendBonus(type) {
     if (type === 'partner') return Math.max(0, Math.floor(t.partnerLv || 0)) * 0.05;
     if (type === 'cardChip') return Math.max(0, Math.floor(t.cardChipLv || 0)) * 0.03;
     return 0;
+}
+
+function getRebootSyncBasePercent() {
+    const lv = Math.max(0, Math.floor(gameData.transcend?.syncBaseLv || 0));
+    return Math.min(REBOOT_SYNC_BASE_MAX, REBOOT_SYNC_BASE_MIN + lv * REBOOT_SYNC_BASE_GAIN);
+}
+
+function resetPartnerSyncAfterReboot() {
+    const baseSync = getRebootSyncBasePercent();
+    gameData.partnerSync = { ...defaultData.partnerSync, ...(gameData.partnerSync || {}) };
+    Object.keys(defaultData.partnerSync).forEach(key => {
+        gameData.partnerSync[key] = baseSync;
+    });
 }
 
 function getEffectivePlayerMaxHp() {
@@ -1923,16 +1940,15 @@ function getPartnerSpeedUpgradeCost(type) {
     return 20 + lv * 12;
 }
 
-function upgradePartnerSpeedFromPopup() {
-    const type = currentPartnerInventoryType;
-    const data = getPartnerInventoryData(type);
-    if (!data || !gameData[data.ownedKey]) return;
-    if (!Object.prototype.hasOwnProperty.call(gameData.partnerSpeedLv, type)) return;
+function upgradePartnerSpeed(type) {
+    const data = PARTNER_ATTACK_DATA[type] || getPartnerInventoryData(type);
+    if (!data || !gameData[data.ownedKey]) return false;
+    if (!Object.prototype.hasOwnProperty.call(gameData.partnerSpeedLv, type)) return false;
     const lv = Math.max(0, Math.floor(gameData.partnerSpeedLv[type] || 0));
-    if (lv >= PARTNER_SPEED_MAX_LEVEL) return;
+    if (lv >= PARTNER_SPEED_MAX_LEVEL) return false;
 
     const cost = getPartnerSpeedUpgradeCost(type);
-    if ((gameData.crystals || 0) < cost) return;
+    if ((gameData.crystals || 0) < cost) return false;
 
     gameData.crystals -= cost;
     gameData.partnerSpeedLv[type] = lv + 1;
@@ -1943,6 +1959,58 @@ function upgradePartnerSpeedFromPopup() {
     startZeroAttack();
     updateUI();
     saveData();
+    return true;
+}
+
+function upgradePartnerSpeedFromPopup() {
+    upgradePartnerSpeed(currentPartnerInventoryType);
+    updatePartnerInventoryPopup();
+}
+
+function openPartnerSpeedPopup() {
+    const popup = document.getElementById('partner-speed-popup');
+    if (popup) popup.classList.add('active');
+    renderPartnerSpeedPopup();
+}
+
+function closePartnerSpeedPopup() {
+    const popup = document.getElementById('partner-speed-popup');
+    if (popup) popup.classList.remove('active');
+}
+
+function renderPartnerSpeedPopup() {
+    const list = document.getElementById('partner-speed-popup-list');
+    if (!list) return;
+
+    const types = ['blues', 'forte', 'x', 'zero', 'exeRockman'];
+    list.innerHTML = types.map(type => {
+        const data = PARTNER_ATTACK_DATA[type];
+        if (!data) return '';
+        const owned = !!gameData[data.ownedKey];
+        const lv = Math.max(0, Math.floor(gameData.partnerSpeedLv?.[type] || 0));
+        const cost = getPartnerSpeedUpgradeCost(type);
+        const maxed = lv >= PARTNER_SPEED_MAX_LEVEL;
+        const canUpgrade = owned && !maxed && (gameData.crystals || 0) >= cost;
+        const interval = (getPartnerAttackIntervalForType(type, type === 'zero' ? ZERO_ATTACK_INTERVAL_MULTIPLIER : 1) / 1000).toFixed(2);
+        return `
+            <div class="partner-speed-popup-row ${owned ? 'owned' : 'locked'}">
+                <img src="${data.portrait}" alt="${data.name}">
+                <div class="partner-speed-popup-info">
+                    <b>${data.name}</b>
+                    <span>${owned ? `LV.${lv} / ${PARTNER_SPEED_MAX_LEVEL} · ${interval}초` : '미소환'}</span>
+                </div>
+                <button type="button" class="partner-speed-popup-btn ${canUpgrade ? 'active' : ''}" ${canUpgrade ? '' : 'disabled'} onclick="event.preventDefault(); event.stopPropagation(); upgradePartnerSpeedFromBattle('${type}'); return false;">
+                    ${maxed ? 'MAX' : `강화 <img src="sprites/item/e_can.png" class="btn-item-icon" alt="E캔"> ${cost}`}
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+function upgradePartnerSpeedFromBattle(type) {
+    upgradePartnerSpeed(type);
+    renderPartnerSpeedPopup();
+    updateUI();
 }
 
 const PARTNER_INVENTORY_DATA = {
@@ -5619,6 +5687,7 @@ function performTranscend() {
     gameData.mineRockHp = 80;
     gameData.lv = { ...defaultData.lv };
     gameData.costs = { ...defaultData.costs };
+    resetPartnerSyncAfterReboot();
     gameData.playerMaxHp = getEffectivePlayerMaxHp();
     gameData.playerHp = gameData.playerMaxHp;
 
@@ -5709,6 +5778,7 @@ function updateStatusUI() {
             <div class="status-row"><span>리부트 체력 보너스</span><b><span class="status-transcend-bonus">+${Math.round(getTranscendBonus('hp') * 100)}%</span></b></div>
             <div class="status-row"><span>리부트 나사 보너스</span><b><span class="status-transcend-bonus">+${Math.round(getTranscendBonus('screw') * 100)}%</span></b></div>
             <div class="status-row"><span>리부트 동료공격 보너스</span><b><span class="status-transcend-bonus">+${Math.round(getTranscendBonus('partner') * 100)}%</span></b></div>
+            <div class="status-row"><span>리부트 시작 싱크로율</span><b><span class="status-transcend-bonus">${getRebootSyncBasePercent()} / 100</span></b></div>
             ${partnerRows}
         `;
     }
@@ -5722,16 +5792,19 @@ function updateStatusUI() {
     setButtonActive(transcendBtn, getTranscendPointReward() > 0);
     if (transcendBtn) transcendBtn.disabled = getTranscendPointReward() <= 0;
 
-    ['atk','hp','screw','partner','cardChip'].forEach(type => {
+    ['atk','hp','screw','partner','cardChip','syncBase'].forEach(type => {
         const lvEl = document.getElementById(`transcend-${type}-lv`);
         const costEl = document.getElementById(`transcend-${type}-cost`);
         const btn = document.getElementById(`transcend-${type}-btn`);
         const lv = Math.max(0, Math.floor(gameData.transcend?.[`${type}Lv`] || 0));
         const cost = getTranscendUpgradeCost(type);
-        if (lvEl) lvEl.innerText = `${lv} / ${TRANSCEND_MAX_LEVEL}`;
-        if (costEl) costEl.innerText = lv >= TRANSCEND_MAX_LEVEL ? 'MAX' : cost;
-        setButtonActive(btn, lv < TRANSCEND_MAX_LEVEL && gameData.transcend.points >= cost);
-        if (btn) btn.disabled = !(lv < TRANSCEND_MAX_LEVEL && gameData.transcend.points >= cost);
+        const isSyncBase = type === 'syncBase';
+        const syncBaseValue = getRebootSyncBasePercent();
+        const maxReached = isSyncBase ? syncBaseValue >= REBOOT_SYNC_BASE_MAX : lv >= TRANSCEND_MAX_LEVEL;
+        if (lvEl) lvEl.innerText = isSyncBase ? `${syncBaseValue} / ${REBOOT_SYNC_BASE_MAX}` : `${lv} / ${TRANSCEND_MAX_LEVEL}`;
+        if (costEl) costEl.innerText = maxReached ? 'MAX' : cost;
+        setButtonActive(btn, !maxReached && gameData.transcend.points >= cost);
+        if (btn) btn.disabled = !(!maxReached && gameData.transcend.points >= cost);
     });
 
     const battleTrans = document.getElementById('battle-transcend-count');
@@ -5750,6 +5823,7 @@ function updateUI() {
     document.getElementById('crystals').innerText = Math.floor(gameData.crystals).toLocaleString();
 
     updatePartnerInventoryUI();
+    renderPartnerSpeedPopup();
 
     const stonesEl = document.getElementById('stones');
     if (stonesEl) stonesEl.innerText = Math.floor(gameData.stones || 0).toLocaleString();

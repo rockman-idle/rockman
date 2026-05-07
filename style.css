@@ -8198,3 +8198,142 @@ h2.section-heading-pixel {
   color: #ffd700 !important;
   text-shadow: 0 0 8px rgba(255, 215, 0, 0.9), 0 0 14px rgba(255, 215, 0, 0.45) !important;
 }
+
+
+/* v53: battle row partner speed popup + reboot sync base */
+.speed-upgrade-row .upgrade-btn {
+  min-width: 0;
+}
+
+.partner-speed-open-btn {
+  min-width: 58px;
+  padding: 7px 6px;
+  background: #081018;
+  color: #9be9ff;
+  border: 1px solid #00d4ff;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 0 5px rgba(0, 212, 255, 0.35);
+  font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', Arial, sans-serif;
+}
+
+.partner-speed-open-btn:hover {
+  color: #000;
+  background: #00d4ff;
+}
+
+.partner-speed-popup {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2300;
+  background: rgba(0, 0, 0, 0.78);
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.partner-speed-popup.active {
+  display: flex;
+}
+
+.partner-speed-popup-box {
+  position: relative;
+  width: min(410px, 94vw);
+  max-height: 84vh;
+  overflow-y: auto;
+  padding: 14px 12px 12px;
+  background: linear-gradient(to bottom, #061018, #030507);
+  border: 2px solid #00d4ff;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.45), inset 0 0 16px rgba(0, 212, 255, 0.08);
+}
+
+.partner-speed-popup-title {
+  color: #00d4ff;
+  font-size: 18px;
+  font-weight: 900;
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.8);
+  margin-bottom: 4px;
+}
+
+.partner-speed-popup-help {
+  margin-bottom: 10px;
+  color: #aeeeff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.partner-speed-popup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.partner-speed-popup-row {
+  display: grid;
+  grid-template-columns: 42px 1fr 94px;
+  align-items: center;
+  gap: 8px;
+  padding: 7px;
+  background: #080c10;
+  border: 1px solid #233a47;
+  border-radius: 8px;
+}
+
+.partner-speed-popup-row.locked {
+  opacity: 0.5;
+}
+
+.partner-speed-popup-row img {
+  width: 38px;
+  height: 38px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.partner-speed-popup-info {
+  text-align: left;
+}
+
+.partner-speed-popup-info b {
+  display: block;
+  color: #fff;
+  font-size: 12px;
+}
+
+.partner-speed-popup-info span {
+  display: block;
+  color: #9be9ff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.partner-speed-popup-btn {
+  min-height: 30px;
+  padding: 4px 5px;
+  color: #6d94a4;
+  background: #05080a;
+  border: 1px solid #233a47;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.partner-speed-popup-btn.active {
+  color: #001018;
+  background: #00d4ff;
+  border-color: #00d4ff;
+  box-shadow: 0 0 7px rgba(0, 212, 255, 0.65);
+}
+
+.partner-speed-popup-btn .btn-item-icon {
+  width: 13px;
+  height: 13px;
+  image-rendering: pixelated;
+  vertical-align: -2px;
+}

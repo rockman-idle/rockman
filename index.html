@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=status_reboot_title_v52">
+<link rel="stylesheet" href="style.css?v=reboot_sync_label_v54">
 </head>
 
 <body>
@@ -427,8 +427,9 @@
             <button id="atk-btnMax" class="up-btn" onclick="buyUpgradeMax('atk')">+MAX</button>
         </div>
 
-        <div class="upgrade-row">
+        <div class="upgrade-row speed-upgrade-row">
             <button class="upgrade-btn">공격 속도</button>
+            <button type="button" class="partner-speed-open-btn" onclick="openPartnerSpeedPopup()">동료 공속</button>
             <div class="lv-tag">LV.<span id="spd-lv">1</span></div>
             <button id="spd-btn1" class="up-btn tooltip-btn" onclick="buyUpgrade('spd',1)">+1</button>
             <button id="spd-btn10" class="up-btn tooltip-btn" onclick="buyUpgrade('spd',10)">+10</button>
@@ -466,6 +467,15 @@
 
 
 
+    </div>
+
+    <div id="partner-speed-popup" class="partner-speed-popup" onclick="event.preventDefault(); event.stopPropagation(); closePartnerSpeedPopup(); return false;">
+        <div class="partner-speed-popup-box" onclick="event.stopPropagation()">
+            <button type="button" class="partner-popup-close" onclick="event.preventDefault(); event.stopPropagation(); closePartnerSpeedPopup(); return false;">×</button>
+            <div class="partner-speed-popup-title">동료 공격속도</div>
+            <div class="partner-speed-popup-help">소환한 동료별로 공격속도를 강화합니다.</div>
+            <div id="partner-speed-popup-list" class="partner-speed-popup-list"></div>
+        </div>
     </div>
 
     <div id="partner-tab" class="tab-content">
@@ -892,7 +902,7 @@
     <h2 class="section-heading-pixel reboot-heading">REBOOT</h2>
 
     <div class="status-section transcend-section">
-      <div id="transcend-info" class="transcend-info">리부트 가능 스테이지: 200</div>
+      <div id="transcend-info" class="transcend-info">리부트 가능 스테이지: 100</div>
       <button type="button" id="transcend-btn" class="transcend-btn" onclick="performTranscend()">REBOOT!</button>
       <div class="transcend-help">리부트하면 스테이지/기본 강화/현재 곡괭이가 초기화됩니다.<br>카드, 개발실, 등록 곡괭이는 유지됩니다.</div>
 
@@ -902,6 +912,7 @@
         <div class="transcend-upgrade-row"><span>나사 획득</span><b id="transcend-screw-lv">0 / 20</b><em>비용 <i id="transcend-screw-cost">1</i></em><button id="transcend-screw-btn" onclick="upgradeTranscendStat('screw')">강화</button></div>
         <div class="transcend-upgrade-row"><span>동료 공격</span><b id="transcend-partner-lv">0 / 20</b><em>비용 <i id="transcend-partner-cost">1</i></em><button id="transcend-partner-btn" onclick="upgradeTranscendStat('partner')">강화</button></div>
         <div class="transcend-upgrade-row"><span>카드칩 보너스</span><b id="transcend-cardChip-lv">0 / 20</b><em>비용 <i id="transcend-cardChip-cost">1</i></em><button id="transcend-cardChip-btn" onclick="upgradeTranscendStat('cardChip')">강화</button></div>
+        <div class="transcend-upgrade-row"><span>리부트 시작 싱크로율</span><b id="transcend-syncBase-lv">10 / 100</b><em>비용 <i id="transcend-syncBase-cost">1</i></em><button id="transcend-syncBase-btn" onclick="upgradeTranscendStat('syncBase')">강화</button></div>
       </div>
     </div>
   </div>
@@ -916,7 +927,7 @@
 </div>
 </div>
 
-<script src="game.js?v=status_reboot_title_v52"></script>
+<script src="game.js?v=reboot_sync_label_v54"></script>
 
 
 </body>
