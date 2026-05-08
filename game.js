@@ -7095,9 +7095,10 @@ function handleSleepUnlockSlider(value) {
 
 function refreshMobileSyncTabState(tabName) {
     const wing = document.getElementById('partner-sync-wing');
-    const isMobile = document.body.classList.contains('mobile-mode');
+    const isMobile = document.body.classList.contains('mobile-mode') || document.documentElement.classList.contains('mobile-mode');
     const isMobileSync = isMobile && tabName === 'sync';
     document.body.classList.toggle('mobile-sync-tab-active', isMobileSync);
+    document.documentElement.classList.toggle('mobile-sync-tab-active', isMobileSync);
     if (wing) wing.classList.toggle('open', !isMobile && tabName === 'sync');
     if (tabName === 'sync') updatePartnerAttackUpgradeUI();
 }
@@ -7105,6 +7106,7 @@ function refreshMobileSyncTabState(tabName) {
 function applyMobileMode(enabled) {
     const isEnabled = !!enabled;
     document.body.classList.toggle('mobile-mode', isEnabled);
+    document.documentElement.classList.toggle('mobile-mode', isEnabled);
     const btn = document.getElementById('mobile-mode-toggle');
     if (btn) btn.innerText = isEnabled ? '[PC모드]' : '[모바일모드]';
     const activeTab = document.querySelector('.tab-content.active');
@@ -7123,8 +7125,12 @@ function initMobileModePreference() {
     const sleepBtn = document.getElementById('sleep-mode-btn');
     if (sleepBtn) {
         sleepBtn.onclick = function (e) {
-            if (e) e.stopPropagation();
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
             toggleSleepMode();
+            return false;
         };
     }
 }
