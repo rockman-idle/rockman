@@ -5158,7 +5158,7 @@ function showTab(tabName) {
         tabName = 'battle';
     }
 
-    ['battle', 'partner', 'card', 'armor', 'boss', 'mine', 'status', 'transcend'].forEach(name => {
+    ['battle', 'partner', 'card', 'armor', 'boss', 'mine', 'status', 'transcend', 'sync'].forEach(name => {
         const tab = document.getElementById(name + '-tab');
         const btn = document.getElementById(name + '-tab-btn');
 
@@ -5171,6 +5171,7 @@ function showTab(tabName) {
 
     if (targetTab) targetTab.classList.add('active');
     if (targetBtn) targetBtn.classList.add('active');
+    refreshMobileSyncTabState(tabName);
 
     if (tabName === 'armor') {
         setTimeout(() => {
@@ -6849,6 +6850,7 @@ forteUpgradeEls.forEach(el => {
 });
 
 updatePartnerAttackUpgradeUI();
+updateSleepModeUI();
 updateDevelopmentLabUI();
 
 const superRockGemEls = document.querySelectorAll('.super-rock-gem-count');
@@ -7020,11 +7022,93 @@ function saveData() {
 }
 
 
+const sleepModeState = {
+    active: false,
+    snapshot: null
+};
+
+function getSleepModeSnapshot() {
+    return {
+        screws: Math.floor(gameData.screws || 0),
+        crystals: Math.floor(gameData.crystals || 0),
+        stones: Math.floor(gameData.stones || 0),
+        soulStones: Math.floor(gameData.soulStones || 0),
+        cardChip: Math.floor(gameData.materials?.cardChip || 0),
+        optionChangeChip: Math.floor(gameData.materials?.optionChangeChip || 0),
+        bossReplayCard: Math.floor(gameData.materials?.bossReplayCard || 0)
+    };
+}
+
+function getSleepModeGainValue(key) {
+    if (!sleepModeState.snapshot) return 0;
+    const current = getSleepModeSnapshot();
+    return Math.max(0, Math.floor((current[key] || 0) - (sleepModeState.snapshot[key] || 0)));
+}
+
+function updateSleepModeUI() {
+    if (!sleepModeState.active) return;
+    ['screws','crystals','stones','soulStones','cardChip','optionChangeChip','bossReplayCard'].forEach(key => {
+        const el = document.getElementById(`sleep-gain-${key}`);
+        if (el) el.innerText = `+${getSleepModeGainValue(key).toLocaleString()}`;
+    });
+}
+
+function enterSleepMode() {
+    const overlay = document.getElementById('sleep-mode-overlay');
+    const btn = document.getElementById('sleep-mode-btn');
+    const slider = document.getElementById('sleep-unlock-slider');
+    sleepModeState.active = true;
+    sleepModeState.snapshot = getSleepModeSnapshot();
+    if (overlay) overlay.classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (slider) slider.value = 0;
+    updateSleepModeUI();
+}
+
+function exitSleepMode() {
+    const overlay = document.getElementById('sleep-mode-overlay');
+    const btn = document.getElementById('sleep-mode-btn');
+    const slider = document.getElementById('sleep-unlock-slider');
+    sleepModeState.active = false;
+    if (overlay) overlay.classList.remove('active');
+    if (btn) btn.classList.remove('active');
+    if (slider) slider.value = 0;
+}
+
+function toggleSleepMode() {
+    if (sleepModeState.active) return;
+    enterSleepMode();
+}
+
+function handleSleepUnlockSlider(value) {
+    const slider = document.getElementById('sleep-unlock-slider');
+    const numeric = Number(value || 0);
+    if (numeric >= 98) {
+        exitSleepMode();
+        return;
+    }
+    if (slider && numeric < 98) {
+        clearTimeout(slider._sleepResetTimer);
+        slider._sleepResetTimer = setTimeout(() => { slider.value = 0; }, 180);
+    }
+}
+
+function refreshMobileSyncTabState(tabName) {
+    const wing = document.getElementById('partner-sync-wing');
+    const isMobileSync = document.body.classList.contains('mobile-mode') && tabName === 'sync';
+    document.body.classList.toggle('mobile-sync-tab-active', isMobileSync);
+    if (wing) wing.classList.toggle('open', tabName === 'sync');
+    if (tabName === 'sync') updatePartnerAttackUpgradeUI();
+}
+
 function applyMobileMode(enabled) {
     const isEnabled = !!enabled;
     document.body.classList.toggle('mobile-mode', isEnabled);
     const btn = document.getElementById('mobile-mode-toggle');
     if (btn) btn.innerText = isEnabled ? '[PC모드]' : '[모바일모드]';
+    const activeTab = document.querySelector('.tab-content.active');
+    const activeTabName = activeTab ? activeTab.id.replace('-tab', '') : 'battle';
+    refreshMobileSyncTabState(isEnabled ? activeTabName : 'battle');
 }
 
 function toggleMobileMode() {

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=mobile_mode_partner_sync_v84">
+<link rel="stylesheet" href="style.css?v=mobile_mode_partner_sync_sleep_v85">
 </head>
 
 <body>
@@ -272,7 +272,9 @@
 <div class="tab-bookmark">
     <button id="status-tab-btn" class="tab-btn status-right-tab-btn" onclick="showTab('status')">상태</button>
     <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">동료</button>
+    <button id="sync-tab-btn" class="tab-btn mobile-sync-tab-btn" onclick="showTab('sync')">동료<br>싱크로율</button>
     <button id="card-tab-btn" class="tab-btn" onclick="showTab('card')">카드</button>
+    <button id="sleep-mode-btn" class="tab-btn mobile-sleep-tab-btn" onclick="toggleSleepMode()">절전</button>
 </div>
 
 <div id="resource-wing" class="resource-side-bar" aria-label="보유 재화">
@@ -929,6 +931,8 @@
 </div>
 
 
+<div id="sync-tab" class="tab-content"><div class="mobile-sync-tab-dummy"></div></div>
+
 <div id="status-tab" class="tab-content">
   <div class="system-panel status-panel">
     <h2 class="section-heading-pixel status-heading">STATUS</h2>
@@ -976,7 +980,29 @@
 </div>
 </div>
 
-<script src="game.js?v=mobile_mode_partner_sync_v84"></script>
+<div id="sleep-mode-overlay" class="sleep-mode-overlay">
+  <div class="sleep-mode-backdrop"></div>
+  <div class="sleep-mode-card">
+    <img src="sprites/item/e_can.png" alt="E캔" class="sleep-mode-main-icon">
+    <div class="sleep-mode-title">절전모드</div>
+    <div class="sleep-mode-subtitle">슬라이드하여 절전모드 해제</div>
+    <div id="sleep-mode-gains" class="sleep-mode-gains">
+      <div class="sleep-gain-row"><img src="sprites/item/screw.png" alt="나사"><span id="sleep-gain-screws">0</span></div>
+      <div class="sleep-gain-row"><img src="sprites/item/e_can.png" alt="E캔"><span id="sleep-gain-crystals">0</span></div>
+      <div class="sleep-gain-row"><img src="sprites/mine/stone.png" alt="돌"><span id="sleep-gain-stones">0</span></div>
+      <div class="sleep-gain-row"><img src="sprites/item/light_stone.png" alt="라이트코어"><span id="sleep-gain-soulStones">0</span></div>
+      <div class="sleep-gain-row"><img src="sprites/boss/reward/cardchip.png" alt="카드칩"><span id="sleep-gain-cardChip">0</span></div>
+      <div class="sleep-gain-row"><img src="sprites/card/option_stone.png" alt="옵션변경칩"><span id="sleep-gain-optionChangeChip">0</span></div>
+      <div class="sleep-gain-row"><img src="sprites/item/boss_ticket.png" alt="보스재생카드"><span id="sleep-gain-bossReplayCard">0</span></div>
+    </div>
+    <div class="sleep-mode-slider-wrap">
+      <input id="sleep-unlock-slider" class="sleep-unlock-slider" type="range" min="0" max="100" value="0" step="1" oninput="handleSleepUnlockSlider(this.value)">
+      <div class="sleep-mode-close-hint">클릭 없이 계속 진행됩니다</div>
+    </div>
+  </div>
+</div>
+
+<script src="game.js?v=mobile_mode_partner_sync_sleep_v85"></script>
 
 
 </body>
