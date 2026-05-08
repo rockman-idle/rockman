@@ -10111,3 +10111,74 @@ body.mobile-mode .footer-actions .reset-btn {
   font-size: 10px;
   padding: 5px 7px;
 }
+
+
+/* v84: mobile sync wing + battle screen tune */
+body.mobile-mode .container {
+  padding: 8px 4px 112px !important;
+}
+
+body.mobile-mode .game-screen {
+  height: 176px !important;
+  width: calc(100% + 6px);
+  margin-left: -3px;
+  margin-bottom: 8px;
+}
+
+body.mobile-mode #scroll-bg {
+  background-size: auto 176px !important;
+}
+
+body.mobile-mode #rockman-area {
+  left: 52px !important;
+  bottom: 18px !important;
+}
+
+body.mobile-mode #enemy-area {
+  bottom: 25px !important;
+}
+
+body.mobile-mode #partner-area {
+  left: -14px !important;
+  bottom: 20px !important;
+}
+
+body.mobile-mode .partner-sync-wing {
+  position: fixed !important;
+  right: 4px !important;
+  left: auto !important;
+  top: auto !important;
+  bottom: 93px !important;
+  width: 58px !important;
+  min-height: 56px !important;
+  transform: none !important;
+  transform-origin: right bottom !important;
+  z-index: 5200 !important;
+}
+
+body.mobile-mode .partner-sync-wing-btn {
+  left: auto !important;
+  right: 0 !important;
+  top: auto !important;
+  bottom: 0 !important;
+  width: 58px !important;
+  min-height: 50px !important;
+  border-radius: 8px 8px 0 0 !important;
+  border-left: 2px solid #333 !important;
+  border-bottom: none !important;
+  font-size: 10px !important;
+  line-height: 1.15 !important;
+}
+
+body.mobile-mode .partner-sync-wing-panel {
+  left: auto !important;
+  right: 0 !important;
+  top: auto !important;
+  bottom: 56px !important;
+  width: min(320px, calc(100vw - 12px)) !important;
+  transform: translateY(10px) !important;
+}
+
+body.mobile-mode .partner-sync-wing.open .partner-sync-wing-panel {
+  transform: translateY(0) !important;
+}
