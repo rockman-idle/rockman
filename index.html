@@ -2,8 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=reboot_sync_label_v54">
+<link rel="stylesheet" href="style.css?v=mobile_mode_v83">
 </head>
 
 <body>
@@ -15,6 +16,8 @@
     <img src="sprites/card/option_stone.png">
     <img src="sprites/item/screw.png">
     <img src="sprites/item/e_can.png">
+    <img src="sprites/item/light_stone.png">
+    <img src="sprites/item/boss_ticket.png">
     <img src="sprites/background/lab_classic.png">
     <img src="sprites/background/lab_x.png">
     <img src="sprites/background/lab_exe.png">
@@ -194,9 +197,26 @@
 <div id="transcend-overlay" class="transcend-overlay" onclick="closeTranscendOverlay()">
     <div class="transcend-overlay-box">
         <div id="transcend-overlay-title" class="transcend-overlay-title">리부트 완료</div>
-        <div class="transcend-overlay-core">REBOOT</div>
+        <div class="transcend-overlay-core"></div>
         <div id="transcend-overlay-desc" class="transcend-overlay-desc">리부트 코어를 획득했습니다.</div>
         <div class="transcend-overlay-hint">클릭해서 닫기</div>
+    </div>
+</div>
+
+<div id="transcend-confirm-popup" class="transcend-confirm-popup" onclick="event.preventDefault(); event.stopPropagation(); closeTranscendConfirm(); return false;">
+    <div class="transcend-confirm-box" onclick="event.stopPropagation()">
+        <div class="transcend-confirm-title">REBOOT?</div>
+        <div id="transcend-confirm-reward" class="transcend-confirm-reward">획득 예정 리부트 코어 +0</div>
+        <div class="transcend-confirm-desc reboot-reset-help">
+            리부트 시 <img src="sprites/item/screw.png" class="inline-item-icon" alt="나사">, <img src="sprites/item/e_can.png" class="inline-item-icon" alt="E캔">, <img src="sprites/mine/stone.png" class="inline-item-icon" alt="돌"> 재화가 초기화됩니다.<br>
+            <img src="sprites/item/screw.png" class="inline-item-icon" alt="나사">나사 강화가 초기화됩니다.<br>
+            등록되지 않은 곡괭이가 초기화됩니다.<br>
+            동료 싱크로율이 초기화됩니다.
+        </div>
+        <div class="transcend-confirm-actions">
+            <button type="button" class="transcend-confirm-cancel" onclick="event.preventDefault(); event.stopPropagation(); closeTranscendConfirm(); return false;">취소</button>
+            <button type="button" class="transcend-confirm-ok" onclick="event.preventDefault(); event.stopPropagation(); confirmTranscend(); return false;">REBOOT!</button>
+        </div>
     </div>
 </div>
 
@@ -244,8 +264,8 @@
 <div class="tab-bookmark-left">
     <button id="battle-tab-btn" class="tab-btn left-tab-btn active" onclick="showTab('battle')">전투</button>
     <button id="mine-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('mine')">광산</button>
+    <button id="boss-tab-btn" class="tab-btn left-tab-btn boss-replay-tab-btn" onclick="showTab('boss')">보스<br>재생실</button>
     <button id="armor-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('armor')">개발실</button>
-    <button id="boss-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('boss')">보스전</button>
     <button id="transcend-tab-btn" class="tab-btn left-tab-btn transcend-tab-btn" onclick="showTab('transcend')">리부트</button>
 </div>
 
@@ -253,6 +273,16 @@
     <button id="status-tab-btn" class="tab-btn status-right-tab-btn" onclick="showTab('status')">상태</button>
     <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">동료</button>
     <button id="card-tab-btn" class="tab-btn" onclick="showTab('card')">카드</button>
+</div>
+
+<div id="resource-wing" class="resource-side-bar" aria-label="보유 재화">
+    <div class="resource-side-row"><img src="sprites/item/screw.png" class="resource-icon item-resource-icon" alt="나사"> <span id="screws">0</span></div>
+    <div class="resource-side-row"><img src="sprites/item/e_can.png" class="resource-icon item-resource-icon" alt="E캔"> <span id="crystals">0</span></div>
+    <div class="resource-side-row"><img src="sprites/mine/stone.png" class="resource-icon stone-resource-icon" alt="돌"> <span id="stones">0</span></div>
+    <div class="resource-side-row"><img src="sprites/item/light_stone.png" class="resource-icon soul-resource-icon" alt="라이트코어"> <span id="soul-stones">0</span></div>
+    <div class="resource-side-row"><img src="sprites/boss/reward/cardchip.png" class="resource-icon cardchip-resource-icon" alt="카드칩"> <span id="side-card-chip-count">0</span></div>
+    <div class="resource-side-row"><img src="sprites/card/option_stone.png" class="resource-icon optionchip-resource-icon" alt="옵션변경칩"> <span id="side-option-change-chip-count">0</span></div>
+    <div class="resource-side-row"><img src="sprites/item/boss_ticket.png" class="resource-icon boss-ticket-resource-icon" alt="보스재생카드"> <span id="boss-replay-card-count">0</span></div>
 </div>
 
 <div id="partner-sync-wing" class="partner-sync-wing">
@@ -406,64 +436,73 @@
             <div id="battle-tip-message" class="tip-message">TIP</div>
         </div>
 
-        <div class="resource-panel">
-            <div class="resource-box"><img src="sprites/item/screw.png" class="resource-icon item-resource-icon" alt="나사"> <span id="screws">0</span></div>
-            <div class="resource-box"><img src="sprites/item/e_can.png" class="resource-icon item-resource-icon" alt="E캔"> <span id="crystals">0</span></div>
-            <div class="resource-box"><img src="sprites/mine/stone.png" class="resource-icon stone-resource-icon" alt="돌"> <span id="stones">0</span></div>
+        <div class="battle-upgrade-tabs" role="tablist" aria-label="전투 강화 재화 탭">
+            <button type="button" id="battle-upgrade-tab-screw" class="battle-upgrade-tab active" onclick="showBattleUpgradeTab('screw')"><img src="sprites/item/screw.png" alt="나사"></button>
+            <button type="button" id="battle-upgrade-tab-ecan" class="battle-upgrade-tab" onclick="showBattleUpgradeTab('ecan')"><img src="sprites/item/e_can.png" alt="E캔"></button>
+            <button type="button" id="battle-upgrade-tab-soul" class="battle-upgrade-tab soul-tab" onclick="showBattleUpgradeTab('soul')"><img src="sprites/item/light_stone.png" alt="라이트코어"></button>
         </div>
 
-        <div class="exchange-panel">
-            <div class="exchange-title">나사 → E캔 교환 (<img src="sprites/item/screw.png" class="inline-item-icon" alt="나사">100 : <img src="sprites/item/e_can.png" class="inline-item-icon" alt="E캔">1)</div>
-            <button id="exchange-btn1" class="exchange-btn" onclick="exchangeScrewsToCrystals(1)"><img src="sprites/item/e_can.png" class="btn-item-icon" alt="E캔"> 1개</button>
-            <button id="exchange-btn10" class="exchange-btn" onclick="exchangeScrewsToCrystals(10)"><img src="sprites/item/e_can.png" class="btn-item-icon" alt="E캔"> 10개</button>
-            <button id="exchange-btn100" class="exchange-btn" onclick="exchangeScrewsToCrystals(100)"><img src="sprites/item/e_can.png" class="btn-item-icon" alt="E캔"> 100개</button>
+        <div id="battle-upgrade-screw-panel" class="battle-upgrade-panel active">
+            <div class="battle-upgrade-help screw-help">
+                <img src="sprites/item/screw.png" alt="나사">
+                <div><b>나사 강화</b><span>리부트 시 초기화되는 기본 전투 강화입니다.</span></div>
+            </div>
+            <div class="screw-upgrade-list">
+                <div class="screw-upgrade-row">
+                    <span>버스터 공격력</span><b id="screw-atk-lv">LV.1</b><em id="screw-atk-effect">+0</em><button id="screw-atk-btn" onclick="buyScrewUpgrade('atk')">강화</button>
+                </div>
+                <div class="screw-upgrade-row speed-row">
+                    <span>공격 속도</span><b id="screw-spd-lv">LV.1</b><em id="screw-spd-effect">-0.00초</em><button id="screw-spd-btn" onclick="buyScrewUpgrade('spd')">강화</button>
+                </div>
+                <div class="screw-upgrade-row">
+                    <span>록맨 체력</span><b id="screw-hp-lv">LV.1</b><em id="screw-hp-effect">+0</em><button id="screw-hp-btn" onclick="buyScrewUpgrade('hp')">강화</button>
+                </div>
+                <div class="screw-upgrade-row">
+                    <span>차지샷 확률</span><b id="screw-crit-lv">LV.1 / 20</b><em id="screw-crit-effect">0%</em><button id="screw-crit-btn" onclick="buyScrewUpgrade('crit')">강화</button>
+                </div>
+                <div class="screw-upgrade-row critdmg-row">
+                    <span>차지샷 데미지</span><b id="screw-critDmg-lv">LV.1</b><em id="screw-critDmg-effect">x1.50</em><button id="screw-critDmg-btn" onclick="buyScrewUpgrade('critDmg')">강화</button>
+                </div>
+            </div>
+            <button type="button" class="battle-panel-big-btn screw-partner-open-btn" onclick="openPartnerSpeedPopup()">동료 공속 개별 강화</button>
         </div>
 
-        <div class="upgrade-row">
-            <button class="upgrade-btn">버스터 공격력</button>
-            <div class="lv-tag">LV.<span id="atk-lv">1</span></div>
-            <button id="atk-btn1" class="up-btn tooltip-btn" onclick="buyUpgrade('atk',1)">+1</button>
-            <button id="atk-btn10" class="up-btn tooltip-btn" onclick="buyUpgrade('atk',10)">+10</button>
-            <button id="atk-btnMax" class="up-btn" onclick="buyUpgradeMax('atk')">+MAX</button>
+        <div id="battle-upgrade-ecan-panel" class="battle-upgrade-panel">
+            <div class="battle-upgrade-help ecan-help">
+                <img src="sprites/item/e_can.png" alt="E캔">
+                <div><b>E캔 강화</b><span>리부트 후에도 강화 상태가 유지됩니다. 저효율</span></div>
+            </div>
+
+            <div class="exchange-panel ecan-exchange-panel">
+                <div class="exchange-title">나사 → E캔 교환 (<img src="sprites/item/screw.png" class="inline-item-icon" alt="나사">100 : <img src="sprites/item/e_can.png" class="inline-item-icon" alt="E캔">1)</div>
+                <button id="exchange-btn1" class="exchange-btn" onclick="exchangeScrewsToCrystals(1)"><img src="sprites/item/e_can.png" class="btn-item-icon" alt="E캔"> 1개</button>
+                <button id="exchange-btn10" class="exchange-btn" onclick="exchangeScrewsToCrystals(10)"><img src="sprites/item/e_can.png" class="btn-item-icon" alt="E캔"> 10개</button>
+                <button id="exchange-btn100" class="exchange-btn" onclick="exchangeScrewsToCrystals(100)"><img src="sprites/item/e_can.png" class="btn-item-icon" alt="E캔"> 100개</button>
+                <button id="exchange-btnMax" class="exchange-btn" onclick="exchangeScrewsToCrystalsMax()">최대</button>
+            </div>
+            <div class="ecan-upgrade-list">
+                <div class="ecan-upgrade-row"><span>공격력</span><b id="ecan-atk-lv">LV.0</b><em id="ecan-atk-effect">+0%</em><button id="ecan-atk-btn" onclick="upgradeEcanStat('atk')">강화</button></div>
+                <div class="ecan-upgrade-row"><span>체력</span><b id="ecan-hp-lv">LV.0</b><em id="ecan-hp-effect">+0%</em><button id="ecan-hp-btn" onclick="upgradeEcanStat('hp')">강화</button></div>
+                <div class="ecan-upgrade-row"><span>동료 공격력</span><b id="ecan-partner-lv">LV.0</b><em id="ecan-partner-effect">+0%</em><button id="ecan-partner-btn" onclick="upgradeEcanStat('partner')">강화</button></div>
+                <div class="ecan-upgrade-row"><span>보스 데미지</span><b id="ecan-boss-lv">LV.0</b><em id="ecan-boss-effect">+0%</em><button id="ecan-boss-btn" onclick="upgradeEcanStat('boss')">강화</button></div>
+                <div class="ecan-upgrade-row"><span>공격속도</span><b id="ecan-atkSpeed-lv">LV.0 / 40</b><em id="ecan-atkSpeed-effect">+0%</em><button id="ecan-atkSpeed-btn" onclick="upgradeEcanStat('atkSpeed')">강화</button></div>
+                <div class="ecan-upgrade-row"><span>차지확률</span><b id="ecan-crit-lv">LV.0 / 40</b><em id="ecan-crit-effect">+0%</em><button id="ecan-crit-btn" onclick="upgradeEcanStat('crit')">강화</button></div>
+            </div>
         </div>
 
-        <div class="upgrade-row speed-upgrade-row">
-            <button class="upgrade-btn">공격 속도</button>
-            <button type="button" class="partner-speed-open-btn" onclick="openPartnerSpeedPopup()">동료 공속</button>
-            <div class="lv-tag">LV.<span id="spd-lv">1</span></div>
-            <button id="spd-btn1" class="up-btn tooltip-btn" onclick="buyUpgrade('spd',1)">+1</button>
-            <button id="spd-btn10" class="up-btn tooltip-btn" onclick="buyUpgrade('spd',10)">+10</button>
-            <button id="spd-btnMax" class="up-btn" onclick="buyUpgradeMax('spd')">+MAX</button>
+        <div id="battle-upgrade-soul-panel" class="battle-upgrade-panel">
+            <div class="battle-upgrade-help soul-help">
+                <img src="sprites/item/light_stone.png" alt="라이트코어">
+                <div><b>라이트코어 강화</b><span>리부트 후에도 강화 상태가 유지됩니다. 저효율</span></div>
+            </div>
+            <div class="soul-upgrade-list">
+                <div class="soul-upgrade-row"><span>공격력</span><b id="soul-atk-lv">LV.0</b><em id="soul-atk-effect">+0%</em><button id="soul-atk-btn" onclick="upgradeSoulStat('atk')">강화</button></div>
+                <div class="soul-upgrade-row"><span>체력</span><b id="soul-hp-lv">LV.0</b><em id="soul-hp-effect">+0%</em><button id="soul-hp-btn" onclick="upgradeSoulStat('hp')">강화</button></div>
+                <div class="soul-upgrade-row"><span>나사 획득</span><b id="soul-screw-lv">LV.0</b><em id="soul-screw-effect">+0%</em><button id="soul-screw-btn" onclick="upgradeSoulStat('screw')">강화</button></div>
+                <div class="soul-upgrade-row"><span>공격속도</span><b id="soul-atkSpeed-lv">LV.0 / 40</b><em id="soul-atkSpeed-effect">+0%</em><button id="soul-atkSpeed-btn" onclick="upgradeSoulStat('atkSpeed')">강화</button></div>
+                <div class="soul-upgrade-row"><span>차지확률</span><b id="soul-crit-lv">LV.0 / 30</b><em id="soul-crit-effect">+0%</em><button id="soul-crit-btn" onclick="upgradeSoulStat('crit')">강화</button></div>
+            </div>
         </div>
-        <div class="upgrade-row">
-            <button class="upgrade-btn">록맨 체력</button>
-            <div class="lv-tag">LV.<span id="hp-lv">1</span></div>
-            <button id="hp-btn1" class="up-btn tooltip-btn" onclick="buyUpgrade('hp',1)">+1</button>
-            <button id="hp-btn10" class="up-btn tooltip-btn" onclick="buyUpgrade('hp',10)">+10</button>
-            <button id="hp-btnMax" class="up-btn" onclick="buyUpgradeMax('hp')">+MAX</button>
-        </div>
-        <div class="upgrade-row">
-            <button class="upgrade-btn">차지샷 확률</button>
-            <div class="lv-tag">LV.<span id="crit-lv">1</span></div>
-            <button id="crit-btn1" class="up-btn tooltip-btn" onclick="buyUpgrade('crit',1)">+1</button>
-            <button id="crit-btn10" class="up-btn tooltip-btn" onclick="buyUpgrade('crit',10)">+10</button>
-            <button id="crit-btnMax" class="up-btn" onclick="buyUpgradeMax('crit')">+MAX</button>
-        </div>
-
-        <div class="upgrade-row rush-upgrade">
-            <button class="upgrade-btn rush-upgrade-btn">차지샷 데미지</button>
-            <div class="lv-tag rush-lv-tag">LV.<span id="critDmg-lv">1</span></div>
-            <button id="critDmg-btn1" class="up-btn rush-up-btn tooltip-btn" onclick="buyUpgrade('critDmg',1)">+1</button>
-            <button id="critDmg-btn10" class="up-btn rush-up-btn tooltip-btn" onclick="buyUpgrade('critDmg',10)">+10</button>
-            <button id="critDmg-btnMax" class="up-btn rush-up-btn" onclick="buyUpgradeMax('critDmg')">+MAX</button>
-        </div>
-<div class="upgrade-row partner-upgrade">
-    <button class="upgrade-btn partner-upgrade-btn">동료 공격 속도</button>
-    <div class="lv-tag partner-lv-tag">LV.<span id="partnerSpd-lv">1</span></div>
-    <button id="partnerSpd-btn1" class="up-btn partner-up-btn tooltip-btn" onclick="buyUpgrade('partnerSpd',1)">+1</button>
-    <button id="partnerSpd-btn10" class="up-btn partner-up-btn tooltip-btn" onclick="buyUpgrade('partnerSpd',10)">+10</button>
-    <button id="partnerSpd-btnMax" class="up-btn partner-up-btn" onclick="buyUpgradeMax('partnerSpd')">+MAX</button>
-</div>
 
 
 
@@ -481,11 +520,7 @@
     <div id="partner-tab" class="tab-content">
         <div class="partner-panel partner-inventory-panel">
             <h2 class="section-heading-pixel">PARTNER</h2>
-            <p class="partner-desc partner-inventory-help">E캔으로 동료 데이터를 제작하고, 전송가능 동료 수만큼 동료를 소환할 수 있습니다.</p>
-
-            <div class="partner-resource-row">
-                <div class="partner-resource-box"><img src="sprites/item/e_can.png" class="resource-icon" alt="E캔"> E캔 <b id="partner-e-can-count">0</b></div>
-            </div>
+            <p class="partner-desc partner-inventory-help">E캔으로 동료 데이터를 제작하고,<br>전송가능 동료 수만큼 동료를 소환할 수 있습니다.</p>
 
             <div class="partner-blueprint-box">
                 <div class="partner-blueprint-info">
@@ -581,23 +616,17 @@
   <div class="system-panel card-panel">
     <h2 class="section-heading-pixel">CARD</h2>
 
-    <div class="card-resource-row">
-      <div class="card-resource-box"><img src="sprites/boss/reward/cardchip.png" class="card-resource-icon" alt="카드칩"> 카드칩 <b id="card-tab-card-chip-count">0</b></div>
-      <div class="card-resource-box"><img src="sprites/card/option_stone.png" class="card-resource-icon" alt="옵션스톤"> 옵션변경칩 <b id="option-change-chip-count">0</b></div>
-      <div class="card-resource-box"><img src="sprites/item/screw.png" class="card-resource-icon" alt="나사"> 나사 <b id="card-tab-screws-count">0</b></div>
-    </div>
-
     <div class="card-section card-analysis-box">
       <div class="card-section-title">카드칩 분석</div>
       <div class="card-section-help">카드칩 1개와 나사 500개를 사용해 카드를 1장 획득합니다.</div>
       <div class="card-action-row card-analyze-action-row">
         <button id="card-analyze-1-btn" class="card-action-btn card-analyze-btn" onclick="analyzeCardChips(1)">
           <span class="card-analyze-btn-title">1개 분석</span>
-          <span class="card-analyze-btn-cost"><img src="sprites/boss/reward/cardchip.png" class="btn-item-icon" alt="카드칩"> <b class="analyze-cost-num">1</b> <img src="sprites/item/screw.png" class="btn-item-icon" alt="나사"> <b class="analyze-cost-num">500</b></span>
+          <span class="card-analyze-btn-cost"><img src="sprites/boss/reward/cardchip.png" class="btn-item-icon card-analyze-chip-icon" alt="카드칩"> <b class="analyze-cost-num">1</b> <img src="sprites/item/screw.png" class="btn-item-icon" alt="나사"> <b class="analyze-cost-num">500</b></span>
         </button>
         <button id="card-analyze-10-btn" class="card-action-btn card-analyze-btn" onclick="analyzeCardChips(10)">
           <span class="card-analyze-btn-title">10개 분석</span>
-          <span class="card-analyze-btn-cost"><img src="sprites/boss/reward/cardchip.png" class="btn-item-icon" alt="카드칩"> <b class="analyze-cost-num">10</b> <img src="sprites/item/screw.png" class="btn-item-icon" alt="나사"> <b class="analyze-cost-num">5,000</b></span>
+          <span class="card-analyze-btn-cost"><img src="sprites/boss/reward/cardchip.png" class="btn-item-icon card-analyze-chip-icon" alt="카드칩"> <b class="analyze-cost-num">10</b> <img src="sprites/item/screw.png" class="btn-item-icon" alt="나사"> <b class="analyze-cost-num">5,000</b></span>
         </button>
       </div>
       <div id="card-analysis-result" class="card-result-text"></div>
@@ -631,7 +660,8 @@
         <div id="card-popup-list" class="card-popup-list"></div>
         <div class="card-popup-actions">
           <button type="button" id="card-popup-equip-btn" class="card-popup-btn" onclick="event.preventDefault(); event.stopPropagation(); equipCardFromPopup(); return false;">장착</button>
-          <button type="button" id="card-popup-synth-btn" class="card-popup-btn" onclick="event.preventDefault(); event.stopPropagation(); synthCardFromPopup(); return false;">합성</button>
+          <button type="button" id="card-popup-lock-btn" class="card-popup-btn card-popup-lock-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleCardLockFromPopup(); return false;">잠금</button>
+          <button type="button" id="card-popup-synth-btn" class="card-popup-btn" onclick="event.preventDefault(); event.stopPropagation(); synthCardFromPopup(); return false;">일괄 합성</button>
           <button type="button" id="card-popup-reroll-btn" class="card-popup-btn" onclick="event.preventDefault(); event.stopPropagation(); rerollCardOptionFromPopup(); return false;">옵션변경</button>
         </div>
       </div>
@@ -763,6 +793,13 @@
   <div class="system-panel boss-panel-v2">
     <h2 class="section-heading-pixel">BOSS BATTLE</h2>
 
+    <div class="exchange-panel boss-replay-card-panel boss-replay-exchange-panel">
+      <div class="exchange-title">E캔 → 보스재생카드 제작 (<img src="sprites/item/e_can.png" class="inline-item-icon" alt="E캔">1000 : <img src="sprites/item/boss_ticket.png" class="inline-item-icon" alt="보스재생카드">1)</div>
+      <button id="boss-ticket-craft-1-btn" class="exchange-btn boss-ticket-craft-btn" onclick="craftBossReplayCards(1)"><img src="sprites/item/boss_ticket.png" class="btn-item-icon" alt="보스재생카드"> 1개</button>
+      <button id="boss-ticket-craft-10-btn" class="exchange-btn boss-ticket-craft-btn" onclick="craftBossReplayCards(10)"><img src="sprites/item/boss_ticket.png" class="btn-item-icon" alt="보스재생카드"> 10개</button>
+      <button id="boss-ticket-craft-max-btn" class="exchange-btn boss-ticket-craft-btn" onclick="craftBossReplayCardsMax()">최대</button>
+    </div>
+
     <div class="boss-category-list">
       <button id="boss-group-classic-btn" class="boss-category-btn active" onclick="toggleBossGroup('classic')">클래식 보스전</button>
       <button id="boss-group-irregular-btn" class="boss-category-btn locked" onclick="toggleBossGroup('irregular')">이레귤러 보스</button>
@@ -771,15 +808,15 @@
     </div>
 
     <div id="boss-group-classic" class="boss-group-panel open">
-      <button id="boss-card-cutman" class="boss-select-card cutman-card" onclick="selectBossCard('classic_cutman')">
+      <div id="boss-card-cutman" class="boss-select-card cutman-card" role="button" tabindex="0" onclick="openBossActionPanel('classic_cutman')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); openBossActionPanel('classic_cutman');}">
         <div class="boss-portrait-box">
           <img class="boss-portrait-img" src="sprites/boss/super-rboss/cutman/cutman_portrait.png" alt="컷맨">
         </div>
 
         <div class="boss-card-main">
           <div class="boss-card-topline">
-            <div class="boss-card-name">컷맨</div>
-            <div class="boss-entry-cost"><img class="boss-resource-icon crystal-icon-small" src="sprites/item/e_can.png" alt="E캔"> 100</div>
+            <div class="boss-card-name">컷맨 <span id="cutman-boss-level-label" class="boss-level-label">Lv. 1</span></div>
+            <div class="boss-entry-cost"><img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1</div>
           </div>
 
           <div class="boss-card-preview">
@@ -798,9 +835,20 @@
             </div>
 
             <div id="cutman-card-message" class="boss-card-message"></div>
+
+            <div id="cutman-boss-action-panel" class="boss-action-panel" onclick="event.preventDefault(); event.stopPropagation(); return false;">
+              <div class="boss-action-panel-info">
+                최고 클리어 <b id="cutman-cleared-level-text">Lv. 0</b> / 다음 도전 <b id="cutman-next-level-text">Lv. 1</b>
+              </div>
+              <div class="boss-action-buttons">
+                <button id="cutman-challenge-btn" class="boss-action-btn boss-action-challenge" onclick="event.preventDefault(); event.stopPropagation(); startBossLevelChallenge('classic_cutman'); return false;">다음 레벨 도전</button>
+                <button id="cutman-sweep-1-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_cutman', 1); return false;">1회 소탕</button>
+                <button id="cutman-sweep-10-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_cutman', 10); return false;">10회 소탕</button>
+              </div>
+            </div>
           </div>
         </div>
-      </button>
+      </div>
     </div>
 
     <div id="boss-group-irregular" class="boss-group-panel">
@@ -820,11 +868,6 @@
   <div class="system-panel mine-panel">
     <h2 class="section-heading-pixel">MINE</h2>
     <div class="mine-guide-text">피켈맨 : 여기는 야근 수당이 어떻게 돼요?</div>
-
-    <div class="mine-resource-row">
-      <div class="resource-box"><img src="sprites/item/screw.png" class="resource-icon item-resource-icon" alt="나사"> <span id="mine-screws-display">나사는 상단 공용</span></div>
-      <div class="resource-box"><img src="sprites/mine/stone.png" class="resource-icon stone-resource-icon" alt="돌"> <span class="stone-count">0</span></div>
-    </div>
 
     <div class="mine-screen">
       <div id="miner-area" class="miner-area">
@@ -903,8 +946,13 @@
 
     <div class="status-section transcend-section">
       <div id="transcend-info" class="transcend-info">리부트 가능 스테이지: 100</div>
-      <button type="button" id="transcend-btn" class="transcend-btn" onclick="performTranscend()">REBOOT!</button>
-      <div class="transcend-help">리부트하면 스테이지/기본 강화/현재 곡괭이가 초기화됩니다.<br>카드, 개발실, 등록 곡괭이는 유지됩니다.</div>
+      <button type="button" id="transcend-btn" class="transcend-btn" onclick="openTranscendConfirm()">REBOOT!</button>
+      <div class="transcend-help reboot-reset-help">
+        리부트 시 <img src="sprites/item/screw.png" class="inline-item-icon" alt="나사">, <img src="sprites/item/e_can.png" class="inline-item-icon" alt="E캔">, <img src="sprites/mine/stone.png" class="inline-item-icon" alt="돌"> 재화가 초기화됩니다.<br>
+        <img src="sprites/item/screw.png" class="inline-item-icon" alt="나사">나사 강화가 초기화됩니다.<br>
+        등록되지 않은 곡괭이가 초기화됩니다.<br>
+        동료 싱크로율이 초기화됩니다.
+      </div>
 
       <div class="transcend-upgrade-grid">
         <div class="transcend-upgrade-row"><span>공격력</span><b id="transcend-atk-lv">0 / 20</b><em>비용 <i id="transcend-atk-cost">1</i></em><button id="transcend-atk-btn" onclick="upgradeTranscendStat('atk')">강화</button></div>
@@ -912,7 +960,7 @@
         <div class="transcend-upgrade-row"><span>나사 획득</span><b id="transcend-screw-lv">0 / 20</b><em>비용 <i id="transcend-screw-cost">1</i></em><button id="transcend-screw-btn" onclick="upgradeTranscendStat('screw')">강화</button></div>
         <div class="transcend-upgrade-row"><span>동료 공격</span><b id="transcend-partner-lv">0 / 20</b><em>비용 <i id="transcend-partner-cost">1</i></em><button id="transcend-partner-btn" onclick="upgradeTranscendStat('partner')">강화</button></div>
         <div class="transcend-upgrade-row"><span>카드칩 보너스</span><b id="transcend-cardChip-lv">0 / 20</b><em>비용 <i id="transcend-cardChip-cost">1</i></em><button id="transcend-cardChip-btn" onclick="upgradeTranscendStat('cardChip')">강화</button></div>
-        <div class="transcend-upgrade-row"><span>리부트 시작 싱크로율</span><b id="transcend-syncBase-lv">10 / 100</b><em>비용 <i id="transcend-syncBase-cost">1</i></em><button id="transcend-syncBase-btn" onclick="upgradeTranscendStat('syncBase')">강화</button></div>
+        <div class="transcend-upgrade-row"><span>동료 싱크로율</span><b id="transcend-syncBase-lv">10 / 100</b><em>비용 <i id="transcend-syncBase-cost">1</i></em><button id="transcend-syncBase-btn" onclick="upgradeTranscendStat('syncBase')">강화</button></div>
       </div>
     </div>
   </div>
@@ -920,6 +968,7 @@
 
 <div class="footer-row">
     <div class="footer-actions">
+        <button id="mobile-mode-toggle" class="reset-btn mode-toggle-btn" onclick="toggleMobileMode()">[모바일모드]</button>
         <button class="reset-btn" onclick="resetGame()">[데이터 초기화]</button>
         <button class="reset-btn" onclick="devCheat()">[DEV 치트]</button>
     </div>
@@ -927,7 +976,7 @@
 </div>
 </div>
 
-<script src="game.js?v=reboot_sync_label_v54"></script>
+<script src="game.js?v=mobile_mode_v83"></script>
 
 
 </body>
