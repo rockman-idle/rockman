@@ -10278,3 +10278,326 @@ body.mobile-mode .mobile-sleep-tab-btn {
   position: relative;
   z-index: 5105;
 }
+
+
+/* v87: 모바일 하단 탭/가로스크롤/싱크로율 팝업 최종 강제 보정 */
+html.mobile-mode,
+body.mobile-mode {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+html.mobile-mode body,
+body.mobile-mode {
+  padding: 0 !important;
+  background: #050505 !important;
+}
+
+html.mobile-mode body .container,
+body.mobile-mode .container {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 8px 6px 112px !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  border-left: none !important;
+  border-right: none !important;
+}
+
+html.mobile-mode body .tab-bookmark-left,
+html.mobile-mode body .tab-bookmark,
+body.mobile-mode .tab-bookmark-left,
+body.mobile-mode .tab-bookmark {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: auto !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  display: grid !important;
+  gap: 0 !important;
+  padding: 4px 5px !important;
+  box-sizing: border-box !important;
+  background: rgba(0, 0, 0, 0.97) !important;
+  z-index: 9000 !important;
+  transform: none !important;
+}
+
+html.mobile-mode body .tab-bookmark-left,
+body.mobile-mode .tab-bookmark-left {
+  bottom: 0 !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  border-top: 1px solid #24333a !important;
+}
+
+html.mobile-mode body .tab-bookmark,
+body.mobile-mode .tab-bookmark {
+  bottom: 47px !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  border-top: 1px solid #24333a !important;
+}
+
+html.mobile-mode body .tab-btn,
+html.mobile-mode body .left-tab-btn,
+html.mobile-mode body .status-right-tab-btn,
+body.mobile-mode .tab-btn,
+body.mobile-mode .left-tab-btn,
+body.mobile-mode .status-right-tab-btn {
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 40px !important;
+  padding: 5px 2px !important;
+  border: 1px solid #303f46 !important;
+  border-radius: 5px !important;
+  border-left: 1px solid #303f46 !important;
+  border-right: 1px solid #303f46 !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+
+html.mobile-mode body .mobile-sync-tab-btn,
+html.mobile-mode body .mobile-sleep-tab-btn,
+body.mobile-mode .mobile-sync-tab-btn,
+body.mobile-mode .mobile-sleep-tab-btn {
+  display: flex !important;
+}
+
+html.mobile-mode body .tab-content,
+body.mobile-mode .tab-content,
+html.mobile-mode body #battle-tab,
+body.mobile-mode #battle-tab {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+html.mobile-mode body #battle-tab *,
+body.mobile-mode #battle-tab * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+html.mobile-mode body .game-screen,
+body.mobile-mode .game-screen {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  overflow: hidden !important;
+}
+
+html.mobile-mode body .battle-upgrade-tabs,
+body.mobile-mode .battle-upgrade-tabs {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+}
+
+html.mobile-mode body .screw-upgrade-row,
+html.mobile-mode body .ecan-upgrade-row,
+html.mobile-mode body .soul-upgrade-row,
+html.mobile-mode body .transcend-upgrade-row,
+body.mobile-mode .screw-upgrade-row,
+body.mobile-mode .ecan-upgrade-row,
+body.mobile-mode .soul-upgrade-row,
+body.mobile-mode .transcend-upgrade-row {
+  grid-template-columns: minmax(0, 1fr) 52px 48px 80px !important;
+  gap: 4px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* 동료 싱크로율: 모바일에서는 날개 버튼 제거 + 중앙 팝업 */
+html.mobile-mode body #partner-sync-wing,
+body.mobile-mode #partner-sync-wing {
+  display: none !important;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 0 !important;
+  z-index: 9200 !important;
+  pointer-events: none !important;
+  background: rgba(0, 0, 0, 0.46) !important;
+  transform: none !important;
+}
+
+html.mobile-mode body.mobile-sync-tab-active #partner-sync-wing,
+body.mobile-mode.mobile-sync-tab-active #partner-sync-wing {
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+html.mobile-mode body #partner-sync-wing-btn,
+html.mobile-mode body .partner-sync-wing-btn,
+body.mobile-mode #partner-sync-wing-btn,
+body.mobile-mode .partner-sync-wing-btn {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+html.mobile-mode body #partner-sync-wing-panel,
+body.mobile-mode #partner-sync-wing-panel {
+  position: fixed !important;
+  left: 50% !important;
+  right: auto !important;
+  top: 50% !important;
+  bottom: auto !important;
+  width: min(372px, calc(100vw - 18px)) !important;
+  max-height: min(70vh, 540px) !important;
+  overflow-y: auto !important;
+  opacity: 1 !important;
+  transform: translate(-50%, -50%) !important;
+  pointer-events: auto !important;
+  border-width: 2px !important;
+  border-radius: 10px !important;
+  box-shadow: 0 14px 34px rgba(0,0,0,0.58) !important;
+}
+
+html.mobile-mode body .partner-sync-wing .partner-attack-upgrade-box,
+body.mobile-mode .partner-sync-wing .partner-attack-upgrade-box {
+  margin: 0 !important;
+}
+
+/* 모바일 전투 캐릭터 위치는 기존 PC 기준 유지 */
+html.mobile-mode body #rockman-area,
+body.mobile-mode #rockman-area { left: 55px !important; bottom: 10px !important; }
+html.mobile-mode body #enemy-area,
+body.mobile-mode #enemy-area { bottom: 19px !important; }
+html.mobile-mode body #partner-area,
+body.mobile-mode #partner-area { left: -20px !important; bottom: 12px !important; }
+
+
+/* v88: 절전모드 완전 검정 + 록맨 슬라이드 해제 */
+.sleep-mode-overlay {
+  background: #000 !important;
+}
+
+.sleep-mode-backdrop {
+  background: #000 !important;
+}
+
+.sleep-mode-card {
+  background: transparent !important;
+  border-color: rgba(255,255,255,0.045) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.sleep-mode-main-icon {
+  opacity: 0.16 !important;
+  filter: brightness(0.45) saturate(0.65) !important;
+}
+
+.sleep-mode-title {
+  color: rgba(180, 195, 210, 0.38) !important;
+}
+
+.sleep-mode-subtitle {
+  color: rgba(120, 155, 180, 0.42) !important;
+}
+
+.sleep-gain-row {
+  background: rgba(255,255,255,0.018) !important;
+  border: 1px solid rgba(255,255,255,0.025) !important;
+}
+
+.sleep-gain-row img {
+  opacity: 0.35 !important;
+  filter: brightness(0.55) saturate(0.65) !important;
+}
+
+.sleep-gain-row span {
+  color: rgba(210, 225, 238, 0.36) !important;
+}
+
+.sleep-mode-slider-wrap {
+  margin-top: 12px !important;
+}
+
+.sleep-unlock-slider,
+.sleep-mode-close-hint {
+  display: none !important;
+}
+
+.sleep-slide-track {
+  position: relative;
+  width: min(250px, 74vw);
+  height: 42px;
+  margin: 0 auto;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.04);
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+
+.sleep-slide-track::after {
+  content: '밀어서 해제';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(150, 170, 190, 0.22);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.sleep-slide-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: rgba(80, 160, 220, 0.08);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.sleep-slide-handle {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.065);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  cursor: grab;
+  touch-action: none;
+}
+
+.sleep-slide-handle:active {
+  cursor: grabbing;
+}
+
+.sleep-slide-handle img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  opacity: 0.34;
+  filter: brightness(0.62) saturate(0.7);
+  pointer-events: none;
+}

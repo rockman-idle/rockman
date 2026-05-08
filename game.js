@@ -7056,23 +7056,21 @@ function updateSleepModeUI() {
 function enterSleepMode() {
     const overlay = document.getElementById('sleep-mode-overlay');
     const btn = document.getElementById('sleep-mode-btn');
-    const slider = document.getElementById('sleep-unlock-slider');
     sleepModeState.active = true;
     sleepModeState.snapshot = getSleepModeSnapshot();
     if (overlay) overlay.classList.add('active');
     if (btn) btn.classList.add('active');
-    if (slider) slider.value = 0;
+    resetSleepSlideHandle();
     updateSleepModeUI();
 }
 
 function exitSleepMode() {
     const overlay = document.getElementById('sleep-mode-overlay');
     const btn = document.getElementById('sleep-mode-btn');
-    const slider = document.getElementById('sleep-unlock-slider');
     sleepModeState.active = false;
     if (overlay) overlay.classList.remove('active');
     if (btn) btn.classList.remove('active');
-    if (slider) slider.value = 0;
+    resetSleepSlideHandle();
 }
 
 function toggleSleepMode() {
@@ -7080,17 +7078,84 @@ function toggleSleepMode() {
     enterSleepMode();
 }
 
-function handleSleepUnlockSlider(value) {
-    const slider = document.getElementById('sleep-unlock-slider');
-    const numeric = Number(value || 0);
-    if (numeric >= 98) {
+const sleepSlideState = {
+    dragging: false,
+    maxX: 0
+};
+
+function setSleepSlideProgress(x) {
+    const track = document.getElementById('sleep-slide-track');
+    const handle = document.getElementById('sleep-slide-handle');
+    const fill = document.getElementById('sleep-slide-fill');
+    if (!track || !handle) return 0;
+    const maxX = Math.max(1, track.clientWidth - handle.clientWidth - 6);
+    const clamped = Math.max(0, Math.min(maxX, x));
+    handle.style.transform = `translateX(${clamped}px)`;
+    if (fill) fill.style.width = `${clamped + handle.clientWidth / 2}px`;
+    return clamped / maxX;
+}
+
+function resetSleepSlideHandle() {
+    setSleepSlideProgress(0);
+}
+
+function startSleepSlideDrag(event) {
+    if (!sleepModeState.active) return;
+    const track = document.getElementById('sleep-slide-track');
+    const handle = document.getElementById('sleep-slide-handle');
+    if (!track || !handle) return;
+    event.preventDefault();
+    sleepSlideState.dragging = true;
+    const rect = track.getBoundingClientRect();
+    sleepSlideState.trackLeft = rect.left;
+    sleepSlideState.maxX = Math.max(1, track.clientWidth - handle.clientWidth - 6);
+    if (handle.setPointerCapture && event.pointerId !== undefined) {
+        try { handle.setPointerCapture(event.pointerId); } catch (e) {}
+    }
+    moveSleepSlideDrag(event);
+}
+
+function moveSleepSlideDrag(event) {
+    if (!sleepSlideState.dragging) return;
+    event.preventDefault();
+    const track = document.getElementById('sleep-slide-track');
+    const handle = document.getElementById('sleep-slide-handle');
+    if (!track || !handle) return;
+    const rect = track.getBoundingClientRect();
+    const clientX = event.touches?.[0]?.clientX ?? event.clientX;
+    const x = clientX - rect.left - handle.clientWidth / 2;
+    const ratio = setSleepSlideProgress(x);
+    if (ratio >= 0.86) {
+        sleepSlideState.dragging = false;
         exitSleepMode();
-        return;
     }
-    if (slider && numeric < 98) {
-        clearTimeout(slider._sleepResetTimer);
-        slider._sleepResetTimer = setTimeout(() => { slider.value = 0; }, 180);
-    }
+}
+
+function endSleepSlideDrag(event) {
+    if (!sleepSlideState.dragging) return;
+    sleepSlideState.dragging = false;
+    if (event) event.preventDefault();
+    setTimeout(resetSleepSlideHandle, 120);
+}
+
+function initSleepSlideControl() {
+    const track = document.getElementById('sleep-slide-track');
+    const handle = document.getElementById('sleep-slide-handle');
+    if (!track || !handle || track.dataset.bound === '1') return;
+    track.dataset.bound = '1';
+    [track, handle].forEach(el => {
+        el.addEventListener('pointerdown', startSleepSlideDrag);
+        el.addEventListener('touchstart', startSleepSlideDrag, { passive: false });
+    });
+    window.addEventListener('pointermove', moveSleepSlideDrag, { passive: false });
+    window.addEventListener('pointerup', endSleepSlideDrag, { passive: false });
+    window.addEventListener('touchmove', moveSleepSlideDrag, { passive: false });
+    window.addEventListener('touchend', endSleepSlideDrag, { passive: false });
+}
+
+function handleSleepUnlockSlider(value) {
+    const numeric = Number(value || 0);
+    if (numeric >= 98) exitSleepMode();
 }
 
 function refreshMobileSyncTabState(tabName) {
@@ -7122,6 +7187,7 @@ function toggleMobileMode() {
 
 function initMobileModePreference() {
     applyMobileMode(localStorage.getItem('rockmanMobileMode') === '1');
+    initSleepSlideControl();
     const sleepBtn = document.getElementById('sleep-mode-btn');
     if (sleepBtn) {
         sleepBtn.onclick = function (e) {

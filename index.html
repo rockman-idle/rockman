@@ -996,8 +996,12 @@
       <div class="sleep-gain-row"><img src="sprites/item/boss_ticket.png" alt="보스재생카드"><span id="sleep-gain-bossReplayCard">0</span></div>
     </div>
     <div class="sleep-mode-slider-wrap">
-      <input id="sleep-unlock-slider" class="sleep-unlock-slider" type="range" min="0" max="100" value="0" step="1" oninput="handleSleepUnlockSlider(this.value)">
-      <div class="sleep-mode-close-hint">클릭 없이 계속 진행됩니다</div>
+      <div id="sleep-slide-track" class="sleep-slide-track">
+        <div id="sleep-slide-fill" class="sleep-slide-fill"></div>
+        <div id="sleep-slide-handle" class="sleep-slide-handle" role="button" aria-label="절전모드 해제 슬라이더">
+          <img src="sprites/rock/rock_st.png" alt="록맨">
+        </div>
+      </div>
     </div>
   </div>
 </div>
