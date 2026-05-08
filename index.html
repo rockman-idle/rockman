@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=mobile_mode_partner_sync_sleep_v85">
+<link rel="stylesheet" href="style.css?v=mobile_fix_v86">
 </head>
 
 <body>
@@ -274,7 +274,7 @@
     <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">동료</button>
     <button id="sync-tab-btn" class="tab-btn mobile-sync-tab-btn" onclick="showTab('sync')">동료<br>싱크로율</button>
     <button id="card-tab-btn" class="tab-btn" onclick="showTab('card')">카드</button>
-    <button id="sleep-mode-btn" class="tab-btn mobile-sleep-tab-btn" onclick="toggleSleepMode()">절전</button>
+    <button type="button" id="sleep-mode-btn" class="tab-btn mobile-sleep-tab-btn" onclick="event.stopPropagation(); toggleSleepMode();">절전</button>
 </div>
 
 <div id="resource-wing" class="resource-side-bar" aria-label="보유 재화">
@@ -1002,7 +1002,7 @@
   </div>
 </div>
 
-<script src="game.js?v=mobile_mode_partner_sync_sleep_v85"></script>
+<script src="game.js?v=mobile_fix_v86"></script>
 
 
 </body>

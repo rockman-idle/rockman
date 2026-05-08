@@ -7095,9 +7095,10 @@ function handleSleepUnlockSlider(value) {
 
 function refreshMobileSyncTabState(tabName) {
     const wing = document.getElementById('partner-sync-wing');
-    const isMobileSync = document.body.classList.contains('mobile-mode') && tabName === 'sync';
+    const isMobile = document.body.classList.contains('mobile-mode');
+    const isMobileSync = isMobile && tabName === 'sync';
     document.body.classList.toggle('mobile-sync-tab-active', isMobileSync);
-    if (wing) wing.classList.toggle('open', tabName === 'sync');
+    if (wing) wing.classList.toggle('open', !isMobile && tabName === 'sync');
     if (tabName === 'sync') updatePartnerAttackUpgradeUI();
 }
 
@@ -7119,7 +7120,15 @@ function toggleMobileMode() {
 
 function initMobileModePreference() {
     applyMobileMode(localStorage.getItem('rockmanMobileMode') === '1');
+    const sleepBtn = document.getElementById('sleep-mode-btn');
+    if (sleepBtn) {
+        sleepBtn.onclick = function (e) {
+            if (e) e.stopPropagation();
+            toggleSleepMode();
+        };
+    }
 }
+
 
 function resetGame() {
     if (confirm("초기화 하시겠습니까?")) {

@@ -10182,3 +10182,99 @@ body.mobile-mode .partner-sync-wing-panel {
 body.mobile-mode .partner-sync-wing.open .partner-sync-wing-panel {
   transform: translateY(0) !important;
 }
+
+
+/* v85: mobile sync tab + sleep mode */
+.mobile-sync-tab-btn,
+.mobile-sleep-tab-btn { display: none; }
+.mobile-sync-tab-dummy { min-height: 1px; }
+.sleep-mode-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 9500; }
+.sleep-mode-overlay.active { display: flex; }
+.sleep-mode-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.82); }
+.sleep-mode-card { position: relative; z-index: 1; width: min(88vw, 360px); padding: 18px 16px 20px; border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; background: rgba(8, 12, 16, 0.76); box-shadow: 0 0 30px rgba(0,0,0,0.45); text-align: center; backdrop-filter: blur(2px); }
+.sleep-mode-main-icon { width: min(33vw, 132px); display:block; margin:0 auto 10px; image-rendering: pixelated; object-fit: contain; opacity:0.32; filter: brightness(0.7); }
+.sleep-mode-title { color:#dce7f2; font-size:18px; font-weight:900; margin-bottom:5px; }
+.sleep-mode-subtitle { color:#8fb9d8; font-size:12px; font-weight:800; margin-bottom:12px; }
+.sleep-mode-gains { display:flex; flex-direction:column; gap:6px; margin:0 auto 14px; width:min(220px,72vw); }
+.sleep-gain-row { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:26px; padding:4px 8px; border-radius:8px; background:rgba(255,255,255,0.04); }
+.sleep-gain-row img { width:18px; height:18px; image-rendering: pixelated; object-fit: contain; flex:0 0 18px; }
+.sleep-gain-row span { color:#f0f8ff; font-size:13px; font-weight:900; }
+.sleep-mode-slider-wrap { margin-top: 8px; }
+.sleep-unlock-slider { width:100%; accent-color:#75d0ff; }
+.sleep-mode-close-hint { margin-top:6px; color:#8092a0; font-size:10px; font-weight:700; }
+body.mobile-mode .tab-bookmark { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+body.mobile-mode .mobile-sync-tab-btn, body.mobile-mode .mobile-sleep-tab-btn { display:block; }
+body.mobile-mode #partner-sync-wing { position: fixed !important; left: 0 !important; right: 0 !important; bottom: 92px !important; top: auto !important; width: 100% !important; min-height: 0 !important; pointer-events: none !important; display: block !important; transform: none !important; z-index: 5200 !important; }
+body.mobile-mode #partner-sync-wing-btn { display: none !important; }
+body.mobile-mode #partner-sync-wing-panel { left: 50% !important; right: auto !important; top: auto !important; bottom: 0 !important; width: min(372px, calc(100vw - 10px)) !important; max-height: 64vh; overflow-y: auto; opacity: 0 !important; transform: translate(-50%, 12px) !important; pointer-events: none !important; }
+body.mobile-mode.mobile-sync-tab-active #partner-sync-wing-panel, body.mobile-mode #partner-sync-wing.open #partner-sync-wing-panel { opacity:1 !important; transform:translate(-50%,0) !important; pointer-events:auto !important; }
+body.mobile-mode #rockman-area { left: 55px !important; bottom: 10px !important; }
+body.mobile-mode #enemy-area { bottom: 19px !important; }
+body.mobile-mode #partner-area { left: -20px !important; bottom: 12px !important; }
+
+
+/* v86: mobile bug fixes */
+body.mobile-mode #battle-tab {
+  overflow-x: hidden !important;
+}
+
+body.mobile-mode .game-screen {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  overflow: hidden !important;
+}
+
+body.mobile-mode .container {
+  overflow-x: hidden !important;
+}
+
+/* 모바일에서 기존 날개형 버튼/바는 숨기고, sync 탭일 때만 중앙 팝업 표시 */
+body.mobile-mode #partner-sync-wing {
+  display: none !important;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 0 !important;
+  z-index: 8200 !important;
+  pointer-events: none !important;
+  background: rgba(0, 0, 0, 0.46) !important;
+}
+
+body.mobile-mode.mobile-sync-tab-active #partner-sync-wing {
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+body.mobile-mode #partner-sync-wing-btn,
+body.mobile-mode .partner-sync-wing-btn {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.mobile-mode #partner-sync-wing-panel {
+  left: 50% !important;
+  right: auto !important;
+  top: 50% !important;
+  bottom: auto !important;
+  width: min(372px, calc(100vw - 18px)) !important;
+  max-height: min(70vh, 540px) !important;
+  overflow-y: auto !important;
+  opacity: 1 !important;
+  transform: translate(-50%, -50%) !important;
+  pointer-events: auto !important;
+  border-width: 2px !important;
+  box-shadow: 0 14px 34px rgba(0,0,0,0.58) !important;
+}
+
+body.mobile-mode .partner-sync-wing .partner-attack-upgrade-box {
+  margin: 0 !important;
+}
+
+body.mobile-mode .mobile-sleep-tab-btn {
+  position: relative;
+  z-index: 5105;
+}
