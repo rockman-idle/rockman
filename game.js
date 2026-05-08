@@ -7158,6 +7158,21 @@ function handleSleepUnlockSlider(value) {
     if (numeric >= 98) exitSleepMode();
 }
 
+function toggleMobileSyncTab(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    const isMobile = document.body.classList.contains('mobile-mode') || document.documentElement.classList.contains('mobile-mode');
+    if (!isMobile) {
+        showTab('sync');
+        return false;
+    }
+    const isOpen = document.body.classList.contains('mobile-sync-tab-active') || document.documentElement.classList.contains('mobile-sync-tab-active');
+    showTab(isOpen ? 'battle' : 'sync');
+    return false;
+}
+
 function refreshMobileSyncTabState(tabName) {
     const wing = document.getElementById('partner-sync-wing');
     const isMobile = document.body.classList.contains('mobile-mode') || document.documentElement.classList.contains('mobile-mode');
@@ -7197,6 +7212,16 @@ function initMobileModePreference() {
             }
             toggleSleepMode();
             return false;
+        };
+    }
+    const syncWing = document.getElementById('partner-sync-wing');
+    const syncPanel = document.getElementById('partner-sync-wing-panel');
+    if (syncWing) {
+        syncWing.onclick = function (e) {
+            const isMobile = document.body.classList.contains('mobile-mode') || document.documentElement.classList.contains('mobile-mode');
+            if (!isMobile) return;
+            if (syncPanel && syncPanel.contains(e.target)) return;
+            showTab('battle');
         };
     }
 }

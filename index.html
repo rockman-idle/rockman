@@ -272,7 +272,7 @@
 <div class="tab-bookmark">
     <button id="status-tab-btn" class="tab-btn status-right-tab-btn" onclick="showTab('status')">상태</button>
     <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">동료</button>
-    <button id="sync-tab-btn" class="tab-btn mobile-sync-tab-btn" onclick="showTab('sync')">동료<br>싱크로율</button>
+    <button type="button" id="sync-tab-btn" class="tab-btn mobile-sync-tab-btn" onclick="toggleMobileSyncTab(event)">동료<br>싱크로율</button>
     <button id="card-tab-btn" class="tab-btn" onclick="showTab('card')">카드</button>
     <button type="button" id="sleep-mode-btn" class="tab-btn mobile-sleep-tab-btn" onclick="event.stopPropagation(); toggleSleepMode();">절전</button>
 </div>

@@ -10601,3 +10601,7 @@ body.mobile-mode #partner-area { left: -20px !important; bottom: 12px !important
   filter: brightness(0.62) saturate(0.7);
   pointer-events: none;
 }
+
+
+/* v89: mobile sync popup close fix */
+body.mobile-mode .tab-bookmark, html.mobile-mode body .tab-bookmark { z-index: 8600 !important; }
