@@ -380,7 +380,40 @@ const ROCKMAN_RENDER_CONFIG = {
 
     // 실제 모바일 기기에서는 브라우저 viewport/DPR 차이 때문에 PC 모바일 미리보기와
     // 탄환의 CSS 좌표가 다르게 보일 수 있어, 록맨 내부 기준점은 유지한 채 탄환만 보정합니다.
-    realMobileBulletOffsetXRatio: -1.0
+    realMobileBulletOffsetXRatio: -0.67
+};
+
+// 블루스/브루스 trimmed-sprite 기준점 설정부입니다.
+// 포르테/엑스처럼 .game-screen 직속 캐릭터로 배치하고, 록맨처럼 발바닥 중앙 기준으로 렌더링합니다.
+const BLUES_RENDER_CONFIG = {
+    // v101: 여백 제거 블루스 스프라이트를 록맨과 비슷한 체감 크기로 맞춥니다.
+    // 위치는 CSS의 #blues-area에서, 프레임별 흔들림은 아래 anchor offset에서만 보정합니다.
+    height: 21,
+
+    // 이동 애니메이션은 blues_09가 삭제되었으므로 6-7-8-7 반복만 사용합니다.
+    walkPattern: [6, 7, 8, 7],
+
+    // 모든 프레임은 발바닥 중앙 기준으로 보정합니다.
+    // x: +면 이미지가 오른쪽, -면 왼쪽 / y: +면 아래, -면 위
+    // st1~st3은 걷기 1~3번과 분리한 대기 전용 발바닥 보정값입니다.
+    // 선글라스 기준 보정은 제거하고, 발끝/발바닥이 같은 자리에 서도록 맞춥니다.
+    frameAnchorOffsets: {
+        '1': { x: 0, y: 0 },
+        '2': { x: 0, y: 0 },
+        '3': { x: 0, y: 0 },
+        '4': { x: 0, y: 0 },
+        '5': { x: 0, y: 0 },
+        '6': { x: 0, y: 0 },
+        '7': { x: -1, y: 0 },
+        '8': { x: 0, y: 0 },
+
+        // blues_st_01 → blues_st_02 → blues_st_03 → blues_st_02 반복 기준
+        // 우선 발바닥 중앙이 흔들리지 않도록 st2/st3만 뒤쪽으로 보정합니다.
+        st1: { x: 0, y: 0 },
+        st2: { x: 0.5, y: 0 },
+        st3: { x: 0, y: 0 },
+        st: { x: 0, y: 0 }
+    }
 };
 
 
@@ -886,6 +919,7 @@ let beatFloat = 0;
 let beatJoinTimer = null;
 
 let bluesFrame = 6;
+let bluesWalkIndex = 0;
 let bluesAttackTimer = null;
 let bluesAttacking = false;
 let bluesStandPattern = [1, 2, 3, 2];
@@ -1877,6 +1911,7 @@ function applyStillBattleFrames() {
 
     const rockman = document.getElementById('rockman-img');
     const rushImg = document.getElementById('rush-img');
+    const bluesImg = document.getElementById('blues-img');
     const forteImg = document.getElementById('forte-img');
     const xImg = document.getElementById('x-img');
     const rockexeImg = document.getElementById('rockexe-img');
@@ -1888,6 +1923,10 @@ function applyStillBattleFrames() {
     }
     if (rushImg) rushImg.style.display = isSuperRockUnlocked() ? 'none' : '';
     if (rushImg && gameData.rushOwned && !isSuperRockUnlocked()) rushImg.src = 'sprites/partner/rush/rush_st.png';
+    if (bluesImg && gameData.bluesOwned && !bluesAttacking) {
+        bluesImg.src = 'sprites/partner/blues/blues_st_01.png';
+        applyBluesRenderFrame();
+    }
     if (forteImg && gameData.forteOwned && !forteAttacking) forteImg.src = 'sprites/partner/forte/forte_st.png';
     if (xImg && gameData.xOwned && !xAttacking) xImg.src = 'sprites/partner/x/x_st.png';
     if (rockexeImg && gameData.exeRockmanOwned && !rockexeAttacking) rockexeImg.src = 'sprites/partner/rockexe/rockexe_st.png';
@@ -2110,14 +2149,17 @@ function animateBlues() {
   if (isStillBossBattle()) {
     const frame = bluesStandPattern[bluesStandIndex];
     bluesImg.src = `sprites/partner/blues/blues_st_0${frame}.png`;
+    applyBluesRenderFrame();
     bluesStandIndex = (bluesStandIndex + 1) % bluesStandPattern.length;
     return;
   }
 
-  bluesFrame++;
-  if (bluesFrame > 9) bluesFrame = 6;
+  const walkPattern = BLUES_RENDER_CONFIG.walkPattern || [6, 7, 8, 7];
+  bluesFrame = walkPattern[bluesWalkIndex] || 6;
+  bluesWalkIndex = (bluesWalkIndex + 1) % walkPattern.length;
 
   bluesImg.src = `sprites/partner/blues/blues_0${bluesFrame}.png`;
+  applyBluesRenderFrame();
 }
 
 function animateForte() {
@@ -2696,6 +2738,7 @@ function bluesShieldCharge() {
 
   const chargeAnim = setInterval(() => {
     bluesImg.src = `sprites/partner/blues/blues_0${frame}.png`;
+    applyBluesRenderFrame();
     frame++;
 
     if (frame > 5) {
@@ -2748,7 +2791,9 @@ setTimeout(() => {
       setTimeout(() => {
         bluesArea.classList.remove('blues-charge');
         bluesFrame = 6;
+        bluesWalkIndex = 0;
         bluesImg.src = `sprites/partner/blues/blues_06.png`;
+        applyBluesRenderFrame();
         bluesAttacking = false;
       }, 250);
     }
@@ -3502,6 +3547,41 @@ function applyRockmanRenderFrame() {
     rockman.style.objectPosition = 'center bottom';
     rockman.style.imageRendering = 'pixelated';
     rockman.style.transform = `translateX(calc(-50% + ${offset.x}px)) translateY(${offset.y}px)`;
+}
+
+function getBluesFrameAnchorOffset() {
+    const bluesImg = document.getElementById('blues-img');
+    if (!bluesImg) return { x: 0, y: 0 };
+
+    const src = bluesImg.getAttribute('src') || '';
+    let key = 'st';
+
+    // 대기 프레임은 걷기 1/2/3번과 별도 기준점으로 관리합니다.
+    // blues_st_01~03도 선글라스가 아니라 발바닥 중앙 기준으로 st1/st2/st3 오프셋을 사용합니다.
+    const standMatch = src.match(/blues_st_0?([1-3])\.png$/);
+    if (standMatch) {
+        key = `st${standMatch[1]}`;
+    } else {
+        const walkMatch = src.match(/blues_0?([1-8])\.png$/);
+        if (walkMatch) key = walkMatch[1];
+    }
+
+    const offsets = BLUES_RENDER_CONFIG.frameAnchorOffsets || {};
+    return offsets[key] || offsets.st || { x: 0, y: 0 };
+}
+
+function applyBluesRenderFrame() {
+    const bluesImg = document.getElementById('blues-img');
+    if (!bluesImg) return;
+
+    const offset = getBluesFrameAnchorOffset();
+    bluesImg.style.setProperty('height', `${BLUES_RENDER_CONFIG.height}px`, 'important');
+    bluesImg.style.setProperty('width', 'auto', 'important');
+    bluesImg.style.setProperty('max-width', 'none', 'important');
+    bluesImg.style.objectFit = 'contain';
+    bluesImg.style.objectPosition = 'center bottom';
+    bluesImg.style.imageRendering = 'pixelated';
+    bluesImg.style.setProperty('transform', `translateX(calc(-50% + ${offset.x}px)) translateY(${offset.y}px)`, 'important');
 }
 
 function getRockmanRenderedPoint(xRatio = 0.5, yRatio = 0.5, offsetX = 0, offsetY = 0) {
@@ -7011,6 +7091,7 @@ if (bluesArea) {
 
 if (bluesImg) {
   bluesImg.style.display = gameData.bluesOwned ? 'block' : 'none';
+  applyBluesRenderFrame();
 }
 
 const forteArea = document.getElementById('forte-area');

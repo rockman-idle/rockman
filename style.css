@@ -3540,7 +3540,7 @@ body {
 
 #boss-card-cutman .boss-card-topline,
 .cutman-card .boss-card-topline {
-  height: 30px !important;
+  height: 21px !important;
   min-height: 30px !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -10762,4 +10762,67 @@ body.mobile-mode #rockman-area {
 html.real-mobile-device.mobile-mode body #rockman-area,
 body.real-mobile-device.mobile-mode #rockman-area {
     bottom: 40px !important;
+}
+
+/* v103: Blues stand-frame foot-anchor tune
+   블루스 전체 배치 기준: #blues-area의 left/bottom입니다.
+   블루스 내부 프레임 흔들림 기준: game.js의 BLUES_RENDER_CONFIG.frameAnchorOffsets입니다.
+   대기 st1/st2/st3은 선글라스가 아니라 발바닥 중앙 기준으로 보정합니다. */
+
+/* v101: Blues trimmed-sprite anchor system
+   블루스는 더 이상 #rockman-area 안에 묶이지 않고, 포르테/엑스처럼 .game-screen 직속으로 배치합니다.
+   표시 높이/프레임별 발바닥 기준점은 game.js의 BLUES_RENDER_CONFIG에서 관리합니다. */
+.blues-area,
+#blues-area {
+  position: absolute !important;
+  left: 98px !important;
+  bottom: 20px !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: none;
+  overflow: visible !important;
+  z-index: 4;
+  will-change: transform;
+}
+
+.blues-area.active,
+#blues-area.active {
+  display: block !important;
+}
+
+#blues-img {
+  position: absolute !important;
+  left: 50% !important;
+  bottom: 0 !important;
+  width: auto !important;
+  height: 30px !important;
+  max-width: none !important;
+  max-height: none !important;
+  display: block !important;
+  object-fit: contain !important;
+  object-position: center bottom !important;
+  image-rendering: pixelated !important;
+  transform: translateX(-50%) !important;
+  transform-origin: center bottom !important;
+}
+
+html.mobile-mode body #blues-area,
+body.mobile-mode #blues-area {
+  left: 88px !important;
+  bottom: 22px !important;
+  width: 36px !important;
+  height: 36px !important;
+}
+
+html.mobile-mode body #blues-img,
+body.mobile-mode #blues-img {
+  width: auto !important;
+  height: 21px !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+html.real-mobile-device.mobile-mode body #blues-area,
+body.real-mobile-device.mobile-mode #blues-area {
+  bottom: 36px !important;
 }
