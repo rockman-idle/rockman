@@ -260,14 +260,14 @@ body {
 }
 
 .rock-normal-bullet {
-    width: 54px;
-    height: 36px;
+    width: 4px;
+    height: 3px;
     background-image: url("sprites/rock/rock_bullet_01.png");
 }
 
 .rock-charge-bullet {
-    width: 72px;
-    height: 48px;
+    width: 5px;
+    height: 3px;
     background-image: url("sprites/rock/rock_c_bullet_01.png");
 }
 
@@ -1272,7 +1272,7 @@ body {
 
 #beat-join-img {
   width: 28px !important;
-  height: 28px !important;
+  height: 19px !important;
 }
 
 #beat-card .partner-icon {
@@ -3183,7 +3183,7 @@ body {
 .boss-card-reward-line img,
 .boss-reward-chip-icon {
   width: 28px !important;
-  height: 28px !important;
+  height: 19px !important;
   image-rendering: pixelated;
   object-fit: contain;
   vertical-align: middle;
@@ -3295,7 +3295,7 @@ body {
 #boss-card-cutman .boss-reward-chip-icon,
 .cutman-card .boss-reward-chip-icon {
   width: 28px !important;
-  height: 28px !important;
+  height: 19px !important;
   image-rendering: pixelated;
   object-fit: contain;
 }
@@ -3375,7 +3375,7 @@ body {
 
 #boss-card-cutman .boss-card-topline,
 .cutman-card .boss-card-topline {
-  height: 28px !important;
+  height: 19px !important;
   margin-bottom: 0 !important;
 }
 
@@ -4835,14 +4835,14 @@ body {
 /* v2.05: 개발실 노란 화살표를 작고 두께감 있는 픽셀 버튼으로 재정리 */
 .development-nav-btn {
     width: 22px !important;
-    height: 28px !important;
+    height: 19px !important;
     padding: 0 !important;
     border: none !important;
     background: transparent !important;
     clip-path: none !important;
     color: #ffd31a !important;
     font-size: 18px !important;
-    line-height: 28px !important;
+    line-height: 19px !important;
     font-weight: 900 !important;
     font-family: Arial, 'Courier New', monospace !important;
     text-align: center !important;
@@ -5820,7 +5820,7 @@ h2.section-heading-pixel {
 }
 .card-popup-item img {
   width: 28px !important;
-  height: 28px !important;
+  height: 19px !important;
 }
 .equipped-card-sprite {
   width: 38px !important;
@@ -6988,8 +6988,8 @@ h2.section-heading-pixel {
 }
 
 .rock-charge-bullet.super-rock-rocket-punch {
-  width: 64px;
-  height: 44px;
+  width: 5px;
+  height: 3px;
   background-image: url("sprites/armor/super-r/super_r_c_bullet_01.png") !important;
   filter:
     drop-shadow(0 0 5px rgba(255, 242, 160, 0.9))
@@ -8734,7 +8734,7 @@ h2.section-heading-pixel {
 }
 
 #boss-card-cutman .boss-action-btn {
-  min-height: 28px !important;
+  min-height: 19px !important;
   padding: 4px 3px !important;
   font-size: 9.5px !important;
 }
@@ -9650,7 +9650,7 @@ h2.section-heading-pixel {
 
 .card-analyze-btn-cost .card-analyze-chip-icon {
   width: 28px !important;
-  height: 28px !important;
+  height: 19px !important;
   margin: 0 2px 0 0 !important;
   image-rendering: pixelated !important;
   object-fit: contain !important;
@@ -10036,8 +10036,8 @@ body.mobile-mode #resource-wing.resource-side-bar {
 
 body.mobile-mode #resource-wing.resource-side-bar .resource-side-row,
 body.mobile-mode #resource-wing.resource-side-bar .resource-side-row:has(.cardchip-resource-icon) {
-  min-height: 28px !important;
-  height: 28px !important;
+  min-height: 19px !important;
+  height: 19px !important;
   justify-content: center !important;
   padding: 2px !important;
 }
@@ -10646,4 +10646,112 @@ body.mobile-mode.mobile-sync-tab-active #partner-sync-wing-panel {
 html.mobile-mode body .partner-sync-card-grid,
 body.mobile-mode .partner-sync-card-grid {
   padding-bottom: 14px !important;
+}
+
+/* v93: Rockman trimmed-sprite anchor system
+   록맨 PNG 여백 제거 대응: 발바닥 중앙 고정 + 작게 표시.
+   표시 높이/총구/피격 기준은 game.js의 ROCKMAN_RENDER_CONFIG에서 관리합니다. */
+#rockman-area {
+    width: 50px !important;
+    height: 50px !important;
+    overflow: visible !important;
+}
+
+#rockman-img.character,
+#rockman-img {
+    position: absolute !important;
+    left: 50% !important;
+    bottom: 0 !important;
+    width: auto !important;
+    height: 19px !important;
+    max-width: none !important;
+    max-height: none !important;
+    display: block !important;
+    object-fit: contain !important;
+    object-position: center bottom !important;
+    image-rendering: pixelated !important;
+    transform: translateX(-50%) !important;
+    transform-origin: center bottom !important;
+}
+
+.rock-bullet,
+.charge-effect {
+    transform-origin: center center;
+}
+
+html.mobile-mode body #rockman-img.character,
+html.mobile-mode body #rockman-img,
+body.mobile-mode #rockman-img.character,
+body.mobile-mode #rockman-img {
+    position: absolute !important;
+    left: 50% !important;
+    bottom: 0 !important;
+    width: auto !important;
+    height: 19px !important;
+    max-width: none !important;
+    max-height: none !important;
+    transform: translateX(-50%) !important;
+    transform-origin: center bottom !important;
+}
+
+
+/* v95: Rockman trimmed-sprite size/ground-lift + tiny bullet pass
+   록맨은 더 작게 표시하고, 발바닥 기준 위치를 위로 올립니다.
+   탄환/차징/피격 기준 계산은 game.js의 렌더링 좌표 함수를 그대로 사용합니다. */
+#rockman-area {
+    bottom: 18px !important;
+}
+html.mobile-mode body #rockman-area,
+body.mobile-mode #rockman-area {
+    bottom: 18px !important;
+}
+#rockman-img.character,
+#rockman-img,
+html.mobile-mode body #rockman-img.character,
+html.mobile-mode body #rockman-img,
+body.mobile-mode #rockman-img.character,
+body.mobile-mode #rockman-img {
+    height: 19px !important;
+}
+.rock-normal-bullet {
+    width: 4px !important;
+    height: 3px !important;
+}
+.rock-charge-bullet,
+.rock-charge-bullet.super-rock-rocket-punch {
+    width: 5px !important;
+    height: 3px !important;
+}
+
+
+/* v96: Rockman size + per-frame anchor tune
+   화면 절대값이 아니라 game.js의 frameAnchorOffsets로 1/3프레임 발바닥 기준점을 맞춥니다. */
+#rockman-img.character,
+#rockman-img,
+html.mobile-mode body #rockman-img.character,
+html.mobile-mode body #rockman-img,
+body.mobile-mode #rockman-img.character,
+body.mobile-mode #rockman-img {
+    height: 21px !important;
+}
+.rock-normal-bullet {
+    width: 6px !important;
+    height: 4px !important;
+}
+.rock-charge-bullet,
+.rock-charge-bullet.super-rock-rocket-punch {
+    width: 30px !important;
+    height: 20px !important;
+}
+
+/* v98: Rockman battlefield position tune 2
+   브루스 등 다른 스프라이트는 건드리지 않고, 록맨 기준 위치만 v97과 같은 폭으로 한 번 더 우측 상단 이동합니다. */
+#rockman-area {
+    left: 69px !important;
+    bottom: 26px !important;
+}
+html.mobile-mode body #rockman-area,
+body.mobile-mode #rockman-area {
+    left: 69px !important;
+    bottom: 26px !important;
 }

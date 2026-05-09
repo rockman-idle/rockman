@@ -128,6 +128,9 @@ const defaultData = {
 
     partnerSyncStart10Migrated: true,
 
+    // 리부트 1회차 안에서 이미 추가 보상을 받은 스나이퍼죠 스테이지 기록
+    sniperJoeRewardClaimed: {},
+
     lv: {
         atk: 1,
         spd: 1,
@@ -163,6 +166,7 @@ let gameData = {
     ecanUpgrades: { ...defaultData.ecanUpgrades, ...(savedData.ecanUpgrades || {}) },
     partnerBlueprints: { ...defaultData.partnerBlueprints, ...(savedData.partnerBlueprints || {}) },
     partnerSpeedLv: { ...defaultData.partnerSpeedLv, ...(savedData.partnerSpeedLv || {}) },
+    sniperJoeRewardClaimed: { ...defaultData.sniperJoeRewardClaimed, ...(savedData.sniperJoeRewardClaimed || {}) },
     registeredPickaxes: Array.isArray(savedData.registeredPickaxes) ? savedData.registeredPickaxes : defaultData.registeredPickaxes.slice(),
     cards: { ...defaultData.cards, ...(savedData.cards || {}) }
 };
@@ -213,6 +217,10 @@ gameData.partnerSpeedLv = { ...defaultData.partnerSpeedLv, ...(gameData.partnerS
 Object.keys(defaultData.partnerSpeedLv).forEach(key => {
     gameData.partnerSpeedLv[key] = Math.max(0, Math.min(10, Math.floor(gameData.partnerSpeedLv[key] || 0)));
 });
+
+if (!gameData.sniperJoeRewardClaimed || typeof gameData.sniperJoeRewardClaimed !== 'object' || Array.isArray(gameData.sniperJoeRewardClaimed)) {
+    gameData.sniperJoeRewardClaimed = {};
+}
 
 gameData.cards = { ...defaultData.cards, ...(gameData.cards || {}) };
 if (!Array.isArray(gameData.cards.owned)) gameData.cards.owned = [];
@@ -342,6 +350,33 @@ const ECAN_UPGRADE_CONFIG = {
     boss: { key: 'bossLv', name: '보스 데미지', baseCost: 200, growth: 1.17, linear: 35, effectPerLevel: 0.004, max: Infinity, suffix: '%' },
     atkSpeed: { key: 'atkSpeedLv', name: '공격속도', baseCost: 220, growth: 1.18, linear: 35, effectPerLevel: 0.0025, max: 40, suffix: '%' },
     crit: { key: 'critLv', name: '차지확률', baseCost: 220, growth: 1.18, linear: 35, effectPerLevel: 0.25, max: 40, suffix: '%' }
+};
+
+// 록맨 스프라이트 기준점 설정부입니다.
+// 중요: setupStage()가 파일 중간에서 먼저 실행되므로, 이 설정값은 반드시 setupStage()보다 위에 있어야 합니다.
+// 새 방식은 PNG 캔버스 크기를 억지로 통일하지 않고, 렌더링된 이미지 기준으로 잡습니다.
+// - 발바닥 기준: #rockman-area 안에서 이미지 하단 중앙을 고정
+// - 총구 기준: 렌더링된 록맨 이미지의 오른쪽/상단 비율 지점
+// - 피격 기준: 렌더링된 록맨 몸통 중심
+const ROCKMAN_RENDER_CONFIG = {
+    // v96: 록맨 여백 제거 스프라이트 기준. 발바닥 중앙은 유지하고 표시 크기만 소폭 확대합니다.
+    height: 21,
+    muzzleXRatio: 0.94,
+    muzzleYRatio: 0.47,
+    muzzleOffsetX: 0,
+    muzzleOffsetY: 0,
+    bodyCenterXRatio: 0.50,
+    bodyCenterYRatio: 0.54,
+
+    // 프레임별 기준점 미세 보정입니다.
+    // 화면 절대 위치가 아니라, 각 PNG의 "발바닥 중앙 기준점"을 맞추기 위한 보정입니다.
+    // 록맨은 오른쪽을 보고 있으므로 x가 -1이면 뒤쪽(왼쪽)으로 1px 당겨집니다.
+    frameAnchorOffsets: {
+        '1': { x: -1, y: 0 },
+        '2': { x: 0, y: 0 },
+        '3': { x: -1, y: 0 },
+        st: { x: 0, y: 0 }
+    }
 };
 
 
@@ -1784,6 +1819,7 @@ function setupStage() {
     updateBossBattleTabLockState();
 
     updateEnemyPosition();
+    applyRockmanRenderFrame();
     applyStillBattleFrames();
 
     if (isSniperJoeBattle()) {
@@ -1822,7 +1858,10 @@ function applyStillBattleFrames() {
     const rockexeImg = document.getElementById('rockexe-img');
     const zeroImg = document.getElementById('zero-img');
 
-    if (rockman) rockman.src = getRockStandSprite();
+    if (rockman) {
+        rockman.src = getRockStandSprite();
+        applyRockmanRenderFrame();
+    }
     if (rushImg) rushImg.style.display = isSuperRockUnlocked() ? 'none' : '';
     if (rushImg && gameData.rushOwned && !isSuperRockUnlocked()) rushImg.src = 'sprites/partner/rush/rush_st.png';
     if (forteImg && gameData.forteOwned && !forteAttacking) forteImg.src = 'sprites/partner/forte/forte_st.png';
@@ -1974,6 +2013,7 @@ function animate() {
     rockFrame += rockDir;
     if (rockFrame === 3 || rockFrame === 1) rockDir *= -1;
     rImg.src = getRockWalkSprite(rockFrame);
+    applyRockmanRenderFrame();
 
     if (!enemyDead && !isBossBattle) {
         metFrame = (metFrame % 2) + 1;
@@ -3293,6 +3333,7 @@ function failStage() {
 
     const wasBossBattle = isBossBattle;
     const failedBossType = currentBossType;
+    const failedEnemyType = currentEnemyType;
 
     playerDead = true;
     enemyDead = true;
@@ -3308,7 +3349,8 @@ function failStage() {
             showStageText("패배");
         } else if (gameData.stage > 1) {
             const beforeStage = gameData.stage;
-            gameData.stage = Math.max(1, gameData.stage - 3);
+            const downAmount = failedEnemyType === 'sniperjoe' ? 5 : 3;
+            gameData.stage = Math.max(1, gameData.stage - downAmount);
             const downCount = beforeStage - gameData.stage;
             showStageText(`STAGE DOWN -${downCount}`);
         } else {
@@ -3332,6 +3374,8 @@ function attack() {
 
     if (!rockman || !enemy || !screen) return;
 
+    applyRockmanRenderFrame();
+
     const isChargeShot = Math.random() * 100 < getEffectiveCritChance();
 
     if (isChargeShot) fireChargeShot(screen, enemy);
@@ -3339,15 +3383,10 @@ function attack() {
 }
 
 function getBusterPosition() {
-    const screen = document.querySelector('.game-screen');
-    const rockman = document.getElementById('rockman-img');
-
-    const screenRect = screen.getBoundingClientRect();
-    const rockRect = rockman.getBoundingClientRect();
-
+    const pos = getRockmanMuzzlePoint();
     return {
-        x: rockRect.right - screenRect.left - 8,
-        y: screenRect.bottom - rockRect.top - 28
+        x: pos.x,
+        y: pos.yBottom
     };
 }
 
@@ -3373,12 +3412,8 @@ function getEnemyBulletTravel(startX) {
 
     if (!rockman || !screen) return -120;
 
-    const screenRect = screen.getBoundingClientRect();
-    const rockRect = rockman.getBoundingClientRect();
-
-    // 스나이퍼죠 탄도 너무 앞에서 사라지지 않도록
-    // 실제 화면에 보이는 록맨 스프라이트 중앙을 도착/삭제 기준으로 사용합니다.
-    const impactX = rockRect.left - screenRect.left + rockRect.width / 2;
+    // 적 탄환은 록맨 박스 중앙이 아니라 실제 렌더링된 몸통 중심을 목표로 합니다.
+    const impactX = getRockmanBodyCenterPoint().x;
 
     return Math.min(-28, impactX - startX);
 }
@@ -3416,17 +3451,86 @@ function getElementCenterX(element) {
     return rect.left - screenRect.left + rect.width / 2;
 }
 
-const ROCK_BULLET_OFFSET_X = -25;
-const ROCK_BULLET_OFFSET_Y = -14;
-const ROCK_CHARGE_BULLET_OFFSET_Y = -20;
-const ROCK_NORMAL_BULLET_DURATION = 620;
-const ROCK_CHARGE_BULLET_DURATION = 460;
+function getRockmanFrameAnchorOffset() {
+    const rockman = document.getElementById('rockman-img');
+    if (!rockman) return { x: 0, y: 0 };
+
+    const src = rockman.getAttribute('src') || '';
+    let key = 'st';
+    const match = src.match(/(?:rock|super_r)(?:_walk)?_0?([123])\.png$/);
+    if (match) key = match[1];
+
+    const offsets = ROCKMAN_RENDER_CONFIG.frameAnchorOffsets || {};
+    return offsets[key] || offsets.st || { x: 0, y: 0 };
+}
+
+function applyRockmanRenderFrame() {
+    const rockman = document.getElementById('rockman-img');
+    if (!rockman) return;
+
+    // 록맨 렌더링은 위치/크기/프레임별 기준점만 보정하고 src/애니메이션 루프는 절대 건드리지 않습니다.
+    // CSS 절대 좌표가 아니라, 각 PNG의 발바닥 중앙 기준점을 맞추는 방식입니다.
+    const offset = getRockmanFrameAnchorOffset();
+    rockman.style.height = `${ROCKMAN_RENDER_CONFIG.height}px`;
+    rockman.style.width = 'auto';
+    rockman.style.maxWidth = 'none';
+    rockman.style.objectFit = 'contain';
+    rockman.style.objectPosition = 'center bottom';
+    rockman.style.imageRendering = 'pixelated';
+    rockman.style.transform = `translateX(calc(-50% + ${offset.x}px)) translateY(${offset.y}px)`;
+}
+
+function getRockmanRenderedPoint(xRatio = 0.5, yRatio = 0.5, offsetX = 0, offsetY = 0) {
+    const screen = document.querySelector('.game-screen');
+    const rockman = document.getElementById('rockman-img');
+
+    if (!screen || !rockman) return { x: 0, yBottom: 0, yTop: 0 };
+
+    applyRockmanRenderFrame();
+
+    const screenRect = screen.getBoundingClientRect();
+    const rockRect = rockman.getBoundingClientRect();
+    const x = rockRect.left - screenRect.left + rockRect.width * xRatio + offsetX;
+    const yTop = rockRect.top - screenRect.top + rockRect.height * yRatio + offsetY;
+
+    return {
+        x,
+        yTop,
+        yBottom: screenRect.height - yTop
+    };
+}
+
+function getRockmanMuzzlePoint() {
+    return getRockmanRenderedPoint(
+        ROCKMAN_RENDER_CONFIG.muzzleXRatio,
+        ROCKMAN_RENDER_CONFIG.muzzleYRatio,
+        ROCKMAN_RENDER_CONFIG.muzzleOffsetX,
+        ROCKMAN_RENDER_CONFIG.muzzleOffsetY
+    );
+}
+
+function getRockmanBodyCenterPoint() {
+    return getRockmanRenderedPoint(
+        ROCKMAN_RENDER_CONFIG.bodyCenterXRatio,
+        ROCKMAN_RENDER_CONFIG.bodyCenterYRatio,
+        0,
+        0
+    );
+}
 
 function getRockBulletPosition(isChargeShot = false) {
-    const pos = getBusterPosition();
+    const pos = getRockmanMuzzlePoint();
+    // v96: 기본탄은 v95보다 소폭 키우고, 차지샷은 기본탄 대비 약 5배 크기로 분리합니다.
+    const width = isChargeShot ? 30 : 6;
+    const height = isChargeShot ? 20 : 4;
+
     return {
-        x: pos.x + ROCK_BULLET_OFFSET_X,
-        y: pos.y + (isChargeShot ? ROCK_CHARGE_BULLET_OFFSET_Y : ROCK_BULLET_OFFSET_Y)
+        // 탄환의 왼쪽 시작점을 총구 끝에 거의 맞춥니다.
+        // 이미지 자체가 큰 이펙트이므로 Y축은 탄환 중앙이 총구와 맞도록 둡니다.
+        x: pos.x - 2,
+        y: pos.yBottom - height / 2,
+        width,
+        height
     };
 }
 
@@ -3489,8 +3593,8 @@ function fireChargeShot(screen, enemy) {
     charge.className = 'charge-effect';
 
     const chargePos = getBusterPosition();
-    charge.style.left = (chargePos.x - 8) + "px";
-    charge.style.bottom = (chargePos.y - 8) + "px";
+    charge.style.left = (chargePos.x - 9) + "px";
+    charge.style.bottom = (chargePos.y - 9) + "px";
 
     screen.appendChild(charge);
 
@@ -3691,6 +3795,61 @@ function giveBossBattleReward(displayDelay = 0) {
     }
 }
 
+function getSniperJoeRewardKey(stage = gameData.stage) {
+    return String(Math.max(1, Math.floor(stage || 1)));
+}
+
+function hasClaimedSniperJoeReward(stage = gameData.stage) {
+    const key = getSniperJoeRewardKey(stage);
+    return !!(gameData.sniperJoeRewardClaimed && gameData.sniperJoeRewardClaimed[key]);
+}
+
+function markSniperJoeRewardClaimed(stage = gameData.stage) {
+    if (!gameData.sniperJoeRewardClaimed || typeof gameData.sniperJoeRewardClaimed !== 'object') {
+        gameData.sniperJoeRewardClaimed = {};
+    }
+    gameData.sniperJoeRewardClaimed[getSniperJoeRewardKey(stage)] = true;
+}
+
+function getSniperJoeEcanReward(stage = gameData.stage) {
+    const st = Math.max(10, Math.floor(stage || 10));
+    const step = Math.max(0, Math.floor((st - 10) / 10));
+    return 100 + step * 8;
+}
+
+function rollSniperJoeBonusReward(stage = gameData.stage) {
+    const reward = {
+        crystals: getSniperJoeEcanReward(stage),
+        soulStones: 0,
+        optionChangeChip: 0,
+        bossReplayCard: 0
+    };
+
+    const step = Math.max(0, Math.floor((Math.max(10, stage) - 10) / 10));
+
+    if (Math.random() < Math.min(0.10, 0.035 + step * 0.002)) {
+        reward.soulStones = 1;
+    }
+
+    if (Math.random() < Math.min(0.08, 0.025 + step * 0.0015)) {
+        reward.optionChangeChip = 1;
+    }
+
+    if (Math.random() < Math.min(0.07, 0.020 + step * 0.0015)) {
+        reward.bossReplayCard = 1;
+    }
+
+    return reward;
+}
+
+function applySniperJoeBonusReward(reward) {
+    if (!reward) return;
+    gameData.crystals += Math.max(0, Math.floor(reward.crystals || 0));
+    gameData.soulStones += Math.max(0, Math.floor(reward.soulStones || 0));
+    gameData.materials.optionChangeChip += Math.max(0, Math.floor(reward.optionChangeChip || 0));
+    gameData.materials.bossReplayCard += Math.max(0, Math.floor(reward.bossReplayCard || 0));
+}
+
 function killEnemy() {
     if (enemyDead || playerDead) return;
 
@@ -3762,8 +3921,20 @@ function killEnemy() {
     const reward = Math.floor((80 + gameData.stage * 20) * (1 + getTranscendBonus('screw') + getSoulBonus('screw')));
     gameData.screws += reward;
 
+    const rewardTextData = { screws: reward };
+
+    if (isSniperJoeBattle()) {
+        const currentStage = Math.max(1, Math.floor(gameData.stage || 1));
+        if (!hasClaimedSniperJoeReward(currentStage)) {
+            const bonusReward = rollSniperJoeBonusReward(currentStage);
+            applySniperJoeBonusReward(bonusReward);
+            Object.assign(rewardTextData, bonusReward);
+            markSniperJoeRewardClaimed(currentStage);
+        }
+    }
+
     playEnemyDeathEffect();
-    showRewardText(reward);
+    showRewardText(rewardTextData);
 
     setTimeout(() => {
         gameData.stage++;
@@ -3900,17 +4071,16 @@ function showPlayerDamageText(damage) {
 
     if (!screen || !rockmanArea) return;
 
-    const screenRect = screen.getBoundingClientRect();
-    const rockRect = rockmanArea.getBoundingClientRect();
+    const bodyCenter = getRockmanBodyCenterPoint();
 
     const text = document.createElement('div');
     text.className = 'damage-text';
     text.innerText = `-${damage}`;
     text.style.color = '#ff3b3b';
     text.style.textShadow = '0 0 8px #ff3b3b';
-    text.style.left = (rockRect.left - screenRect.left + 10) + 'px';
+    text.style.left = (bodyCenter.x - 8) + 'px';
     text.style.right = 'auto';
-    text.style.bottom = '58px';
+    text.style.bottom = (bodyCenter.yBottom + 8) + 'px';
 
     screen.appendChild(text);
 
@@ -3942,6 +4112,30 @@ function showRewardText(reward) {
         if (reward.superRockChip) {
             parts.push(
                 `<span class="reward-inline-item"><img class="reward-inline-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"> 슈퍼록맨 데이터칩 +${reward.superRockChip}</span>`
+            );
+        }
+
+        if (reward.crystals) {
+            parts.push(
+                `<span class="reward-inline-item"><img class="reward-inline-icon" src="sprites/item/e_can.png" alt="E캔"> E캔 +${reward.crystals}</span>`
+            );
+        }
+
+        if (reward.soulStones) {
+            parts.push(
+                `<span class="reward-inline-item"><img class="reward-inline-icon" src="sprites/item/light_stone.png" alt="라이트코어"> 라이트코어 +${reward.soulStones}</span>`
+            );
+        }
+
+        if (reward.optionChangeChip) {
+            parts.push(
+                `<span class="reward-inline-item"><img class="reward-inline-icon" src="sprites/card/option_stone.png" alt="옵션변경칩"> 옵션변경칩 +${reward.optionChangeChip}</span>`
+            );
+        }
+
+        if (reward.bossReplayCard) {
+            parts.push(
+                `<span class="reward-inline-item"><img class="reward-inline-icon" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 보스재생카드 +${reward.bossReplayCard}</span>`
             );
         }
 
@@ -5604,7 +5798,10 @@ function enterBossBattle(bossKey = 'classic_cutman', bossLevel = 1, bossMode = '
     updateEnemyPosition();
 
     const rockmanImg = document.getElementById('rockman-img');
-    if (rockmanImg) rockmanImg.src = getRockStandSprite();
+    if (rockmanImg) {
+      rockmanImg.src = getRockStandSprite();
+      applyRockmanRenderFrame();
+    }
 
     applyStillBattleFrames();
     updateBossBattleTabLockState();
@@ -5720,7 +5917,7 @@ function fireCutmanBossCutter() {
     const bossData = getBossData(currentBossType);
     const screenRect = screen.getBoundingClientRect();
     const enemyRect = enemyImg.getBoundingClientRect();
-    const rockRect = rockman.getBoundingClientRect();
+    const rockBodyCenter = getRockmanBodyCenterPoint();
 
     cutmanBossAttacking = true;
 
@@ -5737,7 +5934,7 @@ function fireCutmanBossCutter() {
     cutter.style.top = startY + 'px';
     screen.appendChild(cutter);
 
-    const targetX = rockRect.left - screenRect.left + rockRect.width / 2;
+    const targetX = rockBodyCenter.x;
     const travel = Math.min(-40, targetX - startX);
     const speed = bossData.cutterSpeed || 0.34;
     const duration = Math.max(520, Math.round(Math.abs(travel) / speed));
@@ -6308,6 +6505,7 @@ function performTranscend() {
     gameData.costs = { ...defaultData.costs };
     gameData.partnerSpeedLv = { ...defaultData.partnerSpeedLv };
     gameData.partnerAtkSpeedLevel = 0;
+    gameData.sniperJoeRewardClaimed = {};
     resetPartnerSyncAfterReboot();
     gameData.playerMaxHp = getEffectivePlayerMaxHp();
     gameData.playerHp = gameData.playerMaxHp;
