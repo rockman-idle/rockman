@@ -10605,3 +10605,45 @@ body.mobile-mode #partner-area { left: -20px !important; bottom: 12px !important
 
 /* v89: mobile sync popup close fix */
 body.mobile-mode .tab-bookmark, html.mobile-mode body .tab-bookmark { z-index: 8600 !important; }
+
+
+/* v90: 모바일 동료 싱크로율 팝업을 상단 고정 패널로 변경 */
+html.mobile-mode body.mobile-sync-tab-active,
+body.mobile-mode.mobile-sync-tab-active {
+  overflow: hidden !important;
+}
+
+html.mobile-mode body #partner-sync-wing,
+body.mobile-mode #partner-sync-wing {
+  align-items: flex-start !important;
+}
+
+html.mobile-mode body.mobile-sync-tab-active #partner-sync-wing,
+body.mobile-mode.mobile-sync-tab-active #partner-sync-wing {
+  padding-top: max(8px, env(safe-area-inset-top)) !important;
+  box-sizing: border-box !important;
+}
+
+html.mobile-mode body #partner-sync-wing-panel,
+body.mobile-mode #partner-sync-wing-panel {
+  top: max(10px, env(safe-area-inset-top)) !important;
+  bottom: auto !important;
+  left: 50% !important;
+  right: auto !important;
+  width: min(372px, calc(100vw - 16px)) !important;
+  max-height: calc(100vh - 112px - max(10px, env(safe-area-inset-top))) !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding-bottom: 18px !important;
+  transform: translate(-50%, 0) !important;
+}
+
+html.mobile-mode body.mobile-sync-tab-active #partner-sync-wing-panel,
+body.mobile-mode.mobile-sync-tab-active #partner-sync-wing-panel {
+  transform: translate(-50%, 0) !important;
+}
+
+html.mobile-mode body .partner-sync-card-grid,
+body.mobile-mode .partner-sync-card-grid {
+  padding-bottom: 14px !important;
+}
