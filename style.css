@@ -10755,3 +10755,11 @@ body.mobile-mode #rockman-area {
     left: 69px !important;
     bottom: 26px !important;
 }
+
+
+/* v99: 실제 모바일 기기 전용 록맨 위치 보정
+   PC에서 켠 모바일모드는 유지하고, 아이폰/안드로이드 실기에서만 록맨을 스프라이트 높이의 약 2/3만큼 더 올립니다. */
+html.real-mobile-device.mobile-mode body #rockman-area,
+body.real-mobile-device.mobile-mode #rockman-area {
+    bottom: 40px !important;
+}

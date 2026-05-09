@@ -376,7 +376,11 @@ const ROCKMAN_RENDER_CONFIG = {
         '2': { x: 0, y: 0 },
         '3': { x: -1, y: 0 },
         st: { x: 0, y: 0 }
-    }
+    },
+
+    // 실제 모바일 기기에서는 브라우저 viewport/DPR 차이 때문에 PC 모바일 미리보기와
+    // 탄환의 CSS 좌표가 다르게 보일 수 있어, 록맨 내부 기준점은 유지한 채 탄환만 보정합니다.
+    realMobileBulletOffsetXRatio: -1.0
 };
 
 
@@ -385,6 +389,26 @@ function getCritChanceForLevel(level) {
     if (lv >= CRIT_UPGRADE_MAX_LEVEL) return CRIT_CHANCE_MAX_FROM_UPGRADE;
     const progress = (lv - 1) / Math.max(1, CRIT_UPGRADE_MAX_LEVEL - 1);
     return Math.round((defaultData.critChance + (CRIT_CHANCE_MAX_FROM_UPGRADE - defaultData.critChance) * progress) * 10) / 10;
+}
+
+function isRealMobileDevice() {
+    const ua = navigator.userAgent || '';
+    const platform = navigator.platform || '';
+    const hasTouch = (navigator.maxTouchPoints || 0) > 0;
+    const isiPadOS = hasTouch && /MacIntel/.test(platform);
+    return hasTouch && (/iPhone|iPad|iPod|Android/i.test(ua) || isiPadOS);
+}
+
+function refreshRealMobileDeviceClass() {
+    const enabled = isRealMobileDevice();
+    document.documentElement.classList.toggle('real-mobile-device', enabled);
+    if (document.body) document.body.classList.toggle('real-mobile-device', enabled);
+}
+
+function isRealMobileModeActive() {
+    const mobileMode = document.body.classList.contains('mobile-mode') || document.documentElement.classList.contains('mobile-mode');
+    const realDevice = document.body.classList.contains('real-mobile-device') || document.documentElement.classList.contains('real-mobile-device');
+    return mobileMode && realDevice;
 }
 
 function clampBattleBalanceValues() {
@@ -3524,10 +3548,18 @@ function getRockBulletPosition(isChargeShot = false) {
     const width = isChargeShot ? 30 : 6;
     const height = isChargeShot ? 20 : 4;
 
+    let realMobileOffsetX = 0;
+    if (isRealMobileModeActive()) {
+        const rockman = document.getElementById('rockman-img');
+        if (rockman) {
+            realMobileOffsetX = rockman.getBoundingClientRect().width * (ROCKMAN_RENDER_CONFIG.realMobileBulletOffsetXRatio || 0);
+        }
+    }
+
     return {
         // 탄환의 왼쪽 시작점을 총구 끝에 거의 맞춥니다.
-        // 이미지 자체가 큰 이펙트이므로 Y축은 탄환 중앙이 총구와 맞도록 둡니다.
-        x: pos.x - 2,
+        // 실제 모바일에서는 차징 이펙트 기준은 유지하고 탄환 이미지만 별도 좌우 보정합니다.
+        x: pos.x - 2 + realMobileOffsetX,
         y: pos.yBottom - height / 2,
         width,
         height
@@ -7382,6 +7414,7 @@ function refreshMobileSyncTabState(tabName) {
 }
 
 function applyMobileMode(enabled) {
+    refreshRealMobileDeviceClass();
     const isEnabled = !!enabled;
     document.body.classList.toggle('mobile-mode', isEnabled);
     document.documentElement.classList.toggle('mobile-mode', isEnabled);
