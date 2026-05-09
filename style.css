@@ -10824,5 +10824,6 @@ body.mobile-mode #blues-img {
 
 html.real-mobile-device.mobile-mode body #blues-area,
 body.real-mobile-device.mobile-mode #blues-area {
-  bottom: 36px !important;
+  left: 90px !important;
+  bottom: 30px !important;
 }
