@@ -352,96 +352,115 @@ const ECAN_UPGRADE_CONFIG = {
     crit: { key: 'critLv', name: '차지확률', baseCost: 220, growth: 1.18, linear: 35, effectPerLevel: 0.25, max: 40, suffix: '%' }
 };
 
-// 록맨 스프라이트 기준점 설정부입니다.
-// 중요: setupStage()가 파일 중간에서 먼저 실행되므로, 이 설정값은 반드시 setupStage()보다 위에 있어야 합니다.
-// 새 방식은 PNG 캔버스 크기를 억지로 통일하지 않고, 렌더링된 이미지 기준으로 잡습니다.
-// - 발바닥 기준: #rockman-area 안에서 이미지 하단 중앙을 고정
-// - 총구 기준: 렌더링된 록맨 이미지의 오른쪽/상단 비율 지점
-// - 피격 기준: 렌더링된 록맨 몸통 중심
-const ROCKMAN_RENDER_CONFIG = {
-    // v96: 록맨 여백 제거 스프라이트 기준. 발바닥 중앙은 유지하고 표시 크기만 소폭 확대합니다.
-    height: 21,
-    muzzleXRatio: 0.94,
-    muzzleYRatio: 0.47,
+
+
+// v108: 록맨 40x40 캔버스 기준 설정입니다. 이전 trimmed/anchor 방식은 사용하지 않습니다.
+// rock_01~03 / rock_st / rock_bullet / rock_c_bullet 전부 40x40.
+// 캐릭터는 PNG 내부에서 하단+오른쪽, 탄환은 PNG 내부에서 좌측에 맞춰져 있으므로
+// 코드에서는 40x40 캔버스를 그대로 표시하고 기준점만 계산합니다.
+const ROCKMAN_40_CANVAS_CONFIG = {
+    width: 40,
+    height: 40,
+    bulletWidth: 40,
+    bulletHeight: 40,
+    chargeBulletWidth: 40,
+    chargeBulletHeight: 40,
+    muzzleOffsetX: 0,
+    muzzleOffsetY: -19,
+    bodyCenterOffsetX: -16,
+    bodyCenterOffsetY: -20,
+    // charge-effect는 CSS border 2px 때문에 실제 렌더링 높이가 18+4=22px입니다.
+    // 중심을 총구 y에 맞춘 뒤, PC 실제 화면 기준으로 4px 더 아래로 내립니다.
+    chargeEffectRenderedSize: 22,
+    chargeEffectOffsetY: -8,
+
+    // 일반탄/차지탄 공통 Y 보정입니다.
+    // 40x40 불렛 PNG는 같은 높이 기준이므로 둘 다 같은 값을 적용합니다.
+    // bottom 좌표계라 음수면 화면상 아래로 이동합니다.
+    bulletOffsetY: -2,
+    chargeBulletOffsetY: 0
+};
+
+
+// 블루스도 40x40 캔버스 기준입니다.
+// blues_06~08 / blues_st_01~03 전부 40x40이고, PNG 내부에서 바닥 기준 정렬이 끝난 상태를 전제로 합니다.
+const BLUES_40_CANVAS_CONFIG = {
+    width: 37,
+    height: 37,
+    walkPattern: [6, 7, 8, 7],
+    standPattern: [1, 2, 3, 2]
+};
+
+
+// 포르테도 록맨과 같은 40x40 캔버스 기준입니다.
+// forte_01~03 / forte_st / forte_bullet_01 / forte_c_bullet_* 전부 40x40을 전제로 합니다.
+// 캐릭터는 PNG 내부에서 하단+오른쪽, 불렛은 PNG 내부에서 좌측 기준 정렬이 끝난 상태를 사용합니다.
+const FORTE_40_CANVAS_CONFIG = {
+    width: 40,
+    height: 40,
+    bulletWidth: 40,
+    bulletHeight: 40,
+    chargeBulletWidth: 40,
+    chargeBulletHeight: 40,
+    // 포르테는 40x40 캐릭터 PNG의 우측하단과
+    // 불렛/차지불렛 40x40 PNG의 좌측하단을 맞춰 발사합니다.
+    // 차지 이펙트만 실제 총구 중심(우측 끝, 바닥 기준 약 12.5px 높이)에 배치합니다.
     muzzleOffsetX: 0,
     muzzleOffsetY: 0,
-    bodyCenterXRatio: 0.50,
-    bodyCenterYRatio: 0.54,
-
-    // 프레임별 기준점 미세 보정입니다.
-    // 화면 절대 위치가 아니라, 각 PNG의 "발바닥 중앙 기준점"을 맞추기 위한 보정입니다.
-    // 록맨은 오른쪽을 보고 있으므로 x가 -1이면 뒤쪽(왼쪽)으로 1px 당겨집니다.
-    frameAnchorOffsets: {
-        '1': { x: -1, y: 0 },
-        '2': { x: 0, y: 0 },
-        '3': { x: -1, y: 0 },
-        st: { x: 0, y: 0 }
-    },
-
-    // 실제 모바일 기기에서는 브라우저 viewport/DPR 차이 때문에 PC 모바일 미리보기와
-    // 탄환의 CSS 좌표가 다르게 보일 수 있어, 록맨 내부 기준점은 유지한 채 탄환만 보정합니다.
-    realMobileBulletOffsetXRatio: -0.67
+    bulletOffsetY: 0,
+    chargeBulletOffsetY: 0,
+    chargeEffectRenderedSize: 22,
+    chargeEffectOffsetX: 0,
+    chargeEffectOffsetY: 12.5,
+    walkPattern: [1, 2, 3, 2]
 };
 
-// 블루스/브루스 trimmed-sprite 기준점 설정부입니다.
-// 포르테/엑스처럼 .game-screen 직속 캐릭터로 배치하고, 록맨처럼 발바닥 중앙 기준으로 렌더링합니다.
-const BLUES_RENDER_CONFIG = {
-    // v101: 여백 제거 블루스 스프라이트를 록맨과 비슷한 체감 크기로 맞춥니다.
-    // 위치는 CSS의 #blues-area에서, 프레임별 흔들림은 아래 anchor offset에서만 보정합니다.
-    height: 21,
-
-    // 이동 애니메이션은 blues_09가 삭제되었으므로 6-7-8-7 반복만 사용합니다.
-    walkPattern: [6, 7, 8, 7],
-
-    // 모든 프레임은 발바닥 중앙 기준으로 보정합니다.
-    // x: +면 이미지가 오른쪽, -면 왼쪽 / y: +면 아래, -면 위
-    // st1~st3은 걷기 1~3번과 분리한 대기 전용 발바닥 보정값입니다.
-    // 선글라스 기준 보정은 제거하고, 발끝/발바닥이 같은 자리에 서도록 맞춥니다.
-    frameAnchorOffsets: {
-        '1': { x: 0, y: 0 },
-        '2': { x: 0, y: 0 },
-        '3': { x: 0, y: 0 },
-        '4': { x: 0, y: 0 },
-        '5': { x: 0, y: 0 },
-        '6': { x: 0, y: 0 },
-        '7': { x: -1, y: 0 },
-        '8': { x: 0, y: 0 },
-
-        // blues_st_01 → blues_st_02 → blues_st_03 → blues_st_02 반복 기준
-        // 우선 발바닥 중앙이 흔들리지 않도록 st2/st3만 뒤쪽으로 보정합니다.
-        st1: { x: 0, y: 0 },
-        st2: { x: 0.5, y: 0 },
-        st3: { x: 0, y: 0 },
-        st: { x: 0, y: 0 }
-    }
+const X_40_CANVAS_CONFIG = {
+    width: 40,
+    height: 40,
+    bulletWidth: 40,
+    bulletHeight: 40,
+    chargeBulletWidth: 40,
+    chargeBulletHeight: 40,
+    // 엑스는 40x40 캐릭터 PNG의 우측하단과
+    // 불렛/차지불렛 40x40 PNG의 좌측하단을 맞춰 발사합니다.
+    // 차지 이펙트만 실제 총구 중심(우측 끝, 바닥 기준 약 14.5px 높이)에 배치합니다.
+    muzzleOffsetX: 0,
+    muzzleOffsetY: 0,
+    bulletOffsetY: 0,
+    chargeBulletOffsetY: 0,
+    chargeEffectRenderedSize: 22,
+    chargeEffectOffsetX: 0,
+    chargeEffectOffsetY: 14.5,
+    walkPattern: [1, 2, 3, 2]
 };
 
+const ROCKEXE_40_CANVAS_CONFIG = {
+    width: 40,
+    height: 40,
+    bulletWidth: 40,
+    bulletHeight: 40,
+    chargeBulletWidth: 40,
+    chargeBulletHeight: 40,
+    // 록맨.EXE는 40x40 캐릭터 PNG의 우측하단과
+    // 불렛/차지불렛 40x40 PNG의 좌측하단을 맞춰 발사합니다.
+    // 기본 불렛 때만 캐릭터 위에 버스터 이펙트 01~03을 재생합니다.
+    muzzleOffsetX: 0,
+    muzzleOffsetY: 0,
+    bulletOffsetY: 0,
+    chargeBulletOffsetY: 0,
+    busterEffectWidth: 40,
+    busterEffectHeight: 40,
+    busterEffectFramePrefix: 'sprites/partner/rockexe/rockexe_bustter_ef_',
+    busterEffectFrameCount: 3,
+    busterEffectFrameInterval: 45
+};
 
 function getCritChanceForLevel(level) {
     const lv = Math.max(1, Math.min(CRIT_UPGRADE_MAX_LEVEL, Math.floor(level || 1)));
     if (lv >= CRIT_UPGRADE_MAX_LEVEL) return CRIT_CHANCE_MAX_FROM_UPGRADE;
     const progress = (lv - 1) / Math.max(1, CRIT_UPGRADE_MAX_LEVEL - 1);
     return Math.round((defaultData.critChance + (CRIT_CHANCE_MAX_FROM_UPGRADE - defaultData.critChance) * progress) * 10) / 10;
-}
-
-function isRealMobileDevice() {
-    const ua = navigator.userAgent || '';
-    const platform = navigator.platform || '';
-    const hasTouch = (navigator.maxTouchPoints || 0) > 0;
-    const isiPadOS = hasTouch && /MacIntel/.test(platform);
-    return hasTouch && (/iPhone|iPad|iPod|Android/i.test(ua) || isiPadOS);
-}
-
-function refreshRealMobileDeviceClass() {
-    const enabled = isRealMobileDevice();
-    document.documentElement.classList.toggle('real-mobile-device', enabled);
-    if (document.body) document.body.classList.toggle('real-mobile-device', enabled);
-}
-
-function isRealMobileModeActive() {
-    const mobileMode = document.body.classList.contains('mobile-mode') || document.documentElement.classList.contains('mobile-mode');
-    const realDevice = document.body.classList.contains('real-mobile-device') || document.documentElement.classList.contains('real-mobile-device');
-    return mobileMode && realDevice;
 }
 
 function clampBattleBalanceValues() {
@@ -749,26 +768,29 @@ const PARTNER_ATTACK_DATA = {
         chargeFrameInterval: 70,
         attackFrame: 'sprites/partner/forte/forte_03.png',
         idleFrame: 'sprites/partner/forte/forte_01.png',
+        standFrame: 'sprites/partner/forte/forte_st.png',
 
-        // 포르테 투사체 위치 조절부입니다.
-        // 기준점: forte-img의 오른쪽 아래(bottom/right)를 기준으로 총구 중심을 잡습니다.
-        // busterOffsetX: 작게 = 왼쪽, 크게 = 오른쪽
-        // busterOffsetY: 작게 = 아래쪽, 크게 = 위쪽
-        projectilePositionMode: 'muzzle-center',
+        // 포르테는 40x40 캐릭터 PNG의 우측하단과
+        // 불렛/차지불렛 40x40 PNG의 좌측하단을 맞춰 발사합니다.
+        // 차지 이펙트만 실제 총구 중심 기준으로 배치합니다.
+        projectilePositionMode: 'left-bottom',
         muzzleAnchorX: 'right',
         muzzleAnchorY: 'bottom',
-        busterOffsetX: -13,
-        busterOffsetY: 9,
+        muzzleOffsetX: FORTE_40_CANVAS_CONFIG.muzzleOffsetX,
+        muzzleOffsetY: FORTE_40_CANVAS_CONFIG.muzzleOffsetY,
 
-        // 기본탄/차지탄은 크기가 달라도 같은 중심점에서 발사됩니다.
-        bulletWidth: 54,
-        bulletHeight: 36,
-        chargeBulletWidth: 72,
-        chargeBulletHeight: 48,
+        bulletWidth: FORTE_40_CANVAS_CONFIG.bulletWidth,
+        bulletHeight: FORTE_40_CANVAS_CONFIG.bulletHeight,
+        chargeBulletWidth: FORTE_40_CANVAS_CONFIG.chargeBulletWidth,
+        chargeBulletHeight: FORTE_40_CANVAS_CONFIG.chargeBulletHeight,
+        bulletOffsetY: FORTE_40_CANVAS_CONFIG.bulletOffsetY,
+        chargeBulletOffsetY: FORTE_40_CANVAS_CONFIG.chargeBulletOffsetY,
+
         chargeEffectWidth: 18,
         chargeEffectHeight: 18,
-        chargeEffectOffsetX: 0,
-        chargeEffectOffsetY: 0,
+        chargeEffectRenderedSize: FORTE_40_CANVAS_CONFIG.chargeEffectRenderedSize,
+        chargeEffectOffsetX: FORTE_40_CANVAS_CONFIG.chargeEffectOffsetX,
+        chargeEffectOffsetY: FORTE_40_CANVAS_CONFIG.chargeEffectOffsetY,
 
         shotDuration: 920,
         chargeShotDuration: 680
@@ -790,25 +812,27 @@ const PARTNER_ATTACK_DATA = {
         attackFrame: 'sprites/partner/x/x_03.png',
         idleFrame: 'sprites/partner/x/x_01.png',
 
-        // 엑스 투사체 위치 조절부입니다.
-        // 기준점: x-img의 오른쪽 아래(bottom/right)를 기준으로 총구 중심을 잡습니다.
-        // busterOffsetX: 작게 = 왼쪽, 크게 = 오른쪽
-        // busterOffsetY: 작게 = 아래쪽, 크게 = 위쪽
-        projectilePositionMode: 'muzzle-center',
+        // 엑스는 40x40 캐릭터 PNG의 우측하단과
+        // 불렛/차지불렛 40x40 PNG의 좌측하단을 맞춰 발사합니다.
+        // 차지 이펙트만 실제 총구 중심 기준으로 배치합니다.
+        projectilePositionMode: 'left-bottom',
         muzzleAnchorX: 'right',
         muzzleAnchorY: 'bottom',
-        busterOffsetX: -20,
-        busterOffsetY: 10,
+        muzzleOffsetX: X_40_CANVAS_CONFIG.muzzleOffsetX,
+        muzzleOffsetY: X_40_CANVAS_CONFIG.muzzleOffsetY,
 
-        // 기본탄/차지탄은 크기가 달라도 같은 중심점에서 발사됩니다.
-        bulletWidth: 54,
-        bulletHeight: 36,
-        chargeBulletWidth: 72,
-        chargeBulletHeight: 48,
+        bulletWidth: X_40_CANVAS_CONFIG.bulletWidth,
+        bulletHeight: X_40_CANVAS_CONFIG.bulletHeight,
+        chargeBulletWidth: X_40_CANVAS_CONFIG.chargeBulletWidth,
+        chargeBulletHeight: X_40_CANVAS_CONFIG.chargeBulletHeight,
+        bulletOffsetY: X_40_CANVAS_CONFIG.bulletOffsetY,
+        chargeBulletOffsetY: X_40_CANVAS_CONFIG.chargeBulletOffsetY,
+
         chargeEffectWidth: 18,
         chargeEffectHeight: 18,
-        chargeEffectOffsetX: 0,
-        chargeEffectOffsetY: 0,
+        chargeEffectRenderedSize: X_40_CANVAS_CONFIG.chargeEffectRenderedSize,
+        chargeEffectOffsetX: X_40_CANVAS_CONFIG.chargeEffectOffsetX,
+        chargeEffectOffsetY: X_40_CANVAS_CONFIG.chargeEffectOffsetY,
 
         shotDuration: 920,
         chargeShotDuration: 680
@@ -843,24 +867,30 @@ const PARTNER_ATTACK_DATA = {
         attackFrame: 'sprites/partner/rockexe/rockexe_03.png',
         idleFrame: 'sprites/partner/rockexe/rockexe_01.png',
 
-        // 록맨.EXE 투사체 위치 조절부입니다.
-        // 기준점: rockexe-img의 오른쪽 아래(bottom/right)를 기준으로 총구 중심을 잡습니다.
-        // busterOffsetX: 작게 = 왼쪽, 크게 = 오른쪽
-        // busterOffsetY: 작게 = 아래쪽, 크게 = 위쪽
-        projectilePositionMode: 'muzzle-center',
+        // 록맨.EXE는 40x40 캐릭터 PNG의 우측하단과
+        // 불렛/차지불렛 40x40 PNG의 좌측하단을 맞춰 발사합니다.
+        // 기본 불렛 때만 캐릭터 위에 버스터 이펙트를 재생합니다.
+        projectilePositionMode: 'left-bottom',
         muzzleAnchorX: 'right',
         muzzleAnchorY: 'bottom',
-        busterOffsetX: -19,
-        busterOffsetY: 8,
+        muzzleOffsetX: ROCKEXE_40_CANVAS_CONFIG.muzzleOffsetX,
+        muzzleOffsetY: ROCKEXE_40_CANVAS_CONFIG.muzzleOffsetY,
 
-        bulletWidth: 54,
-        bulletHeight: 36,
-        chargeBulletWidth: 48,
-        chargeBulletHeight: 48,
+        bulletWidth: ROCKEXE_40_CANVAS_CONFIG.bulletWidth,
+        bulletHeight: ROCKEXE_40_CANVAS_CONFIG.bulletHeight,
+        chargeBulletWidth: ROCKEXE_40_CANVAS_CONFIG.chargeBulletWidth,
+        chargeBulletHeight: ROCKEXE_40_CANVAS_CONFIG.chargeBulletHeight,
+        bulletOffsetY: ROCKEXE_40_CANVAS_CONFIG.bulletOffsetY,
+        chargeBulletOffsetY: ROCKEXE_40_CANVAS_CONFIG.chargeBulletOffsetY,
         chargeEffectWidth: 18,
         chargeEffectHeight: 18,
         chargeEffectOffsetX: 0,
         chargeEffectOffsetY: 0,
+        busterEffectWidth: ROCKEXE_40_CANVAS_CONFIG.busterEffectWidth,
+        busterEffectHeight: ROCKEXE_40_CANVAS_CONFIG.busterEffectHeight,
+        busterEffectFramePrefix: ROCKEXE_40_CANVAS_CONFIG.busterEffectFramePrefix,
+        busterEffectFrameCount: ROCKEXE_40_CANVAS_CONFIG.busterEffectFrameCount,
+        busterEffectFrameInterval: ROCKEXE_40_CANVAS_CONFIG.busterEffectFrameInterval,
 
         arcChargeProjectile: true,
         arcHeight: 24,
@@ -918,14 +948,14 @@ let beatDir = 1;
 let beatFloat = 0;
 let beatJoinTimer = null;
 
-let bluesFrame = 6;
-let bluesWalkIndex = 0;
+let bluesFrame = BLUES_40_CANVAS_CONFIG.walkPattern[0];
+let bluesFrameIndex = 0;
 let bluesAttackTimer = null;
 let bluesAttacking = false;
-let bluesStandPattern = [1, 2, 3, 2];
+let bluesStandPattern = BLUES_40_CANVAS_CONFIG.standPattern.slice();
 let bluesStandIndex = 0;
 
-let forteFramePattern = [1, 2, 3, 2];
+let forteFramePattern = FORTE_40_CANVAS_CONFIG.walkPattern.slice();
 let forteFrameIndex = 0;
 let forteJoinTimer = null;
 let forteAttackTimer = null;
@@ -1877,7 +1907,6 @@ function setupStage() {
     updateBossBattleTabLockState();
 
     updateEnemyPosition();
-    applyRockmanRenderFrame();
     applyStillBattleFrames();
 
     if (isSniperJoeBattle()) {
@@ -1911,22 +1940,14 @@ function applyStillBattleFrames() {
 
     const rockman = document.getElementById('rockman-img');
     const rushImg = document.getElementById('rush-img');
-    const bluesImg = document.getElementById('blues-img');
     const forteImg = document.getElementById('forte-img');
     const xImg = document.getElementById('x-img');
     const rockexeImg = document.getElementById('rockexe-img');
     const zeroImg = document.getElementById('zero-img');
 
-    if (rockman) {
-        rockman.src = getRockStandSprite();
-        applyRockmanRenderFrame();
-    }
+    if (rockman) rockman.src = getRockStandSprite();
     if (rushImg) rushImg.style.display = isSuperRockUnlocked() ? 'none' : '';
     if (rushImg && gameData.rushOwned && !isSuperRockUnlocked()) rushImg.src = 'sprites/partner/rush/rush_st.png';
-    if (bluesImg && gameData.bluesOwned && !bluesAttacking) {
-        bluesImg.src = 'sprites/partner/blues/blues_st_01.png';
-        applyBluesRenderFrame();
-    }
     if (forteImg && gameData.forteOwned && !forteAttacking) forteImg.src = 'sprites/partner/forte/forte_st.png';
     if (xImg && gameData.xOwned && !xAttacking) xImg.src = 'sprites/partner/x/x_st.png';
     if (rockexeImg && gameData.exeRockmanOwned && !rockexeAttacking) rockexeImg.src = 'sprites/partner/rockexe/rockexe_st.png';
@@ -2076,7 +2097,6 @@ function animate() {
     rockFrame += rockDir;
     if (rockFrame === 3 || rockFrame === 1) rockDir *= -1;
     rImg.src = getRockWalkSprite(rockFrame);
-    applyRockmanRenderFrame();
 
     if (!enemyDead && !isBossBattle) {
         metFrame = (metFrame % 2) + 1;
@@ -2142,24 +2162,38 @@ function animateBeat() {
     beatImg.style.transform = `translateY(${Math.sin(beatFloat) * 4}px)`;
 }
 
+function setBluesWalkFrame(frame) {
+  const bluesImg = document.getElementById('blues-img');
+  if (!bluesImg) return;
+  bluesFrame = frame;
+  bluesImg.src = `sprites/partner/blues/blues_0${frame}.png`;
+}
+
+function setBluesStandFrame(frame) {
+  const bluesImg = document.getElementById('blues-img');
+  if (!bluesImg) return;
+  bluesImg.src = `sprites/partner/blues/blues_st_0${frame}.png`;
+}
+
+function resetBluesWalkAnimation() {
+  bluesFrameIndex = 0;
+  setBluesWalkFrame(BLUES_40_CANVAS_CONFIG.walkPattern[0]);
+}
+
 function animateBlues() {
   const bluesImg = document.getElementById('blues-img');
   if (!bluesImg || !gameData.bluesOwned || bluesAttacking) return;
 
   if (isStillBossBattle()) {
     const frame = bluesStandPattern[bluesStandIndex];
-    bluesImg.src = `sprites/partner/blues/blues_st_0${frame}.png`;
-    applyBluesRenderFrame();
+    setBluesStandFrame(frame);
     bluesStandIndex = (bluesStandIndex + 1) % bluesStandPattern.length;
     return;
   }
 
-  const walkPattern = BLUES_RENDER_CONFIG.walkPattern || [6, 7, 8, 7];
-  bluesFrame = walkPattern[bluesWalkIndex] || 6;
-  bluesWalkIndex = (bluesWalkIndex + 1) % walkPattern.length;
-
-  bluesImg.src = `sprites/partner/blues/blues_0${bluesFrame}.png`;
-  applyBluesRenderFrame();
+  const frame = BLUES_40_CANVAS_CONFIG.walkPattern[bluesFrameIndex];
+  setBluesWalkFrame(frame);
+  bluesFrameIndex = (bluesFrameIndex + 1) % BLUES_40_CANVAS_CONFIG.walkPattern.length;
 }
 
 function animateForte() {
@@ -2738,7 +2772,6 @@ function bluesShieldCharge() {
 
   const chargeAnim = setInterval(() => {
     bluesImg.src = `sprites/partner/blues/blues_0${frame}.png`;
-    applyBluesRenderFrame();
     frame++;
 
     if (frame > 5) {
@@ -2790,10 +2823,7 @@ setTimeout(() => {
 
       setTimeout(() => {
         bluesArea.classList.remove('blues-charge');
-        bluesFrame = 6;
-        bluesWalkIndex = 0;
-        bluesImg.src = `sprites/partner/blues/blues_06.png`;
-        applyBluesRenderFrame();
+        resetBluesWalkAnimation();
         bluesAttacking = false;
       }, 250);
     }
@@ -2984,6 +3014,24 @@ function getPartnerBusterPosition(type) {
 
     if (!data || !anchor) return null;
 
+    // left-edge 모드는 록맨/포르테처럼 투사체 좌측을 총구 x에 맞추고,
+    // Y는 총구 중심을 기준으로 배치합니다.
+    if (data.projectilePositionMode === 'left-edge') {
+        return {
+            x: anchor.x + (data.muzzleOffsetX || 0),
+            y: anchor.y + (data.muzzleOffsetY || 0)
+        };
+    }
+
+    // left-bottom 모드는 엑스 전용입니다.
+    // 캐릭터 40x40의 우측하단과 투사체 40x40의 좌측하단을 그대로 맞춥니다.
+    if (data.projectilePositionMode === 'left-bottom') {
+        return {
+            x: anchor.x + (data.muzzleOffsetX || 0),
+            y: anchor.y + (data.muzzleOffsetY || 0)
+        };
+    }
+
     // legacy 모드는 기존 좌하단 배치 방식과 호환됩니다.
     if (data.projectilePositionMode !== 'muzzle-center') {
         return {
@@ -3014,6 +3062,28 @@ function placeElementByCenter(element, center, width, height) {
 
 function placePartnerProjectile(element, data, pos, isChargeShot) {
     const size = getPartnerProjectileSize(data, isChargeShot);
+    element.style.width = size.width + 'px';
+    element.style.height = size.height + 'px';
+
+    if (data.projectilePositionMode === 'left-edge') {
+        element.style.left = pos.x + 'px';
+        element.style.bottom = (
+            pos.y - size.height / 2
+            + (data.bulletOffsetY || 0)
+            + (isChargeShot ? (data.chargeBulletOffsetY || 0) : 0)
+        ) + 'px';
+        return;
+    }
+
+    if (data.projectilePositionMode === 'left-bottom') {
+        element.style.left = pos.x + 'px';
+        element.style.bottom = (
+            pos.y
+            + (data.bulletOffsetY || 0)
+            + (isChargeShot ? (data.chargeBulletOffsetY || 0) : 0)
+        ) + 'px';
+        return;
+    }
 
     if (data.projectilePositionMode !== 'muzzle-center') {
         element.style.left = pos.x + 'px';
@@ -3026,14 +3096,24 @@ function placePartnerProjectile(element, data, pos, isChargeShot) {
 }
 
 function placePartnerChargeEffect(element, data, pos) {
+    const effectWidth = data.chargeEffectWidth || 18;
+    const effectHeight = data.chargeEffectHeight || 18;
+    element.style.width = effectWidth + 'px';
+    element.style.height = effectHeight + 'px';
+
+    if (data.projectilePositionMode === 'left-edge' || data.projectilePositionMode === 'left-bottom') {
+        const renderedSize = data.chargeEffectRenderedSize || Math.max(effectWidth, effectHeight);
+        element.style.left = (pos.x - renderedSize / 2 + (data.chargeEffectOffsetX || 0)) + 'px';
+        element.style.bottom = (pos.y - renderedSize / 2 + (data.chargeEffectOffsetY || 0)) + 'px';
+        return;
+    }
+
     if (data.projectilePositionMode !== 'muzzle-center') {
         element.style.left = (pos.x - 8) + 'px';
         element.style.bottom = (pos.y - 8) + 'px';
         return;
     }
 
-    const effectWidth = data.chargeEffectWidth || 18;
-    const effectHeight = data.chargeEffectHeight || 18;
     const effectCenter = {
         x: pos.x + (data.chargeEffectOffsetX || 0),
         y: pos.y + (data.chargeEffectOffsetY || 0)
@@ -3141,6 +3221,34 @@ function getEnemyImpactPoint() {
     };
 }
 
+
+function playRockexeBusterEffect(pos) {
+    const screen = document.querySelector('.game-screen');
+    if (!screen || !pos) return;
+
+    // 기본 불렛의 40x40 좌측하단과 버스터 이펙트 40x40 좌측하단을 맞춥니다.
+    screen.querySelectorAll('.rockexe-buster-effect').forEach(el => el.remove());
+
+    const effect = document.createElement('img');
+    effect.className = 'rockexe-buster-effect';
+    effect.src = `${ROCKEXE_40_CANVAS_CONFIG.busterEffectFramePrefix}01.png`;
+    effect.style.left = pos.x + 'px';
+    effect.style.bottom = pos.y + 'px';
+    screen.appendChild(effect);
+
+    let frame = 1;
+    const maxFrame = ROCKEXE_40_CANVAS_CONFIG.busterEffectFrameCount || 3;
+    const timer = setInterval(() => {
+        frame += 1;
+        if (frame > maxFrame) {
+            clearInterval(timer);
+            effect.remove();
+            return;
+        }
+        effect.src = `${ROCKEXE_40_CANVAS_CONFIG.busterEffectFramePrefix}${String(frame).padStart(2, '0')}.png`;
+    }, ROCKEXE_40_CANVAS_CONFIG.busterEffectFrameInterval || 45);
+}
+
 function firePartnerBuster(type) {
     const data = PARTNER_ATTACK_DATA[type];
     const screen = document.querySelector('.game-screen');
@@ -3172,6 +3280,10 @@ function firePartnerBuster(type) {
     };
 
     const shoot = () => {
+        if (type === 'exeRockman' && !isChargeShot) {
+            playRockexeBusterEffect(pos);
+        }
+
         const bullet = document.createElement('div');
         bullet.className = isChargeShot ? (data.chargeBulletClass || data.bulletClass) : data.bulletClass;
         placePartnerProjectile(bullet, data, pos, isChargeShot);
@@ -3443,8 +3555,6 @@ function attack() {
 
     if (!rockman || !enemy || !screen) return;
 
-    applyRockmanRenderFrame();
-
     const isChargeShot = Math.random() * 100 < getEffectiveCritChance();
 
     if (isChargeShot) fireChargeShot(screen, enemy);
@@ -3452,10 +3562,18 @@ function attack() {
 }
 
 function getBusterPosition() {
-    const pos = getRockmanMuzzlePoint();
+    const screen = document.querySelector('.game-screen');
+    const rockman = document.getElementById('rockman-img');
+    if (!screen || !rockman) return { x: 0, y: 0 };
+
+    const screenRect = screen.getBoundingClientRect();
+    const rockRect = rockman.getBoundingClientRect();
+
     return {
-        x: pos.x,
-        y: pos.yBottom
+        // 40x40 캔버스의 오른쪽 끝을 버스터 기준으로 사용합니다.
+        x: rockRect.right - screenRect.left + ROCKMAN_40_CANVAS_CONFIG.muzzleOffsetX,
+        // bottom 좌표계: rockRect.top 기준보다 캔버스 내부 총구 위치를 더 안정적으로 계산합니다.
+        y: screenRect.bottom - rockRect.top + ROCKMAN_40_CANVAS_CONFIG.muzzleOffsetY
     };
 }
 
@@ -3481,8 +3599,12 @@ function getEnemyBulletTravel(startX) {
 
     if (!rockman || !screen) return -120;
 
-    // 적 탄환은 록맨 박스 중앙이 아니라 실제 렌더링된 몸통 중심을 목표로 합니다.
-    const impactX = getRockmanBodyCenterPoint().x;
+    const screenRect = screen.getBoundingClientRect();
+    const rockRect = rockman.getBoundingClientRect();
+
+    // 스나이퍼죠 탄도 너무 앞에서 사라지지 않도록
+    // 실제 화면에 보이는 록맨 스프라이트 중앙을 도착/삭제 기준으로 사용합니다.
+    const impactX = rockRect.left - screenRect.left + rockRect.width / 2;
 
     return Math.min(-28, impactX - startX);
 }
@@ -3520,127 +3642,19 @@ function getElementCenterX(element) {
     return rect.left - screenRect.left + rect.width / 2;
 }
 
-function getRockmanFrameAnchorOffset() {
-    const rockman = document.getElementById('rockman-img');
-    if (!rockman) return { x: 0, y: 0 };
-
-    const src = rockman.getAttribute('src') || '';
-    let key = 'st';
-    const match = src.match(/(?:rock|super_r)(?:_walk)?_0?([123])\.png$/);
-    if (match) key = match[1];
-
-    const offsets = ROCKMAN_RENDER_CONFIG.frameAnchorOffsets || {};
-    return offsets[key] || offsets.st || { x: 0, y: 0 };
-}
-
-function applyRockmanRenderFrame() {
-    const rockman = document.getElementById('rockman-img');
-    if (!rockman) return;
-
-    // 록맨 렌더링은 위치/크기/프레임별 기준점만 보정하고 src/애니메이션 루프는 절대 건드리지 않습니다.
-    // CSS 절대 좌표가 아니라, 각 PNG의 발바닥 중앙 기준점을 맞추는 방식입니다.
-    const offset = getRockmanFrameAnchorOffset();
-    rockman.style.height = `${ROCKMAN_RENDER_CONFIG.height}px`;
-    rockman.style.width = 'auto';
-    rockman.style.maxWidth = 'none';
-    rockman.style.objectFit = 'contain';
-    rockman.style.objectPosition = 'center bottom';
-    rockman.style.imageRendering = 'pixelated';
-    rockman.style.transform = `translateX(calc(-50% + ${offset.x}px)) translateY(${offset.y}px)`;
-}
-
-function getBluesFrameAnchorOffset() {
-    const bluesImg = document.getElementById('blues-img');
-    if (!bluesImg) return { x: 0, y: 0 };
-
-    const src = bluesImg.getAttribute('src') || '';
-    let key = 'st';
-
-    // 대기 프레임은 걷기 1/2/3번과 별도 기준점으로 관리합니다.
-    // blues_st_01~03도 선글라스가 아니라 발바닥 중앙 기준으로 st1/st2/st3 오프셋을 사용합니다.
-    const standMatch = src.match(/blues_st_0?([1-3])\.png$/);
-    if (standMatch) {
-        key = `st${standMatch[1]}`;
-    } else {
-        const walkMatch = src.match(/blues_0?([1-8])\.png$/);
-        if (walkMatch) key = walkMatch[1];
-    }
-
-    const offsets = BLUES_RENDER_CONFIG.frameAnchorOffsets || {};
-    return offsets[key] || offsets.st || { x: 0, y: 0 };
-}
-
-function applyBluesRenderFrame() {
-    const bluesImg = document.getElementById('blues-img');
-    if (!bluesImg) return;
-
-    const offset = getBluesFrameAnchorOffset();
-    bluesImg.style.setProperty('height', `${BLUES_RENDER_CONFIG.height}px`, 'important');
-    bluesImg.style.setProperty('width', 'auto', 'important');
-    bluesImg.style.setProperty('max-width', 'none', 'important');
-    bluesImg.style.objectFit = 'contain';
-    bluesImg.style.objectPosition = 'center bottom';
-    bluesImg.style.imageRendering = 'pixelated';
-    bluesImg.style.setProperty('transform', `translateX(calc(-50% + ${offset.x}px)) translateY(${offset.y}px)`, 'important');
-}
-
-function getRockmanRenderedPoint(xRatio = 0.5, yRatio = 0.5, offsetX = 0, offsetY = 0) {
-    const screen = document.querySelector('.game-screen');
-    const rockman = document.getElementById('rockman-img');
-
-    if (!screen || !rockman) return { x: 0, yBottom: 0, yTop: 0 };
-
-    applyRockmanRenderFrame();
-
-    const screenRect = screen.getBoundingClientRect();
-    const rockRect = rockman.getBoundingClientRect();
-    const x = rockRect.left - screenRect.left + rockRect.width * xRatio + offsetX;
-    const yTop = rockRect.top - screenRect.top + rockRect.height * yRatio + offsetY;
-
-    return {
-        x,
-        yTop,
-        yBottom: screenRect.height - yTop
-    };
-}
-
-function getRockmanMuzzlePoint() {
-    return getRockmanRenderedPoint(
-        ROCKMAN_RENDER_CONFIG.muzzleXRatio,
-        ROCKMAN_RENDER_CONFIG.muzzleYRatio,
-        ROCKMAN_RENDER_CONFIG.muzzleOffsetX,
-        ROCKMAN_RENDER_CONFIG.muzzleOffsetY
-    );
-}
-
-function getRockmanBodyCenterPoint() {
-    return getRockmanRenderedPoint(
-        ROCKMAN_RENDER_CONFIG.bodyCenterXRatio,
-        ROCKMAN_RENDER_CONFIG.bodyCenterYRatio,
-        0,
-        0
-    );
-}
+const ROCK_NORMAL_BULLET_DURATION = 620;
+const ROCK_CHARGE_BULLET_DURATION = 460;
 
 function getRockBulletPosition(isChargeShot = false) {
-    const pos = getRockmanMuzzlePoint();
-    // v96: 기본탄은 v95보다 소폭 키우고, 차지샷은 기본탄 대비 약 5배 크기로 분리합니다.
-    const width = isChargeShot ? 30 : 6;
-    const height = isChargeShot ? 20 : 4;
-
-    let realMobileOffsetX = 0;
-    if (isRealMobileModeActive()) {
-        const rockman = document.getElementById('rockman-img');
-        if (rockman) {
-            realMobileOffsetX = rockman.getBoundingClientRect().width * (ROCKMAN_RENDER_CONFIG.realMobileBulletOffsetXRatio || 0);
-        }
-    }
-
+    const pos = getBusterPosition();
+    const width = isChargeShot ? ROCKMAN_40_CANVAS_CONFIG.chargeBulletWidth : ROCKMAN_40_CANVAS_CONFIG.bulletWidth;
+    const height = isChargeShot ? ROCKMAN_40_CANVAS_CONFIG.chargeBulletHeight : ROCKMAN_40_CANVAS_CONFIG.bulletHeight;
     return {
-        // 탄환의 왼쪽 시작점을 총구 끝에 거의 맞춥니다.
-        // 실제 모바일에서는 차징 이펙트 기준은 유지하고 탄환 이미지만 별도 좌우 보정합니다.
-        x: pos.x - 2 + realMobileOffsetX,
-        y: pos.yBottom - height / 2,
+        // 탄환 PNG 내부 실제 탄은 좌측에 붙어 있으므로, div 왼쪽을 총구 끝에 맞춥니다.
+        x: pos.x,
+        y: pos.y - height / 2
+            + (ROCKMAN_40_CANVAS_CONFIG.bulletOffsetY || 0)
+            + (isChargeShot ? (ROCKMAN_40_CANVAS_CONFIG.chargeBulletOffsetY || 0) : 0),
         width,
         height
     };
@@ -3675,6 +3689,8 @@ function fireNormalShot(screen, enemy) {
     const pos = getRockBulletPosition(false);
     bullet.style.left = pos.x + "px";
     bullet.style.bottom = pos.y + "px";
+    if (pos.width) bullet.style.width = pos.width + "px";
+    if (pos.height) bullet.style.height = pos.height + "px";
 
     screen.appendChild(bullet);
 
@@ -3705,8 +3721,9 @@ function fireChargeShot(screen, enemy) {
     charge.className = 'charge-effect';
 
     const chargePos = getBusterPosition();
-    charge.style.left = (chargePos.x - 9) + "px";
-    charge.style.bottom = (chargePos.y - 9) + "px";
+    const chargeEffectSize = ROCKMAN_40_CANVAS_CONFIG.chargeEffectRenderedSize || 22;
+    charge.style.left = (chargePos.x - chargeEffectSize / 2) + "px";
+    charge.style.bottom = (chargePos.y - chargeEffectSize / 2 + (ROCKMAN_40_CANVAS_CONFIG.chargeEffectOffsetY || 0)) + "px";
 
     screen.appendChild(charge);
 
@@ -3718,6 +3735,8 @@ function fireChargeShot(screen, enemy) {
         const pos = getRockBulletPosition(true);
         bullet.style.left = pos.x + "px";
         bullet.style.bottom = pos.y + "px";
+        if (pos.width) bullet.style.width = pos.width + "px";
+        if (pos.height) bullet.style.height = pos.height + "px";
 
         screen.appendChild(bullet);
 
@@ -4183,16 +4202,17 @@ function showPlayerDamageText(damage) {
 
     if (!screen || !rockmanArea) return;
 
-    const bodyCenter = getRockmanBodyCenterPoint();
+    const screenRect = screen.getBoundingClientRect();
+    const rockRect = rockmanArea.getBoundingClientRect();
 
     const text = document.createElement('div');
     text.className = 'damage-text';
     text.innerText = `-${damage}`;
     text.style.color = '#ff3b3b';
     text.style.textShadow = '0 0 8px #ff3b3b';
-    text.style.left = (bodyCenter.x - 8) + 'px';
+    text.style.left = (rockRect.left - screenRect.left + 10) + 'px';
     text.style.right = 'auto';
-    text.style.bottom = (bodyCenter.yBottom + 8) + 'px';
+    text.style.bottom = '58px';
 
     screen.appendChild(text);
 
@@ -5910,10 +5930,7 @@ function enterBossBattle(bossKey = 'classic_cutman', bossLevel = 1, bossMode = '
     updateEnemyPosition();
 
     const rockmanImg = document.getElementById('rockman-img');
-    if (rockmanImg) {
-      rockmanImg.src = getRockStandSprite();
-      applyRockmanRenderFrame();
-    }
+    if (rockmanImg) rockmanImg.src = getRockStandSprite();
 
     applyStillBattleFrames();
     updateBossBattleTabLockState();
@@ -6029,7 +6046,7 @@ function fireCutmanBossCutter() {
     const bossData = getBossData(currentBossType);
     const screenRect = screen.getBoundingClientRect();
     const enemyRect = enemyImg.getBoundingClientRect();
-    const rockBodyCenter = getRockmanBodyCenterPoint();
+    const rockRect = rockman.getBoundingClientRect();
 
     cutmanBossAttacking = true;
 
@@ -6046,7 +6063,7 @@ function fireCutmanBossCutter() {
     cutter.style.top = startY + 'px';
     screen.appendChild(cutter);
 
-    const targetX = rockBodyCenter.x;
+    const targetX = rockRect.left - screenRect.left + rockRect.width / 2;
     const travel = Math.min(-40, targetX - startX);
     const speed = bossData.cutterSpeed || 0.34;
     const duration = Math.max(520, Math.round(Math.abs(travel) / speed));
@@ -7088,10 +7105,16 @@ if (bluesArea) {
   if (gameData.bluesOwned) bluesArea.classList.add('active');
   else bluesArea.classList.remove('active');
 }
+if (bluesImg) {
+  bluesImg.style.width = BLUES_40_CANVAS_CONFIG.width + 'px';
+  bluesImg.style.height = BLUES_40_CANVAS_CONFIG.height + 'px';
+  if (gameData.bluesOwned && !bluesImg.getAttribute('src')) {
+    resetBluesWalkAnimation();
+  }
+}
 
 if (bluesImg) {
   bluesImg.style.display = gameData.bluesOwned ? 'block' : 'none';
-  applyBluesRenderFrame();
 }
 
 const forteArea = document.getElementById('forte-area');
@@ -7103,6 +7126,8 @@ if (forteArea) {
 }
 
 if (forteImg) {
+  forteImg.style.width = FORTE_40_CANVAS_CONFIG.width + 'px';
+  forteImg.style.height = FORTE_40_CANVAS_CONFIG.height + 'px';
   forteImg.style.display = gameData.forteOwned ? 'block' : 'none';
 }
 
@@ -7128,6 +7153,8 @@ if (rockexeArea) {
 
 if (rockexeImg) {
   rockexeImg.style.display = gameData.exeRockmanOwned ? 'block' : 'none';
+  rockexeImg.style.width = ROCKEXE_40_CANVAS_CONFIG.width + 'px';
+  rockexeImg.style.height = ROCKEXE_40_CANVAS_CONFIG.height + 'px';
 }
 
 const zeroArea = document.getElementById('zero-area');
@@ -7495,7 +7522,6 @@ function refreshMobileSyncTabState(tabName) {
 }
 
 function applyMobileMode(enabled) {
-    refreshRealMobileDeviceClass();
     const isEnabled = !!enabled;
     document.body.classList.toggle('mobile-mode', isEnabled);
     document.documentElement.classList.toggle('mobile-mode', isEnabled);

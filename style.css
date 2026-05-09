@@ -128,7 +128,7 @@ body {
     bottom: 10px;
     width: 50px;
     height: 50px;
-    z-index: 5;
+    z-index: 8;
 }
 
 #rockman-area.knockback {
@@ -235,7 +235,7 @@ body {
     background: #ffd700;
     border-radius: 2px;
     box-shadow: 0 0 6px #fff, 0 0 10px #ffd700;
-    z-index: 10;
+    z-index: 9;
 }
 
 .bullet.charge-shot {
@@ -252,7 +252,7 @@ body {
     display: block;
     image-rendering: pixelated;
     pointer-events: none;
-    z-index: 10;
+    z-index: 9;
     background-repeat: no-repeat;
     background-position: center;
     background-size: 100% 100%;
@@ -260,14 +260,14 @@ body {
 }
 
 .rock-normal-bullet {
-    width: 4px;
-    height: 3px;
+    width: 54px;
+    height: 36px;
     background-image: url("sprites/rock/rock_bullet_01.png");
 }
 
 .rock-charge-bullet {
-    width: 5px;
-    height: 3px;
+    width: 72px;
+    height: 48px;
     background-image: url("sprites/rock/rock_c_bullet_01.png");
 }
 
@@ -942,10 +942,12 @@ body {
 
 .blues-area {
   position: absolute;
-  left: 42px;
-  bottom: 12px;
+  left: 94px;
+  bottom: 19px;
+  width: 37px;
+  height: 37px;
   display: none;
-  z-index: 4;
+  z-index: 10;
 }
 
 .blues-area.active {
@@ -953,8 +955,15 @@ body {
 }
 
 #blues-img {
-  width: 38px;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 37px;
+  height: 37px;
+  display: block;
   image-rendering: pixelated;
+  object-fit: contain;
+  object-position: center bottom;
 }
 
 .blues-charge {
@@ -1217,9 +1226,12 @@ body {
 
 .forte-area {
   position: absolute;
-  left: 80px;
+  left: 52px;
   bottom: 15px;
+  width: 40px;
+  height: 40px;
   display: none;
+  overflow: visible;
   z-index: 12;
 }
 
@@ -1228,8 +1240,15 @@ body {
 }
 
 #forte-img {
+  position: absolute;
+  right: 0;
+  bottom: 0;
   width: 40px;
+  height: 40px;
+  display: block;
   image-rendering: pixelated;
+  object-fit: contain;
+  object-position: right bottom;
 }
 
 .partner-top {
@@ -1272,7 +1291,7 @@ body {
 
 #beat-join-img {
   width: 28px !important;
-  height: 19px !important;
+  height: 28px !important;
 }
 
 #beat-card .partner-icon {
@@ -1288,7 +1307,7 @@ body {
     width: 7px;
     height: 5px;
     border-radius: 3px;
-    z-index: 10;
+    z-index: 31;
     background-repeat: no-repeat;
     background-position: center;
     background-size: 100% 100%;
@@ -1297,8 +1316,8 @@ body {
 }
 
 .forte-bullet {
-    width: 54px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 0;
     background-image: url("sprites/partner/forte/forte_bullet_01.png");
 }
@@ -1393,7 +1412,7 @@ body {
     border-radius: 50%;
     box-shadow: 0 0 8px #00d4ff, inset 0 0 8px #00d4ff;
     animation: chargePulse 0.12s ease-out forwards;
-    z-index: 9;
+    z-index: 32;
 }
 
 .forte-charge-effect {
@@ -1403,8 +1422,8 @@ body {
 
 
 .forte-charge-bullet {
-    width: 72px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     border-radius: 0;
     background-image: url("sprites/partner/forte/forte_c_bullet_01.png");
 }
@@ -1583,10 +1602,12 @@ body {
 
 .x-area {
   position: absolute;
-  left: 55px;
-  bottom: 20px;
+  left: 45px;
+  bottom: 32px;
   display: none;
-  z-index: 6;
+  width: 40px;
+  height: 40px;
+  z-index: 7;
 }
 
 .x-area.active {
@@ -1595,34 +1616,43 @@ body {
 
 #x-img {
   width: 40px;
+  height: 40px;
+  display: block;
   image-rendering: pixelated;
+  object-fit: contain;
+  object-position: right bottom;
 }
 
 .x-bullet {
-  width: 54px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 0;
   background-image: url("sprites/partner/x/x_bullet_01.png");
+  z-index: 7;
 }
 
 .x-charge-effect {
   border-color: #00ff66;
   box-shadow: 0 0 8px #00ff66, inset 0 0 8px #00ff66;
+  z-index: 7;
 }
 
 .x-charge-bullet {
-  width: 72px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 0;
   background-image: url("sprites/partner/x/x_c_bullet_01.png");
+  z-index: 7;
 }
 
 .rockexe-area {
   position: absolute;
-  left: 35px;
+  left: 20px;
   bottom: 18px;
+  width: 40px;
+  height: 40px;
   display: none;
-  z-index: 7;
+  z-index: 11;
 }
 
 .rockexe-area.active {
@@ -1630,28 +1660,50 @@ body {
 }
 
 #rockexe-img {
+  position: absolute;
+  right: 0;
+  bottom: 0;
   width: 40px;
+  height: 40px;
+  display: block;
   image-rendering: pixelated;
   object-fit: contain;
+  object-position: right bottom;
+  z-index: 11;
 }
 
 .rockexe-bullet {
-  width: 54px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 0;
   background-image: url("sprites/partner/rockexe/rockexe_bullet_01.png");
+  z-index: 11;
 }
 
 .rockexe-charge-bullet {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: 0;
   background-image: url("sprites/partner/rockexe/rockexe_c_bullet_01.png");
+  z-index: 11;
+}
+
+.rockexe-buster-effect {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  display: block;
+  image-rendering: pixelated;
+  object-fit: contain;
+  object-position: left bottom;
+  pointer-events: none;
+  z-index: 11;
 }
 
 .rockexe-charge-effect {
   border-color: #ffd700;
   box-shadow: 0 0 8px #ffd700, inset 0 0 8px #ffd700;
+  z-index: 11;
 }
 
 
@@ -2126,7 +2178,7 @@ body {
   width: 8px;
   height: 5px;
   border-radius: 3px;
-  z-index: 18;
+  z-index: 34;
   pointer-events: none;
 }
 
@@ -2227,8 +2279,10 @@ body {
   position: absolute;
   left: 80px;
   bottom: 35px;
+  width: 61px;
+  height: 61px;
   display: none;
-  z-index: 3;
+  z-index: 6;
   will-change: transform;
 }
 
@@ -2237,9 +2291,15 @@ body {
 }
 
 #zero-img {
-  width: 48px;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 61px;
+  height: 61px;
+  display: block;
   image-rendering: pixelated;
   object-fit: contain;
+  object-position: right bottom;
 }
 
 
@@ -2248,7 +2308,7 @@ body {
   image-rendering: pixelated;
   object-fit: contain;
   pointer-events: none;
-  z-index: 2;
+  z-index: 6;
   opacity: 0.55;
   filter: brightness(1.6) saturate(1.2) hue-rotate(160deg);
   animation: zeroAfterimageFade 0.36s ease-out forwards;
@@ -3183,7 +3243,7 @@ body {
 .boss-card-reward-line img,
 .boss-reward-chip-icon {
   width: 28px !important;
-  height: 19px !important;
+  height: 28px !important;
   image-rendering: pixelated;
   object-fit: contain;
   vertical-align: middle;
@@ -3295,7 +3355,7 @@ body {
 #boss-card-cutman .boss-reward-chip-icon,
 .cutman-card .boss-reward-chip-icon {
   width: 28px !important;
-  height: 19px !important;
+  height: 28px !important;
   image-rendering: pixelated;
   object-fit: contain;
 }
@@ -3375,7 +3435,7 @@ body {
 
 #boss-card-cutman .boss-card-topline,
 .cutman-card .boss-card-topline {
-  height: 19px !important;
+  height: 28px !important;
   margin-bottom: 0 !important;
 }
 
@@ -3540,7 +3600,7 @@ body {
 
 #boss-card-cutman .boss-card-topline,
 .cutman-card .boss-card-topline {
-  height: 21px !important;
+  height: 30px !important;
   min-height: 30px !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -4835,14 +4895,14 @@ body {
 /* v2.05: 개발실 노란 화살표를 작고 두께감 있는 픽셀 버튼으로 재정리 */
 .development-nav-btn {
     width: 22px !important;
-    height: 19px !important;
+    height: 28px !important;
     padding: 0 !important;
     border: none !important;
     background: transparent !important;
     clip-path: none !important;
     color: #ffd31a !important;
     font-size: 18px !important;
-    line-height: 19px !important;
+    line-height: 28px !important;
     font-weight: 900 !important;
     font-family: Arial, 'Courier New', monospace !important;
     text-align: center !important;
@@ -5820,7 +5880,7 @@ h2.section-heading-pixel {
 }
 .card-popup-item img {
   width: 28px !important;
-  height: 19px !important;
+  height: 28px !important;
 }
 .equipped-card-sprite {
   width: 38px !important;
@@ -6988,8 +7048,8 @@ h2.section-heading-pixel {
 }
 
 .rock-charge-bullet.super-rock-rocket-punch {
-  width: 5px;
-  height: 3px;
+  width: 64px;
+  height: 44px;
   background-image: url("sprites/armor/super-r/super_r_c_bullet_01.png") !important;
   filter:
     drop-shadow(0 0 5px rgba(255, 242, 160, 0.9))
@@ -8734,7 +8794,7 @@ h2.section-heading-pixel {
 }
 
 #boss-card-cutman .boss-action-btn {
-  min-height: 19px !important;
+  min-height: 28px !important;
   padding: 4px 3px !important;
   font-size: 9.5px !important;
 }
@@ -9650,7 +9710,7 @@ h2.section-heading-pixel {
 
 .card-analyze-btn-cost .card-analyze-chip-icon {
   width: 28px !important;
-  height: 19px !important;
+  height: 28px !important;
   margin: 0 2px 0 0 !important;
   image-rendering: pixelated !important;
   object-fit: contain !important;
@@ -10036,8 +10096,8 @@ body.mobile-mode #resource-wing.resource-side-bar {
 
 body.mobile-mode #resource-wing.resource-side-bar .resource-side-row,
 body.mobile-mode #resource-wing.resource-side-bar .resource-side-row:has(.cardchip-resource-icon) {
-  min-height: 19px !important;
-  height: 19px !important;
+  min-height: 28px !important;
+  height: 28px !important;
   justify-content: center !important;
   padding: 2px !important;
 }
@@ -10498,8 +10558,8 @@ body.mobile-mode #partner-area { left: -20px !important; bottom: 12px !important
 }
 
 .sleep-mode-main-icon {
-  opacity: 0.16 !important;
-  filter: brightness(0.45) saturate(0.65) !important;
+  opacity: 0.24 !important;
+  filter: brightness(0.60) saturate(0.82) !important;
 }
 
 .sleep-mode-title {
@@ -10597,8 +10657,8 @@ body.mobile-mode #partner-area { left: -20px !important; bottom: 12px !important
   height: 28px;
   object-fit: contain;
   image-rendering: pixelated;
-  opacity: 0.34;
-  filter: brightness(0.62) saturate(0.7);
+  opacity: 0.42;
+  filter: brightness(0.78) saturate(0.82);
   pointer-events: none;
 }
 
@@ -10648,182 +10708,100 @@ body.mobile-mode .partner-sync-card-grid {
   padding-bottom: 14px !important;
 }
 
-/* v93: Rockman trimmed-sprite anchor system
-   록맨 PNG 여백 제거 대응: 발바닥 중앙 고정 + 작게 표시.
-   표시 높이/총구/피격 기준은 game.js의 ROCKMAN_RENDER_CONFIG에서 관리합니다. */
+
+/* v108: Rockman 40x40 canvas reset - PC first
+   rock_01~03 / rock_st / rock_bullet / rock_c_bullet are all 40x40.
+   Character pixels are already aligned to the PNG bottom-right.
+   Bullet pixels are already aligned to the PNG left side.
+   Do not center or auto-trim these sprites in CSS. */
 #rockman-area {
-    width: 50px !important;
-    height: 50px !important;
+    position: absolute !important;
+    left: 69px !important;
+    bottom: 26px !important;
+    width: 40px !important;
+    height: 40px !important;
     overflow: visible !important;
+    z-index: 8 !important;
 }
 
 #rockman-img.character,
 #rockman-img {
     position: absolute !important;
-    left: 50% !important;
+    left: auto !important;
+    right: 0 !important;
     bottom: 0 !important;
-    width: auto !important;
-    height: 19px !important;
+    width: 40px !important;
+    height: 40px !important;
     max-width: none !important;
     max-height: none !important;
     display: block !important;
     object-fit: contain !important;
-    object-position: center bottom !important;
+    object-position: right bottom !important;
     image-rendering: pixelated !important;
-    transform: translateX(-50%) !important;
-    transform-origin: center bottom !important;
+    transform: none !important;
+    transform-origin: right bottom !important;
 }
 
-.rock-bullet,
-.charge-effect {
-    transform-origin: center center;
+.rock-normal-bullet {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 0 !important;
+    background-image: url("sprites/rock/rock_bullet_01.png") !important;
+    background-size: 100% 100% !important;
+}
+
+.rock-charge-bullet,
+.rock-charge-bullet.super-rock-rocket-punch {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 0 !important;
+    background-size: 100% 100% !important;
+}
+
+html.mobile-mode body #rockman-area,
+body.mobile-mode #rockman-area {
+    left: 69px !important;
+    bottom: 26px !important;
+    width: 40px !important;
+    height: 40px !important;
 }
 
 html.mobile-mode body #rockman-img.character,
 html.mobile-mode body #rockman-img,
 body.mobile-mode #rockman-img.character,
 body.mobile-mode #rockman-img {
-    position: absolute !important;
-    left: 50% !important;
+    left: auto !important;
+    right: 0 !important;
     bottom: 0 !important;
-    width: auto !important;
-    height: 19px !important;
-    max-width: none !important;
-    max-height: none !important;
-    transform: translateX(-50%) !important;
-    transform-origin: center bottom !important;
+    width: 40px !important;
+    height: 40px !important;
+    object-position: right bottom !important;
+    transform: none !important;
+    transform-origin: right bottom !important;
 }
 
-
-/* v95: Rockman trimmed-sprite size/ground-lift + tiny bullet pass
-   록맨은 더 작게 표시하고, 발바닥 기준 위치를 위로 올립니다.
-   탄환/차징/피격 기준 계산은 game.js의 렌더링 좌표 함수를 그대로 사용합니다. */
-#rockman-area {
-    bottom: 18px !important;
-}
-html.mobile-mode body #rockman-area,
-body.mobile-mode #rockman-area {
-    bottom: 18px !important;
-}
-#rockman-img.character,
-#rockman-img,
-html.mobile-mode body #rockman-img.character,
-html.mobile-mode body #rockman-img,
-body.mobile-mode #rockman-img.character,
-body.mobile-mode #rockman-img {
-    height: 19px !important;
-}
-.rock-normal-bullet {
-    width: 4px !important;
-    height: 3px !important;
-}
-.rock-charge-bullet,
-.rock-charge-bullet.super-rock-rocket-punch {
-    width: 5px !important;
-    height: 3px !important;
-}
-
-
-/* v96: Rockman size + per-frame anchor tune
-   화면 절대값이 아니라 game.js의 frameAnchorOffsets로 1/3프레임 발바닥 기준점을 맞춥니다. */
-#rockman-img.character,
-#rockman-img,
-html.mobile-mode body #rockman-img.character,
-html.mobile-mode body #rockman-img,
-body.mobile-mode #rockman-img.character,
-body.mobile-mode #rockman-img {
-    height: 21px !important;
-}
-.rock-normal-bullet {
-    width: 6px !important;
-    height: 4px !important;
-}
-.rock-charge-bullet,
-.rock-charge-bullet.super-rock-rocket-punch {
-    width: 30px !important;
-    height: 20px !important;
-}
-
-/* v98: Rockman battlefield position tune 2
-   브루스 등 다른 스프라이트는 건드리지 않고, 록맨 기준 위치만 v97과 같은 폭으로 한 번 더 우측 상단 이동합니다. */
-#rockman-area {
-    left: 69px !important;
-    bottom: 26px !important;
-}
-html.mobile-mode body #rockman-area,
-body.mobile-mode #rockman-area {
-    left: 69px !important;
-    bottom: 26px !important;
-}
-
-
-/* v99: 실제 모바일 기기 전용 록맨 위치 보정
-   PC에서 켠 모바일모드는 유지하고, 아이폰/안드로이드 실기에서만 록맨을 스프라이트 높이의 약 2/3만큼 더 올립니다. */
 html.real-mobile-device.mobile-mode body #rockman-area,
 body.real-mobile-device.mobile-mode #rockman-area {
-    bottom: 40px !important;
+    left: 69px !important;
+    bottom: 26px !important;
 }
 
-/* v103: Blues stand-frame foot-anchor tune
-   블루스 전체 배치 기준: #blues-area의 left/bottom입니다.
-   블루스 내부 프레임 흔들림 기준: game.js의 BLUES_RENDER_CONFIG.frameAnchorOffsets입니다.
-   대기 st1/st2/st3은 선글라스가 아니라 발바닥 중앙 기준으로 보정합니다. */
 
-/* v101: Blues trimmed-sprite anchor system
-   블루스는 더 이상 #rockman-area 안에 묶이지 않고, 포르테/엑스처럼 .game-screen 직속으로 배치합니다.
-   표시 높이/프레임별 발바닥 기준점은 game.js의 BLUES_RENDER_CONFIG에서 관리합니다. */
-.blues-area,
-#blues-area {
-  position: absolute !important;
-  left: 98px !important;
-  bottom: 20px !important;
-  width: 36px !important;
-  height: 36px !important;
-  display: none;
-  overflow: visible !important;
-  z-index: 4;
-  will-change: transform;
-}
 
-.blues-area.active,
-#blues-area.active {
-  display: block !important;
-}
 
-#blues-img {
-  position: absolute !important;
-  left: 50% !important;
-  bottom: 0 !important;
-  width: auto !important;
-  height: 30px !important;
-  max-width: none !important;
-  max-height: none !important;
-  display: block !important;
-  object-fit: contain !important;
-  object-position: center bottom !important;
-  image-rendering: pixelated !important;
-  transform: translateX(-50%) !important;
-  transform-origin: center bottom !important;
-}
 
-html.mobile-mode body #blues-area,
-body.mobile-mode #blues-area {
-  left: 88px !important;
-  bottom: 22px !important;
-  width: 36px !important;
-  height: 36px !important;
-}
 
-html.mobile-mode body #blues-img,
-body.mobile-mode #blues-img {
-  width: auto !important;
-  height: 21px !important;
-  max-width: none !important;
-  max-height: none !important;
-}
 
-html.real-mobile-device.mobile-mode body #blues-area,
-body.real-mobile-device.mobile-mode #blues-area {
-  left: 90px !important;
-  bottom: 30px !important;
-}
+/* v120: z-index DOM fix
+   기존 문제:
+   - #blues-area가 #rockman-area 내부에 있어서, 블루스 z-index가 높아도 부모 레이어에 갇혔습니다.
+   - 록맨 불릿/차지 이펙트는 .game-screen 직속이라 부모 밖에서 더 위로 보일 수 있었습니다.
+
+   수정:
+   - #blues-area를 #rockman-area 밖으로 이동하여 .game-screen 직속 레이어로 만듭니다.
+   - #rockman-area: 8
+   - .rock-bullet / .charge-effect: 9
+   - .blues-area: 10
+
+   결과:
+   록맨 본체 < 록맨 불릿/록맨 차지 이펙트 < 블루스 순서로 표시됩니다. */
