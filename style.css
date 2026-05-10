@@ -173,6 +173,10 @@ body {
     display: block;
 }
 
+#enemy-area.met-area #enemy-img {
+    margin-left: 9px;
+}
+
 #enemy-area.sniperjoe-area {
     bottom: var(--sniperjoe-ground-bottom, 20px) !important;
     height: 45px;
@@ -187,7 +191,7 @@ body {
 #partner-area {
     position: absolute;
     left: -20px;
-    bottom: 12px;
+    bottom: 1px;
     display: none;
     width: 34px;
     height: 34px;
@@ -1615,6 +1619,9 @@ body {
 }
 
 #x-img {
+  position: absolute;
+  right: 0;
+  bottom: 0;
   width: 40px;
   height: 40px;
   display: block;
@@ -1692,10 +1699,12 @@ body {
   position: absolute;
   width: 40px;
   height: 40px;
-  display: block;
+  border-radius: 0;
+  background-image: url("sprites/partner/rockexe/rockexe_bustter_ef_01.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
   image-rendering: pixelated;
-  object-fit: contain;
-  object-position: left bottom;
   pointer-events: none;
   z-index: 11;
 }
@@ -2279,9 +2288,9 @@ body {
   position: absolute;
   left: 80px;
   bottom: 35px;
+  display: none;
   width: 61px;
   height: 61px;
-  display: none;
   z-index: 6;
   will-change: transform;
 }
@@ -10270,7 +10279,7 @@ body.mobile-mode #partner-sync-wing-panel { left: 50% !important; right: auto !i
 body.mobile-mode.mobile-sync-tab-active #partner-sync-wing-panel, body.mobile-mode #partner-sync-wing.open #partner-sync-wing-panel { opacity:1 !important; transform:translate(-50%,0) !important; pointer-events:auto !important; }
 body.mobile-mode #rockman-area { left: 55px !important; bottom: 10px !important; }
 body.mobile-mode #enemy-area { bottom: 19px !important; }
-body.mobile-mode #partner-area { left: -20px !important; bottom: 12px !important; }
+body.mobile-mode #partner-area { left: -20px !important; bottom: 1px !important; }
 
 
 /* v86: mobile bug fixes */
@@ -10538,7 +10547,7 @@ body.mobile-mode #rockman-area { left: 55px !important; bottom: 10px !important;
 html.mobile-mode body #enemy-area,
 body.mobile-mode #enemy-area { bottom: 19px !important; }
 html.mobile-mode body #partner-area,
-body.mobile-mode #partner-area { left: -20px !important; bottom: 12px !important; }
+body.mobile-mode #partner-area { left: -20px !important; bottom: 1px !important; }
 
 
 /* v88: 절전모드 완전 검정 + 록맨 슬라이드 해제 */
@@ -10558,8 +10567,8 @@ body.mobile-mode #partner-area { left: -20px !important; bottom: 12px !important
 }
 
 .sleep-mode-main-icon {
-  opacity: 0.24 !important;
-  filter: brightness(0.60) saturate(0.82) !important;
+  opacity: 0.30 !important;
+  filter: brightness(0.72) saturate(0.90) !important;
 }
 
 .sleep-mode-title {
@@ -10657,8 +10666,8 @@ body.mobile-mode #partner-area { left: -20px !important; bottom: 12px !important
   height: 28px;
   object-fit: contain;
   image-rendering: pixelated;
-  opacity: 0.42;
-  filter: brightness(0.78) saturate(0.82);
+  opacity: 0.62;
+  filter: brightness(1.12) saturate(1.00);
   pointer-events: none;
 }
 
