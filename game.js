@@ -312,6 +312,9 @@ const PROJECTILE_MIN_DURATION = 90;
 const PROJECTILE_SPEED_PX_PER_MS = 0.38;
 // 아군 투사체 PNG가 좌측 정렬되어 있어 체감상 닿기 전에 사라지는 문제를 보정합니다.
 const ALLY_PROJECTILE_EXTRA_TRAVEL_PX = 10;
+// 모바일 모드에서는 전투 화면 스케일/여백 체감 때문에 불릿 시작점만 살짝 왼쪽으로 당깁니다.
+// 차지샷 이펙트/총구 기준은 그대로 두고, 실제 투사체 div에만 적용합니다.
+const MOBILE_ALLY_PROJECTILE_START_OFFSET_X = -8;
 
 // 전투 밸런스 안전 한계치입니다.
 // 고스테이지에서 적이 너무 빨라지거나, 아군/동료 공속이 과하게 빨라져
@@ -3013,6 +3016,14 @@ function getPartnerAnchorPoint(data) {
     return { x, y };
 }
 
+function isBattleMobileMode() {
+    return document.body.classList.contains('mobile-mode') || document.documentElement.classList.contains('mobile-mode');
+}
+
+function getAllyProjectileStartOffsetX() {
+    return isBattleMobileMode() ? MOBILE_ALLY_PROJECTILE_START_OFFSET_X : 0;
+}
+
 function getPartnerBusterPosition(type) {
     const data = PARTNER_ATTACK_DATA[type];
     const anchor = getPartnerAnchorPoint(data);
@@ -3062,11 +3073,12 @@ function placeElementByCenter(element, center, width, height) {
 
 function placePartnerProjectile(element, data, pos, isChargeShot) {
     const size = getPartnerProjectileSize(data, isChargeShot);
+    const startX = pos.x + getAllyProjectileStartOffsetX();
     element.style.width = size.width + 'px';
     element.style.height = size.height + 'px';
 
     if (data.projectilePositionMode === 'left-edge') {
-        element.style.left = pos.x + 'px';
+        element.style.left = startX + 'px';
         element.style.bottom = (
             pos.y - size.height / 2
             + (data.bulletOffsetY || 0)
@@ -3076,7 +3088,7 @@ function placePartnerProjectile(element, data, pos, isChargeShot) {
     }
 
     if (data.projectilePositionMode === 'left-bottom') {
-        element.style.left = pos.x + 'px';
+        element.style.left = startX + 'px';
         element.style.bottom = (
             pos.y
             + (data.bulletOffsetY || 0)
@@ -3086,12 +3098,12 @@ function placePartnerProjectile(element, data, pos, isChargeShot) {
     }
 
     if (data.projectilePositionMode !== 'muzzle-center') {
-        element.style.left = pos.x + 'px';
+        element.style.left = startX + 'px';
         element.style.bottom = pos.y + 'px';
         return;
     }
 
-    placeElementByCenter(element, pos, size.width, size.height);
+    placeElementByCenter(element, { x: startX, y: pos.y }, size.width, size.height);
 }
 
 function placePartnerChargeEffect(element, data, pos) {
@@ -3126,7 +3138,7 @@ function playRockExeBusterEffect(screen, data, pos) {
 
     const effect = document.createElement('div');
     effect.className = data.busterEffectClass;
-    effect.style.left = pos.x + 'px';
+    effect.style.left = (pos.x + getAllyProjectileStartOffsetX()) + 'px';
     effect.style.bottom = pos.y + 'px';
     effect.style.width = (data.busterEffectWidth || data.bulletWidth || 40) + 'px';
     effect.style.height = (data.busterEffectHeight || data.bulletHeight || 40) + 'px';
@@ -3669,7 +3681,8 @@ function getRockBulletPosition(isChargeShot = false) {
     const height = isChargeShot ? ROCKMAN_40_CANVAS_CONFIG.chargeBulletHeight : ROCKMAN_40_CANVAS_CONFIG.bulletHeight;
     return {
         // 탄환 PNG 내부 실제 탄은 좌측에 붙어 있으므로, div 왼쪽을 총구 끝에 맞춥니다.
-        x: pos.x,
+        // 모바일에서는 차지 이펙트는 그대로 두고 불릿 시작점만 살짝 왼쪽으로 당깁니다.
+        x: pos.x + getAllyProjectileStartOffsetX(),
         y: pos.y - height / 2
             + (ROCKMAN_40_CANVAS_CONFIG.bulletOffsetY || 0)
             + (isChargeShot ? (ROCKMAN_40_CANVAS_CONFIG.chargeBulletOffsetY || 0) : 0),
