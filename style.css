@@ -7787,10 +7787,12 @@ h2.section-heading-pixel {
 .status-legend {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 5px 8px;
   margin: -2px 0 7px;
   font-size: 10px;
   font-weight: 900;
+  line-height: 1.35;
 }
 .status-card-bonus {
   color: #c987ff !important;
@@ -9219,7 +9221,7 @@ h2.section-heading-pixel {
     box-shadow: 0 0 7px rgba(100, 255, 182, 0.65);
 }
 .status-soul-bonus {
-    color: #64ffb6;
+    color: #64ffb6 !important;
     text-shadow: 0 0 5px rgba(100, 255, 182, 0.6);
 }
 
@@ -9311,7 +9313,8 @@ h2.section-heading-pixel {
 }
 
 .status-ecan-bonus {
-  color: #00d4ff;
+  color: #00d4ff !important;
+  text-shadow: 0 0 5px rgba(0, 212, 255, 0.6);
 }
 
 
