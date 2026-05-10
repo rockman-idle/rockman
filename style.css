@@ -15419,3 +15419,171 @@ html.mobile-mode body .container,
 body.mobile-mode .container {
   padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
 }
+
+/* v184: 에어맨 피격/사망 연출 보정 + 광산 자동강화 버튼 */
+#enemy-img.airman-hit-flash {
+  animation: airmanBossHitCutmanLikeV184 0.16s ease-in-out !important;
+  filter: brightness(1.9) saturate(1.18) !important;
+  transform: none !important;
+}
+
+@keyframes airmanBossHitCutmanLikeV184 {
+  0%, 100% { transform: translateX(0) !important; opacity: 1; filter: brightness(1); }
+  25% { transform: translateX(5px) !important; opacity: 1; filter: brightness(1.8) saturate(1.15); }
+  75% { transform: translateX(-5px) !important; opacity: 1; filter: brightness(1.35) saturate(1.05); }
+}
+
+#enemy-img.airman-death-fade {
+  animation: airmanDeathFadeCutmanLikeV184 0.72s ease-out forwards !important;
+}
+
+@keyframes airmanDeathFadeCutmanLikeV184 {
+  0% { opacity: 1; transform: none; filter: brightness(1.1); }
+  45% { opacity: 0.75; transform: none; filter: brightness(1.35) saturate(1.25) drop-shadow(0 0 8px #001a4f); }
+  100% { opacity: 0; transform: none; filter: brightness(1.55) saturate(1.6) drop-shadow(0 0 12px #02092d); }
+}
+
+.airman-death-particle {
+  width: 8px !important;
+  height: 8px !important;
+  border: 2px solid #061744 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  box-shadow: 0 0 8px #061744, 0 0 14px rgba(6, 23, 68, 0.8) !important;
+  animation: cutmanDeathParticle 1.15s ease-out forwards !important;
+}
+
+.mine-enhance-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  width: 100%;
+}
+
+.mine-enhance-split .mine-btn {
+  width: 100%;
+  min-width: 0;
+  border-radius: 0;
+  white-space: nowrap;
+}
+
+.mine-enhance-split .mine-auto-enhance-btn {
+  border-radius: 4px 0 0 4px;
+  border-right-width: 0;
+  font-size: 10px;
+}
+
+.mine-enhance-split .mine-manual-enhance-btn {
+  border-radius: 0 4px 4px 0;
+}
+
+.mine-auto-enhance-btn.auto-running {
+  color: #000 !important;
+  background: #ffd700 !important;
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 7px #ffd700 !important;
+}
+
+.mine-auto-enhance-btn.auto-running::after {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-left: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: mineAutoDotV184 0.7s steps(2, end) infinite;
+  vertical-align: middle;
+}
+
+@keyframes mineAutoDotV184 {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+
+/* v185: 에어맨 피격 효과 제거, 사망 연출 컷맨 시간/형태 통일, 자동강화 색상 분리 */
+#enemy-img.airman-hit-flash {
+  animation: none !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+#enemy-img.airman-dead-blink {
+  animation: cutmanDeadBlink 0.52s step-end 5 !important;
+  transform: none !important;
+}
+
+#enemy-img.airman-death-fade {
+  animation: cutmanDeathFade 1.44s ease-out forwards !important;
+  transform: none !important;
+}
+
+.airman-death-particle {
+  position: absolute !important;
+  width: 8px !important;
+  height: 8px !important;
+  border: 2px solid #1657d8 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  box-shadow: 0 0 8px #2f7bff, 0 0 16px rgba(22, 87, 216, 0.9) !important;
+  pointer-events: none !important;
+  z-index: 45 !important;
+  animation: cutmanDeathParticle 2.2s ease-out forwards !important;
+}
+
+.mine-enhance-split .mine-auto-enhance-btn {
+  color: #79e8ff !important;
+  border-color: #1588b8 !important;
+  background: #06151d !important;
+  box-shadow: inset 0 0 8px rgba(0, 212, 255, 0.12) !important;
+}
+
+.mine-enhance-split .mine-manual-enhance-btn {
+  color: #ffd66b !important;
+  border-color: #9c6b00 !important;
+  background: #171104 !important;
+  box-shadow: inset 0 0 8px rgba(255, 180, 0, 0.12) !important;
+}
+
+.mine-enhance-split .mine-auto-enhance-btn.active {
+  color: #00141d !important;
+  background: #79e8ff !important;
+  border-color: #79e8ff !important;
+  box-shadow: 0 0 7px rgba(121, 232, 255, 0.9) !important;
+}
+
+.mine-enhance-split .mine-manual-enhance-btn.active {
+  color: #1c1200 !important;
+  background: #ffd66b !important;
+  border-color: #ffd66b !important;
+  box-shadow: 0 0 7px rgba(255, 214, 107, 0.9) !important;
+}
+
+.mine-auto-enhance-btn.auto-running {
+  color: #00141d !important;
+  background: #79e8ff !important;
+  border-color: #79e8ff !important;
+  box-shadow: 0 0 8px rgba(121, 232, 255, 0.95) !important;
+}
+
+
+/* v186: 에어맨 사망 이펙트 색상 보정 + 블루스 ST/버스터 프레임 표시 크기 안정화 */
+.airman-death-particle {
+  border-color: #1657d8 !important;
+  box-shadow: 0 0 8px #2f7bff, 0 0 16px rgba(22, 87, 216, 0.9) !important;
+}
+
+#blues-img.blues-stand-size-fix,
+#blues-img.blues-buster-attack-size-fix {
+  width: 40px !important;
+  height: 40px !important;
+  object-fit: contain !important;
+  object-position: right bottom !important;
+}
+
+#blues-area:has(#blues-img.blues-stand-size-fix),
+#blues-area:has(#blues-img.blues-buster-attack-size-fix) {
+  width: 40px !important;
+  height: 40px !important;
+}

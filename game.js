@@ -2294,9 +2294,18 @@ function animateBeat() {
     beatImg.style.transform = `translateY(${Math.sin(beatFloat) * 4}px)`;
 }
 
+function setBluesSpriteSizeMode(mode = 'walk') {
+  const bluesImg = document.getElementById('blues-img');
+  if (!bluesImg) return;
+  bluesImg.classList.remove('blues-stand-size-fix', 'blues-buster-attack-size-fix');
+  if (mode === 'stand') bluesImg.classList.add('blues-stand-size-fix');
+  if (mode === 'buster') bluesImg.classList.add('blues-buster-attack-size-fix');
+}
+
 function setBluesWalkFrame(frame) {
   const bluesImg = document.getElementById('blues-img');
   if (!bluesImg) return;
+  setBluesSpriteSizeMode('walk');
   bluesFrame = frame;
   bluesImg.src = `sprites/partner/blues/blues_0${frame}.png`;
 }
@@ -2304,6 +2313,7 @@ function setBluesWalkFrame(frame) {
 function setBluesStandFrame(frame) {
   const bluesImg = document.getElementById('blues-img');
   if (!bluesImg) return;
+  setBluesSpriteSizeMode('stand');
   bluesImg.src = `sprites/partner/blues/blues_st_0${frame}.png`;
 }
 
@@ -2905,6 +2915,7 @@ function bluesShieldCharge() {
   if (isPartnerLockedByAirmanWind('blues')) return;
 
   bluesAttacking = true;
+  setBluesSpriteSizeMode('walk');
   let frame = 1;
 
   bluesArea.classList.add('blues-charge');
@@ -4279,11 +4290,10 @@ function playAirmanBossDeathEffect() {
     const enemy = document.getElementById('enemy-img');
     const screen = document.querySelector('.game-screen');
     const enemyArea = document.getElementById('enemy-area');
-    const bossData = getBossData(currentBossType);
 
     if (!enemy || !screen) {
         playEnemyDeathEffect();
-        return 700;
+        return 500;
     }
 
     const screenRect = screen.getBoundingClientRect();
@@ -4294,12 +4304,13 @@ function playAirmanBossDeathEffect() {
     enemy.classList.remove('hit-shake', 'airman-hit-flash', 'enemy-death', 'airman-dead-blink', 'airman-death-fade');
     enemy.style.opacity = '1';
     enemy.style.transform = '';
-    enemy.src = bossData?.sprite || 'sprites/boss/super-rboss/airman/airman_st.png';
+    enemy.style.filter = '';
+    enemy.src = 'sprites/boss/super-rboss/airman/airman_w_02.png';
 
     setTimeout(() => {
         if (!enemy.isConnected) return;
         enemy.classList.add('airman-dead-blink');
-    }, 260);
+    }, 840);
 
     setTimeout(() => {
         if (!enemy.isConnected) return;
@@ -4307,35 +4318,41 @@ function playAirmanBossDeathEffect() {
         enemy.classList.add('airman-death-fade');
 
         const particles = [
-            [0, -46], [26, -36], [44, -14], [48, 12], [28, 34],
-            [0, 46], [-28, 34], [-48, 12], [-44, -14], [-26, -36],
-            [18, -55], [-18, -55]
+            [0, -42],
+            [30, -30],
+            [42, 0],
+            [30, 30],
+            [0, 42],
+            [-30, 30],
+            [-42, 0],
+            [-30, -30],
+            [18, -50],
+            [-18, -50]
         ];
 
-        particles.forEach((pos, index) => {
+        particles.forEach(pos => {
             const p = document.createElement('div');
             p.className = 'airman-death-particle';
             p.style.left = centerX + 'px';
             p.style.bottom = centerY + 'px';
             p.style.setProperty('--x', pos[0] + 'px');
             p.style.setProperty('--y', pos[1] + 'px');
-            p.style.animationDelay = (index % 3) * 0.035 + 's';
             screen.appendChild(p);
-            setTimeout(() => p.remove(), 1600);
+            setTimeout(() => p.remove(), 2200);
         });
-    }, 760);
+    }, 2360);
 
     setTimeout(() => {
         if (!enemy.isConnected) return;
         enemy.classList.remove('airman-dead-blink');
         enemy.classList.remove('airman-death-fade');
         enemy.style.opacity = '0';
-    }, 1550);
+    }, 3720);
 
     if (enemyArea) enemyArea.classList.add('airman-death-area');
-    setTimeout(() => enemyArea?.classList.remove('airman-death-area'), 1700);
+    setTimeout(() => enemyArea?.classList.remove('airman-death-area'), 3800);
 
-    return 1700;
+    return 3800;
 }
 
 function playCutmanBossDeathEffect() {
@@ -5940,6 +5957,7 @@ function fireBluesBusterShot() {
     if (isPartnerLockedByAirmanWind('blues')) return;
 
     bluesAttacking = true;
+    setBluesSpriteSizeMode('buster');
     const screenRect = screen.getBoundingClientRect();
     const bluesRect = bluesImg.getBoundingClientRect();
     const startX = bluesRect.right - screenRect.left - 2;
@@ -5985,6 +6003,7 @@ function fireBluesBusterShot() {
             clearInterval(bulletFrameTimer);
             if (!bullet.isConnected || bullet.dataset.cutmanErased === '1') {
                 bullet.remove();
+                setBluesSpriteSizeMode('stand');
                 bluesImg.src = BLUES_BUSTER_SPRITES.stand;
                 bluesAttacking = false;
                 return;
@@ -5993,6 +6012,7 @@ function fireBluesBusterShot() {
             const hit = applyEnemyDamage(damage, false, true);
             if (hit && !enemyDead) playEnemyHit(enemy);
             bullet.remove();
+            setBluesSpriteSizeMode('stand');
             bluesImg.src = BLUES_BUSTER_SPRITES.stand;
             bluesAttacking = false;
             updateUI();
@@ -6002,6 +6022,7 @@ function fireBluesBusterShot() {
 
     setTimeout(() => {
         if (bluesAttacking && !document.querySelector('.blues-stand-bullet')) {
+            setBluesSpriteSizeMode('stand');
             bluesImg.src = BLUES_BUSTER_SPRITES.stand;
             bluesAttacking = false;
         }
@@ -7068,7 +7089,7 @@ function setAirmanReturnWalkFrame(id, img, frameIndex) {
 
 function setAirmanPushedAllyStandFrame(id, img) {
     if (!img) return;
-    if (id === 'blues-area') { img.src = BLUES_BUSTER_SPRITES?.stand || 'sprites/partner/blues/blues_st_01.png'; return; }
+    if (id === 'blues-area') { setBluesSpriteSizeMode('stand'); img.src = BLUES_BUSTER_SPRITES?.stand || 'sprites/partner/blues/blues_st_01.png'; return; }
     if (id === 'forte-area') { img.src = 'sprites/partner/forte/forte_st.png'; return; }
     if (id === 'x-area') { img.src = 'sprites/partner/x/x_st.png'; return; }
     if (id === 'rockexe-area') { img.src = 'sprites/partner/rockexe/rockexe_st.png'; return; }
@@ -10448,3 +10469,150 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.toggle('mobile-tabs-fixed-v183', document.body.classList.contains('mobile-mode') || document.documentElement.classList.contains('mobile-mode'));
 });
 applyUnifiedBossCardsV183();
+
+/* v184: 에어맨 피격 연출 컷맨식 보정 + 광산 자동 강화 */
+if (typeof playAirmanBossHitEffectV183 === 'function' && !window.__airmanHitCutmanLikeV184) {
+    window.__airmanHitCutmanLikeV184 = true;
+    playAirmanBossHitEffectV183 = function() {
+        if (!isBossBattle || currentBossType !== 'classic_airman' || enemyDead || playerDead) return;
+        const enemy = document.getElementById('enemy-img');
+        if (!enemy) return;
+        enemy.classList.remove('airman-hit-flash', 'hit-shake');
+        void enemy.offsetWidth;
+        enemy.classList.add('airman-hit-flash');
+        setTimeout(() => enemy?.classList?.remove('airman-hit-flash'), 180);
+    };
+}
+
+let mineAutoEnhancing = false;
+let mineAutoEnhanceTimer = null;
+
+function canAutoEnhancePickaxe() {
+    return !!gameData.minePickaxeOwned
+        && Math.floor(gameData.minePickaxeEnhance || 0) < 10
+        && Math.floor(gameData.stones || 0) >= getMineEnhanceCost();
+}
+
+function stopAutoEnhancePickaxe(message = '') {
+    mineAutoEnhancing = false;
+    if (mineAutoEnhanceTimer) {
+        clearTimeout(mineAutoEnhanceTimer);
+        mineAutoEnhanceTimer = null;
+    }
+    if (message) showMineResult(message);
+    updateMineAutoEnhanceButtonV184();
+}
+
+function runAutoEnhancePickaxeStep() {
+    if (!mineAutoEnhancing) return;
+
+    if (!gameData.minePickaxeOwned) {
+        stopAutoEnhancePickaxe();
+        return;
+    }
+    if (Math.floor(gameData.minePickaxeEnhance || 0) >= 10) {
+        stopAutoEnhancePickaxe('10강 도달! 자동 강화 중지');
+        return;
+    }
+    if (Math.floor(gameData.stones || 0) < getMineEnhanceCost()) {
+        stopAutoEnhancePickaxe(`${STONE_ICON_HTML} 재료 부족 / 자동 강화 중지`);
+        return;
+    }
+    if (mineEnhancing) {
+        mineAutoEnhanceTimer = setTimeout(runAutoEnhancePickaxeStep, 220);
+        return;
+    }
+
+    enhancePickaxe();
+    mineAutoEnhanceTimer = setTimeout(runAutoEnhancePickaxeStep, 1020);
+}
+
+function toggleAutoEnhancePickaxe() {
+    if (mineAutoEnhancing) {
+        stopAutoEnhancePickaxe('자동 강화 중지');
+        return;
+    }
+
+    if (!gameData.minePickaxeOwned) {
+        showMineResult('곡괭이를 먼저 제작해주세요.');
+        return;
+    }
+    if (Math.floor(gameData.minePickaxeEnhance || 0) >= 10) {
+        showMineResult('이미 10강입니다.');
+        return;
+    }
+    if (Math.floor(gameData.stones || 0) < getMineEnhanceCost()) {
+        showMineResult(`${STONE_ICON_HTML} 재료가 부족합니다`);
+        return;
+    }
+
+    mineAutoEnhancing = true;
+    updateMineAutoEnhanceButtonV184();
+    runAutoEnhancePickaxeStep();
+}
+
+function updateMineAutoEnhanceButtonV184() {
+    const autoBtn = document.getElementById('mine-auto-enhance-btn');
+    const enhanceBtn = document.getElementById('mine-enhance-btn');
+    if (autoBtn) {
+        autoBtn.classList.toggle('auto-running', !!mineAutoEnhancing);
+        autoBtn.innerText = mineAutoEnhancing ? '자동 강화중' : '자동 강화';
+        setButtonActive(autoBtn, mineAutoEnhancing || canAutoEnhancePickaxe());
+    }
+    if (enhanceBtn) {
+        enhanceBtn.innerText = '강화';
+        setButtonActive(enhanceBtn, !mineEnhancing && canAutoEnhancePickaxe());
+    }
+}
+
+if (typeof updateUI === 'function' && !window.__updateMineAutoEnhanceV184) {
+    window.__updateMineAutoEnhanceV184 = true;
+    const updateUIBeforeMineAutoV184 = updateUI;
+    updateUI = function() {
+        updateUIBeforeMineAutoV184();
+        if (mineAutoEnhancing && !canAutoEnhancePickaxe() && !mineEnhancing) {
+            if (!gameData.minePickaxeOwned) {
+                stopAutoEnhancePickaxe();
+            } else if (Math.floor(gameData.minePickaxeEnhance || 0) >= 10) {
+                stopAutoEnhancePickaxe('10강 도달! 자동 강화 중지');
+            } else {
+                stopAutoEnhancePickaxe(`${STONE_ICON_HTML} 재료 부족 / 자동 강화 중지`);
+            }
+            return;
+        }
+        updateMineAutoEnhanceButtonV184();
+    };
+}
+
+document.addEventListener('DOMContentLoaded', updateMineAutoEnhanceButtonV184);
+updateMineAutoEnhanceButtonV184();
+
+
+/* v185: 에어맨 피격 이펙트 제거 + 광산 자동강화 표시 보정 */
+if (typeof playAirmanBossHitEffectV183 === 'function' && !window.__airmanHitNoEffectV185) {
+    window.__airmanHitNoEffectV185 = true;
+    playAirmanBossHitEffectV183 = function() {
+        const enemy = document.getElementById('enemy-img');
+        if (!enemy) return;
+        enemy.classList.remove('airman-hit-flash', 'hit-shake');
+        enemy.style.transform = '';
+        enemy.style.filter = '';
+    };
+}
+
+if (typeof updateMineAutoEnhanceButtonV184 === 'function' && !window.__mineAutoEnhanceButtonV185) {
+    window.__mineAutoEnhanceButtonV185 = true;
+    updateMineAutoEnhanceButtonV184 = function() {
+        const autoBtn = document.getElementById('mine-auto-enhance-btn');
+        const enhanceBtn = document.getElementById('mine-enhance-btn');
+        if (autoBtn) {
+            autoBtn.classList.toggle('auto-running', !!mineAutoEnhancing);
+            autoBtn.innerText = mineAutoEnhancing ? '자동 강화중' : '자동 강화';
+            setButtonActive(autoBtn, mineAutoEnhancing || canAutoEnhancePickaxe());
+        }
+        if (enhanceBtn) {
+            enhanceBtn.innerText = '강화';
+            setButtonActive(enhanceBtn, !mineEnhancing && canAutoEnhancePickaxe());
+        }
+    };
+}

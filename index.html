@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=airman_death_mobile_boss_v183">
+<link rel="stylesheet" href="style.css?v=airman_death_bright_blues_size_v186">
 </head>
 
 <body>
@@ -994,7 +994,10 @@
 
         <div class="mine-actions">
           <button id="craft-pickaxe-btn" class="mine-btn" onclick="craftPickaxe()">곡괭이 제작 <img src="sprites/item/screw.png" class="btn-item-icon" alt="나사">100</button>
-          <button id="mine-enhance-btn" class="mine-btn" onclick="enhancePickaxe()">+1강</button>
+          <div class="mine-enhance-split">
+            <button id="mine-auto-enhance-btn" class="mine-btn mine-auto-enhance-btn" onclick="toggleAutoEnhancePickaxe()">자동 강화</button>
+            <button id="mine-enhance-btn" class="mine-btn mine-manual-enhance-btn" onclick="enhancePickaxe()">강화</button>
+          </div>
           <button id="mine-tier-up-btn" class="mine-btn" onclick="upgradePickaxeTier()">10강 업그레이드</button>
         </div>
       </div>
@@ -1088,7 +1091,7 @@
   </div>
 </div>
 
-<script src="game.js?v=airman_death_mobile_boss_v183"></script>
+<script src="game.js?v=airman_death_bright_blues_size_v186"></script>
 
 
 </body>
