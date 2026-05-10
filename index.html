@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=projectile_plus10_sleepbright_v141">
+<link rel="stylesheet" href="style.css?v=mobile_battle_up10_ui_fix_v143">
 </head>
 
 <body>
@@ -642,7 +642,7 @@
 
     <div class="card-section card-stone-exchange-box">
       <div class="card-section-title">광물 변환</div>
-      <div class="card-section-help">돌 1000개를 옵션변경칩 1개로 변환합니다.</div>
+      <div class="card-section-help card-mineral-exchange-help"><img src="sprites/mine/stone.png" class="card-help-icon stone-help-icon" alt="돌"> 1000개를 <img src="sprites/card/option_stone.png" class="card-help-icon option-chip-help-icon" alt="옵션변경칩"> 1개로 변환합니다.</div>
       <div class="card-action-row">
         <button id="option-chip-exchange-1-btn" class="card-action-btn mineral-btn" onclick="exchangeStonesToOptionChips(1)">1개 교환</button>
         <button id="option-chip-exchange-10-btn" class="card-action-btn mineral-btn" onclick="exchangeStonesToOptionChips(10)">10개 교환</button>
@@ -670,7 +670,7 @@
           <button type="button" id="card-popup-equip-btn" class="card-popup-btn" onclick="event.preventDefault(); event.stopPropagation(); equipCardFromPopup(); return false;">장착</button>
           <button type="button" id="card-popup-lock-btn" class="card-popup-btn card-popup-lock-btn" onclick="event.preventDefault(); event.stopPropagation(); toggleCardLockFromPopup(); return false;">잠금</button>
           <button type="button" id="card-popup-synth-btn" class="card-popup-btn" onclick="event.preventDefault(); event.stopPropagation(); synthCardFromPopup(); return false;">일괄 합성</button>
-          <button type="button" id="card-popup-reroll-btn" class="card-popup-btn" onclick="event.preventDefault(); event.stopPropagation(); rerollCardOptionFromPopup(); return false;">옵션변경</button>
+          <button type="button" id="card-popup-reroll-btn" class="card-popup-btn" onclick="event.preventDefault(); event.stopPropagation(); rerollCardOptionFromPopup(); return false;"><span class="card-popup-btn-label">옵션변경</span><span class="card-popup-cost"><img src="sprites/card/option_stone.png" class="card-popup-cost-icon" alt="옵션변경칩"> 1</span></button>
         </div>
       </div>
     </div>
@@ -1012,7 +1012,7 @@
   </div>
 </div>
 
-<script src="game.js?v=projectile_plus10_sleepbright_v141"></script>
+<script src="game.js?v=mobile_battle_up10_ui_fix_v143"></script>
 
 
 </body>

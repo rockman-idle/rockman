@@ -1748,7 +1748,11 @@ function renderCardPopup() {
         synthBtn.title = canSynth ? `잠금/장착 제외 같은 종류/같은 등급 카드 ${synthRequirement}장당 1장씩 일괄 합성합니다.` : `잠금/장착 제외 같은 종류/같은 등급 카드 ${synthRequirement}장이 필요합니다.`;
     }
     setButtonActive(rerollBtn, canReroll);
-    if (rerollBtn) rerollBtn.disabled = !canReroll;
+    if (rerollBtn) {
+        rerollBtn.disabled = !canReroll;
+        rerollBtn.innerHTML = '<span class="card-popup-btn-label">옵션변경</span><span class="card-popup-cost"><img src="sprites/card/option_stone.png" class="card-popup-cost-icon" alt="옵션변경칩"> 1</span>';
+        rerollBtn.title = canReroll ? '옵션변경칩 1개를 사용합니다.' : '옵션변경칩 1개가 필요합니다.';
+    }
 }
 
 function renderCardUI() {

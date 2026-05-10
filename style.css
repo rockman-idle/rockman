@@ -10814,3 +10814,158 @@ body.real-mobile-device.mobile-mode #rockman-area {
 
    결과:
    록맨 본체 < 록맨 불릿/록맨 차지 이펙트 < 블루스 순서로 표시됩니다. */
+
+
+/* v142: 카드 광물 변환/옵션변경칩 아이콘 표시 */
+.card-mineral-exchange-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.card-help-icon {
+  width: 15px;
+  height: 15px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  vertical-align: -3px;
+  filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.45));
+}
+
+.card-popup-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.card-popup-cost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.card-popup-cost-icon {
+  width: 14px;
+  height: 14px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.45));
+}
+
+/* v143: 모바일 전투 화면 캐릭터/이펙트 10px 상향 + 강화 UI 줄바꿈 보정 */
+html.mobile-mode body #rockman-area,
+body.mobile-mode #rockman-area {
+  left: 55px !important;
+  bottom: 20px !important;
+}
+
+html.mobile-mode body #enemy-area,
+body.mobile-mode #enemy-area {
+  bottom: 29px !important;
+}
+
+html.mobile-mode body #partner-area,
+body.mobile-mode #partner-area {
+  left: -20px !important;
+  bottom: 11px !important;
+}
+
+html.mobile-mode body #beat-area,
+body.mobile-mode #beat-area { bottom: 54px !important; }
+
+html.mobile-mode body .blues-area,
+body.mobile-mode .blues-area { bottom: 29px !important; }
+
+html.mobile-mode body .forte-area,
+body.mobile-mode .forte-area { bottom: 25px !important; }
+
+html.mobile-mode body .x-area,
+body.mobile-mode .x-area { bottom: 42px !important; }
+
+html.mobile-mode body .rockexe-area,
+body.mobile-mode .rockexe-area { bottom: 28px !important; }
+
+html.mobile-mode body .zero-area,
+body.mobile-mode .zero-area { bottom: 45px !important; }
+
+/* 동적 생성 투사체/이펙트도 전투 캐릭터 상향값과 맞춤 */
+html.mobile-mode body .rock-bullet,
+html.mobile-mode body .partner-bullet,
+html.mobile-mode body .enemy-bullet,
+html.mobile-mode body .charge-effect,
+html.mobile-mode body .partner-charge-effect,
+html.mobile-mode body .rockexe-buster-effect,
+html.mobile-mode body .cutman-boss-cutter,
+html.mobile-mode body .cutman-cutter-erase-pop,
+html.mobile-mode body .zero-afterimage,
+body.mobile-mode .rock-bullet,
+body.mobile-mode .partner-bullet,
+body.mobile-mode .enemy-bullet,
+body.mobile-mode .charge-effect,
+body.mobile-mode .partner-charge-effect,
+body.mobile-mode .rockexe-buster-effect,
+body.mobile-mode .cutman-boss-cutter,
+body.mobile-mode .cutman-cutter-erase-pop,
+body.mobile-mode .zero-afterimage {
+  margin-bottom: 10px !important;
+}
+
+/* 광산 강화: '강화 확률/강화 비용' 줄바꿈 방지 */
+.mine-status-line > span {
+  font-size: 11px;
+  line-height: 1.15;
+  white-space: nowrap;
+  color: #9a9a9a;
+  letter-spacing: -0.25px;
+}
+
+.mine-status-line b {
+  font-size: 11px;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.mine-destroy-chance-note {
+  font-size: 9px;
+  letter-spacing: -0.35px;
+}
+
+/* 전투 강화 레벨 표기 줄바꿈 방지 */
+.screw-upgrade-row b,
+.ecan-upgrade-row b,
+.soul-upgrade-row b {
+  white-space: nowrap;
+  line-height: 1.05;
+  font-size: 10px;
+  letter-spacing: -0.45px;
+}
+
+html.mobile-mode body .screw-upgrade-row,
+html.mobile-mode body .ecan-upgrade-row,
+html.mobile-mode body .soul-upgrade-row,
+body.mobile-mode .screw-upgrade-row,
+body.mobile-mode .ecan-upgrade-row,
+body.mobile-mode .soul-upgrade-row {
+  grid-template-columns: minmax(0, 1fr) 60px 48px 78px !important;
+  gap: 4px !important;
+}
+
+html.mobile-mode body .screw-upgrade-row b,
+html.mobile-mode body .ecan-upgrade-row b,
+html.mobile-mode body .soul-upgrade-row b,
+body.mobile-mode .screw-upgrade-row b,
+body.mobile-mode .ecan-upgrade-row b,
+body.mobile-mode .soul-upgrade-row b {
+  font-size: 9.5px !important;
+  white-space: nowrap !important;
+  letter-spacing: -0.55px !important;
+}
