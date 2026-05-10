@@ -314,7 +314,7 @@ const PROJECTILE_SPEED_PX_PER_MS = 0.38;
 const ALLY_PROJECTILE_EXTRA_TRAVEL_PX = 10;
 // 모바일 모드에서는 전투 화면 스케일/여백 체감 때문에 불릿 시작점만 살짝 왼쪽으로 당깁니다.
 // 차지샷 이펙트/총구 기준은 그대로 두고, 실제 투사체 div에만 적용합니다.
-const MOBILE_ALLY_PROJECTILE_START_OFFSET_X = -8;
+const MOBILE_ALLY_PROJECTILE_START_OFFSET_X = -16;
 
 // 전투 밸런스 안전 한계치입니다.
 // 고스테이지에서 적이 너무 빨라지거나, 아군/동료 공속이 과하게 빨라져

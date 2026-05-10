@@ -2182,6 +2182,44 @@ body {
   100% { opacity: 1; filter: brightness(1); }
 }
 
+
+/* v146: 모바일 피격 플래시는 filter 합성으로 인한 미세 위치 튐을 막기 위해 opacity만 사용합니다. */
+body.mobile-mode .ally-hit-flash,
+html.mobile-mode body .ally-hit-flash {
+  animation: allyHitFlashMobileStable 0.52s linear !important;
+}
+
+@keyframes allyHitFlashMobileStable {
+  0% { opacity: 1; }
+  12% { opacity: 0.42; }
+  24% { opacity: 1; }
+  36% { opacity: 0.42; }
+  48% { opacity: 1; }
+  60% { opacity: 0.42; }
+  100% { opacity: 1; }
+}
+
+body.mobile-mode #rockman-img,
+body.mobile-mode #rush-img,
+body.mobile-mode #beat-img,
+body.mobile-mode #blues-img,
+body.mobile-mode #forte-img,
+body.mobile-mode #x-img,
+body.mobile-mode #rockexe-img,
+body.mobile-mode #zero-img,
+html.mobile-mode body #rockman-img,
+html.mobile-mode body #rush-img,
+html.mobile-mode body #beat-img,
+html.mobile-mode body #blues-img,
+html.mobile-mode body #forte-img,
+html.mobile-mode body #x-img,
+html.mobile-mode body #rockexe-img,
+html.mobile-mode body #zero-img {
+  display: block;
+  vertical-align: bottom;
+  backface-visibility: hidden;
+}
+
 .enemy-bullet {
   position: absolute;
   width: 8px;
