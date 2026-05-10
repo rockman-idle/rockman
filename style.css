@@ -173,10 +173,6 @@ body {
     display: block;
 }
 
-#enemy-area.met-area #enemy-img {
-    margin-left: 9px;
-}
-
 #enemy-area.sniperjoe-area {
     bottom: var(--sniperjoe-ground-bottom, 20px) !important;
     height: 45px;
@@ -191,7 +187,7 @@ body {
 #partner-area {
     position: absolute;
     left: -20px;
-    bottom: 1px;
+    bottom: 12px;
     display: none;
     width: 34px;
     height: 34px;
@@ -200,6 +196,7 @@ body {
 #partner-area.active { display: block; }
 
 .partner-character {
+    display: block;
     width: 34px;
     height: 34px;
     image-rendering: pixelated;
@@ -207,6 +204,7 @@ body {
     object-position: center bottom;
     transform-origin: center bottom;
     will-change: transform;
+    backface-visibility: hidden;
 }
 
 .boss-hp-container {
@@ -1608,9 +1606,9 @@ body {
   position: absolute;
   left: 45px;
   bottom: 32px;
-  display: none;
   width: 40px;
   height: 40px;
+  display: none;
   z-index: 7;
 }
 
@@ -1619,9 +1617,6 @@ body {
 }
 
 #x-img {
-  position: absolute;
-  right: 0;
-  bottom: 0;
   width: 40px;
   height: 40px;
   display: block;
@@ -1692,20 +1687,6 @@ body {
   height: 40px;
   border-radius: 0;
   background-image: url("sprites/partner/rockexe/rockexe_c_bullet_01.png");
-  z-index: 11;
-}
-
-.rockexe-buster-effect {
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  border-radius: 0;
-  background-image: url("sprites/partner/rockexe/rockexe_bustter_ef_01.png");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 100% 100%;
-  image-rendering: pixelated;
-  pointer-events: none;
   z-index: 11;
 }
 
@@ -2182,44 +2163,6 @@ body {
   100% { opacity: 1; filter: brightness(1); }
 }
 
-
-/* v146: 모바일 피격 플래시는 filter 합성으로 인한 미세 위치 튐을 막기 위해 opacity만 사용합니다. */
-body.mobile-mode .ally-hit-flash,
-html.mobile-mode body .ally-hit-flash {
-  animation: allyHitFlashMobileStable 0.52s linear !important;
-}
-
-@keyframes allyHitFlashMobileStable {
-  0% { opacity: 1; }
-  12% { opacity: 0.42; }
-  24% { opacity: 1; }
-  36% { opacity: 0.42; }
-  48% { opacity: 1; }
-  60% { opacity: 0.42; }
-  100% { opacity: 1; }
-}
-
-body.mobile-mode #rockman-img,
-body.mobile-mode #rush-img,
-body.mobile-mode #beat-img,
-body.mobile-mode #blues-img,
-body.mobile-mode #forte-img,
-body.mobile-mode #x-img,
-body.mobile-mode #rockexe-img,
-body.mobile-mode #zero-img,
-html.mobile-mode body #rockman-img,
-html.mobile-mode body #rush-img,
-html.mobile-mode body #beat-img,
-html.mobile-mode body #blues-img,
-html.mobile-mode body #forte-img,
-html.mobile-mode body #x-img,
-html.mobile-mode body #rockexe-img,
-html.mobile-mode body #zero-img {
-  display: block;
-  vertical-align: bottom;
-  backface-visibility: hidden;
-}
-
 .enemy-bullet {
   position: absolute;
   width: 8px;
@@ -2326,9 +2269,9 @@ html.mobile-mode body #zero-img {
   position: absolute;
   left: 80px;
   bottom: 35px;
-  display: none;
   width: 61px;
   height: 61px;
+  display: none;
   z-index: 6;
   will-change: transform;
 }
@@ -2348,6 +2291,7 @@ html.mobile-mode body #zero-img {
   object-fit: contain;
   object-position: right bottom;
 }
+
 
 
 .zero-afterimage {
@@ -10317,7 +10261,7 @@ body.mobile-mode #partner-sync-wing-panel { left: 50% !important; right: auto !i
 body.mobile-mode.mobile-sync-tab-active #partner-sync-wing-panel, body.mobile-mode #partner-sync-wing.open #partner-sync-wing-panel { opacity:1 !important; transform:translate(-50%,0) !important; pointer-events:auto !important; }
 body.mobile-mode #rockman-area { left: 55px !important; bottom: 10px !important; }
 body.mobile-mode #enemy-area { bottom: 19px !important; }
-body.mobile-mode #partner-area { left: -20px !important; bottom: 1px !important; }
+body.mobile-mode #partner-area { left: -20px !important; bottom: 12px !important; }
 
 
 /* v86: mobile bug fixes */
@@ -10585,7 +10529,7 @@ body.mobile-mode #rockman-area { left: 55px !important; bottom: 10px !important;
 html.mobile-mode body #enemy-area,
 body.mobile-mode #enemy-area { bottom: 19px !important; }
 html.mobile-mode body #partner-area,
-body.mobile-mode #partner-area { left: -20px !important; bottom: 1px !important; }
+body.mobile-mode #partner-area { left: -20px !important; bottom: 12px !important; }
 
 
 /* v88: 절전모드 완전 검정 + 록맨 슬라이드 해제 */
@@ -10605,8 +10549,8 @@ body.mobile-mode #partner-area { left: -20px !important; bottom: 1px !important;
 }
 
 .sleep-mode-main-icon {
-  opacity: 0.30 !important;
-  filter: brightness(0.72) saturate(0.90) !important;
+  opacity: 0.16 !important;
+  filter: brightness(0.45) saturate(0.65) !important;
 }
 
 .sleep-mode-title {
@@ -10704,8 +10648,8 @@ body.mobile-mode #partner-area { left: -20px !important; bottom: 1px !important;
   height: 28px;
   object-fit: contain;
   image-rendering: pixelated;
-  opacity: 0.62;
-  filter: brightness(1.12) saturate(1.00);
+  opacity: 0.34;
+  filter: brightness(0.62) saturate(0.7);
   pointer-events: none;
 }
 
@@ -10854,99 +10798,16 @@ body.real-mobile-device.mobile-mode #rockman-area {
    록맨 본체 < 록맨 불릿/록맨 차지 이펙트 < 블루스 순서로 표시됩니다. */
 
 
-/* v142: 카드 광물 변환/옵션변경칩 아이콘 표시 */
-.card-mineral-exchange-help {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-
-.card-help-icon {
-  width: 15px;
-  height: 15px;
+.rockexe-buster-effect {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 0;
+  background-image: url("sprites/partner/rockexe/rockexe_bustter_ef_01.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
   image-rendering: pixelated;
-  object-fit: contain;
-  vertical-align: -3px;
-  filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.45));
-}
-
-.card-popup-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  flex-wrap: wrap;
-}
-
-.card-popup-cost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  color: inherit;
-  font-size: 10px;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.card-popup-cost-icon {
-  width: 14px;
-  height: 14px;
-  image-rendering: pixelated;
-  object-fit: contain;
-  filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.45));
-}
-
-/* v144: 모바일 전투 위치 상향 보정 제거 - PC와 같은 상대 좌표/총구 기준 유지 */
-/* 광산 강화: '강화 확률/강화 비용' 줄바꿈 방지 */
-.mine-status-line > span {
-  font-size: 11px;
-  line-height: 1.15;
-  white-space: nowrap;
-  color: #9a9a9a;
-  letter-spacing: -0.25px;
-}
-
-.mine-status-line b {
-  font-size: 11px;
-  line-height: 1.15;
-  white-space: nowrap;
-}
-
-.mine-destroy-chance-note {
-  font-size: 9px;
-  letter-spacing: -0.35px;
-}
-
-/* 전투 강화 레벨 표기 줄바꿈 방지 */
-.screw-upgrade-row b,
-.ecan-upgrade-row b,
-.soul-upgrade-row b {
-  white-space: nowrap;
-  line-height: 1.05;
-  font-size: 10px;
-  letter-spacing: -0.45px;
-}
-
-html.mobile-mode body .screw-upgrade-row,
-html.mobile-mode body .ecan-upgrade-row,
-html.mobile-mode body .soul-upgrade-row,
-body.mobile-mode .screw-upgrade-row,
-body.mobile-mode .ecan-upgrade-row,
-body.mobile-mode .soul-upgrade-row {
-  grid-template-columns: minmax(0, 1fr) 60px 48px 78px !important;
-  gap: 4px !important;
-}
-
-html.mobile-mode body .screw-upgrade-row b,
-html.mobile-mode body .ecan-upgrade-row b,
-html.mobile-mode body .soul-upgrade-row b,
-body.mobile-mode .screw-upgrade-row b,
-body.mobile-mode .ecan-upgrade-row b,
-body.mobile-mode .soul-upgrade-row b {
-  font-size: 9.5px !important;
-  white-space: nowrap !important;
-  letter-spacing: -0.55px !important;
+  pointer-events: none;
+  z-index: 11;
 }
