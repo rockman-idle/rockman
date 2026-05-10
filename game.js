@@ -310,6 +310,11 @@ const SNIPERJOE_DODGE_CHANCE = 0.10;
 // 값이 클수록 빠릅니다. 0.38은 기존 원거리 탄속보다 약간 정돈된 기준입니다.
 const PROJECTILE_MIN_DURATION = 90;
 const PROJECTILE_SPEED_PX_PER_MS = 0.38;
+// 아군 투사체 PNG가 좌측 정렬되어 있어 체감상 닿기 전에 사라지는 문제를 보정합니다.
+const ALLY_PROJECTILE_EXTRA_TRAVEL_PX = 10;
+// 모바일 모드에서는 전투 화면 스케일/여백 체감 때문에 불릿 시작점만 살짝 왼쪽으로 당깁니다.
+// 차지샷 이펙트/총구 기준은 그대로 두고, 실제 투사체 div에만 적용합니다.
+const MOBILE_ALLY_PROJECTILE_START_OFFSET_X = -16;
 
 // 전투 밸런스 안전 한계치입니다.
 // 고스테이지에서 적이 너무 빨라지거나, 아군/동료 공속이 과하게 빨라져
@@ -444,13 +449,13 @@ const ROCKEXE_40_CANVAS_CONFIG = {
     chargeBulletHeight: 40,
     // 록맨.EXE는 40x40 캐릭터 PNG의 우측하단과
     // 불렛/차지불렛 40x40 PNG의 좌측하단을 맞춰 발사합니다.
+    // 버스터 이펙트도 기본불렛의 좌측하단에 맞춰 표시합니다.
     muzzleOffsetX: 0,
     muzzleOffsetY: 0,
     bulletOffsetY: 0,
     chargeBulletOffsetY: 0,
-    chargeEffectRenderedSize: 22,
-    chargeEffectOffsetX: 0,
-    chargeEffectOffsetY: 12.5
+    busterEffectWidth: 40,
+    busterEffectHeight: 40
 };
 
 function getCritChanceForLevel(level) {
@@ -866,6 +871,7 @@ const PARTNER_ATTACK_DATA = {
 
         // 록맨.EXE는 40x40 캐릭터 PNG의 우측하단과
         // 불렛/차지불렛 40x40 PNG의 좌측하단을 맞춰 발사합니다.
+        // 기본불렛 때만 버스터 이펙트를 같은 좌측하단 기준에 표시합니다.
         projectilePositionMode: 'left-bottom',
         muzzleAnchorX: 'right',
         muzzleAnchorY: 'bottom',
@@ -878,20 +884,23 @@ const PARTNER_ATTACK_DATA = {
         chargeBulletHeight: ROCKEXE_40_CANVAS_CONFIG.chargeBulletHeight,
         bulletOffsetY: ROCKEXE_40_CANVAS_CONFIG.bulletOffsetY,
         chargeBulletOffsetY: ROCKEXE_40_CANVAS_CONFIG.chargeBulletOffsetY,
+        busterEffectClass: 'rockexe-buster-effect',
+        busterEffectFramePrefix: 'sprites/partner/rockexe/rockexe_bustter_ef_',
+        busterEffectFrameCount: 3,
+        busterEffectFrameInterval: 45,
+        busterEffectWidth: ROCKEXE_40_CANVAS_CONFIG.busterEffectWidth,
+        busterEffectHeight: ROCKEXE_40_CANVAS_CONFIG.busterEffectHeight,
 
         chargeEffectWidth: 18,
         chargeEffectHeight: 18,
-        chargeEffectRenderedSize: ROCKEXE_40_CANVAS_CONFIG.chargeEffectRenderedSize,
-        chargeEffectOffsetX: ROCKEXE_40_CANVAS_CONFIG.chargeEffectOffsetX,
-        chargeEffectOffsetY: ROCKEXE_40_CANVAS_CONFIG.chargeEffectOffsetY,
+        chargeEffectOffsetX: 0,
+        chargeEffectOffsetY: 0,
 
         arcChargeProjectile: true,
         arcHeight: 24,
         shotDuration: 920,
-        chargeShotDuration: 1360,
-        explosionRadius: 40
+        chargeShotDuration: 1360
     }
-
 };
 
 
@@ -1742,7 +1751,11 @@ function renderCardPopup() {
         synthBtn.title = canSynth ? `잠금/장착 제외 같은 종류/같은 등급 카드 ${synthRequirement}장당 1장씩 일괄 합성합니다.` : `잠금/장착 제외 같은 종류/같은 등급 카드 ${synthRequirement}장이 필요합니다.`;
     }
     setButtonActive(rerollBtn, canReroll);
-    if (rerollBtn) rerollBtn.disabled = !canReroll;
+    if (rerollBtn) {
+        rerollBtn.disabled = !canReroll;
+        rerollBtn.innerHTML = '<span class="card-popup-btn-label">옵션변경</span><span class="card-popup-cost"><img src="sprites/card/option_stone.png" class="card-popup-cost-icon" alt="옵션변경칩"> 1</span>';
+        rerollBtn.title = canReroll ? '옵션변경칩 1개를 사용합니다.' : '옵션변경칩 1개가 필요합니다.';
+    }
 }
 
 function renderCardUI() {
@@ -1868,14 +1881,14 @@ function setupStage() {
 
     const enemyArea = document.getElementById('enemy-area');
     if (enemyArea) {
-        enemyArea.classList.remove('boss-enter-area', 'sniperjoe-enter-area', 'sniperjoe-area');
+        enemyArea.classList.remove('boss-enter-area', 'sniperjoe-enter-area', 'sniperjoe-area', 'met-area');
         enemyArea.style.removeProperty('--boss-ground-bottom');
         if (currentEnemyType === 'sniperjoe') {
             enemyArea.classList.add('sniperjoe-area');
             enemyArea.style.setProperty('--sniperjoe-ground-bottom', `${SNIPERJOE_BOTTOM}px`);
             enemyArea.style.bottom = `${SNIPERJOE_BOTTOM}px`;
         } else {
-            enemyArea.classList.remove('sniperjoe-area');
+            enemyArea.classList.add('met-area');
             enemyArea.style.removeProperty('--sniperjoe-ground-bottom');
             enemyArea.style.bottom = `${MET_BOTTOM}px`;
         }
@@ -1941,11 +1954,8 @@ function applyStillBattleFrames() {
     const zeroImg = document.getElementById('zero-img');
 
     if (rockman) rockman.src = getRockStandSprite();
-    if (rushImg) {
-        const showRush = gameData.rushOwned && !isSuperRockUnlocked();
-        setRushVisibility(showRush);
-        if (showRush) setRushSprite('sprites/partner/rush/rush_st.png');
-    }
+    if (rushImg) rushImg.style.display = isSuperRockUnlocked() ? 'none' : '';
+    if (rushImg && gameData.rushOwned && !isSuperRockUnlocked()) rushImg.src = 'sprites/partner/rush/rush_st.png';
     if (forteImg && gameData.forteOwned && !forteAttacking) forteImg.src = 'sprites/partner/forte/forte_st.png';
     if (xImg && gameData.xOwned && !xAttacking) xImg.src = 'sprites/partner/x/x_st.png';
     if (rockexeImg && gameData.exeRockmanOwned && !rockexeAttacking) rockexeImg.src = 'sprites/partner/rockexe/rockexe_st.png';
@@ -2111,47 +2121,37 @@ function animate() {
 }
 
 
-function setRushVisibility(visible) {
-    const rushImg = document.getElementById('rush-img');
-    if (!rushImg) return;
-    const nextDisplay = visible ? 'block' : 'none';
-    if (rushImg.style.display !== nextDisplay) rushImg.style.display = nextDisplay;
-}
-
-function setRushSprite(src) {
-    const rushImg = document.getElementById('rush-img');
-    if (!rushImg || !src) return;
-    if (rushImg.getAttribute('src') !== src) rushImg.setAttribute('src', src);
-}
-
 function applyRushFrameStabilize(frameKey = 'st') {
     const rushImg = document.getElementById('rush-img');
     if (!rushImg) return;
     const offset = RUSH_FRAME_STABILIZE_OFFSET[frameKey] || RUSH_FRAME_STABILIZE_OFFSET.st;
-    const nextTransform = `translate(${offset.x}px, ${offset.y}px)`;
-    if (rushImg.style.transform !== nextTransform) rushImg.style.transform = nextTransform;
+    rushImg.style.transform = `translate(${offset.x}px, ${offset.y}px)`;
 }
 
 function animateRush() {
     const rushImg = document.getElementById('rush-img');
     if (!rushImg) return;
-
-    if (!gameData.rushOwned || isSuperRockUnlocked()) {
-        setRushVisibility(false);
+    const rushArea = document.getElementById('rush-area');
+    if (isSuperRockUnlocked()) {
+        if (rushArea) rushArea.classList.remove('active');
+        rushImg.style.display = 'none';
+        applyRushFrameStabilize('st');
+        return;
+    }
+    rushImg.style.display = '';
+    if (!gameData.rushOwned) {
         applyRushFrameStabilize('st');
         return;
     }
 
-    setRushVisibility(true);
-
     if (isStillBossBattle()) {
-        setRushSprite('sprites/partner/rush/rush_st.png');
+        rushImg.src = 'sprites/partner/rush/rush_st.png';
         applyRushFrameStabilize('st');
         return;
     }
 
     const frame = rushWalkFrames[rushWalkIndex];
-    setRushSprite(`sprites/partner/rush/rush_0${frame}.png`);
+    rushImg.src = `sprites/partner/rush/rush_0${frame}.png`;
     applyRushFrameStabilize(frame);
     rushWalkIndex = (rushWalkIndex + 1) % rushWalkFrames.length;
 }
@@ -3016,14 +3016,20 @@ function getPartnerAnchorPoint(data) {
     return { x, y };
 }
 
+function isBattleMobileMode() {
+    return document.body.classList.contains('mobile-mode') || document.documentElement.classList.contains('mobile-mode');
+}
+
+function getAllyProjectileStartOffsetX() {
+    return isBattleMobileMode() ? MOBILE_ALLY_PROJECTILE_START_OFFSET_X : 0;
+}
+
 function getPartnerBusterPosition(type) {
     const data = PARTNER_ATTACK_DATA[type];
     const anchor = getPartnerAnchorPoint(data);
 
     if (!data || !anchor) return null;
 
-    // left-edge 모드는 록맨과 같은 40x40 캔버스 방식입니다.
-    // 발사점은 총구 중심만 계산하고, 불렛 div의 left를 총구 x에 직접 맞춥니다.
     if (data.projectilePositionMode === 'left-edge') {
         return {
             x: anchor.x + (data.muzzleOffsetX || 0),
@@ -3040,7 +3046,6 @@ function getPartnerBusterPosition(type) {
         };
     }
 
-    // legacy 모드는 기존 좌하단 배치 방식과 호환됩니다.
     if (data.projectilePositionMode !== 'muzzle-center') {
         return {
             x: anchor.x + (data.busterOffsetX || 0),
@@ -3048,8 +3053,6 @@ function getPartnerBusterPosition(type) {
         };
     }
 
-    // muzzle-center 모드는 busterOffsetX/Y가 '투사체 중심점'을 직접 조정합니다.
-    // anchorY가 bottom일 때는 Y값이 클수록 위로 올라가므로 위치 조정 감각이 직관적입니다.
     return {
         x: anchor.x + (data.busterOffsetX || 0),
         y: anchor.y + (data.busterOffsetY || 0)
@@ -3070,11 +3073,12 @@ function placeElementByCenter(element, center, width, height) {
 
 function placePartnerProjectile(element, data, pos, isChargeShot) {
     const size = getPartnerProjectileSize(data, isChargeShot);
+    const startX = pos.x + getAllyProjectileStartOffsetX();
     element.style.width = size.width + 'px';
     element.style.height = size.height + 'px';
 
     if (data.projectilePositionMode === 'left-edge') {
-        element.style.left = pos.x + 'px';
+        element.style.left = startX + 'px';
         element.style.bottom = (
             pos.y - size.height / 2
             + (data.bulletOffsetY || 0)
@@ -3084,7 +3088,7 @@ function placePartnerProjectile(element, data, pos, isChargeShot) {
     }
 
     if (data.projectilePositionMode === 'left-bottom') {
-        element.style.left = pos.x + 'px';
+        element.style.left = startX + 'px';
         element.style.bottom = (
             pos.y
             + (data.bulletOffsetY || 0)
@@ -3094,13 +3098,12 @@ function placePartnerProjectile(element, data, pos, isChargeShot) {
     }
 
     if (data.projectilePositionMode !== 'muzzle-center') {
-        element.style.left = pos.x + 'px';
+        element.style.left = startX + 'px';
         element.style.bottom = pos.y + 'px';
         return;
     }
 
-    // 기본탄/차지탄 크기가 달라도 같은 중심점에서 출발합니다.
-    placeElementByCenter(element, pos, size.width, size.height);
+    placeElementByCenter(element, { x: startX, y: pos.y }, size.width, size.height);
 }
 
 function placePartnerChargeEffect(element, data, pos) {
@@ -3127,34 +3130,37 @@ function placePartnerChargeEffect(element, data, pos) {
         y: pos.y + (data.chargeEffectOffsetY || 0)
     };
 
-    // 차지 이펙트도 투사체 중심점과 같은 기준으로 배치합니다.
     placeElementByCenter(element, effectCenter, effectWidth, effectHeight);
 }
 
-function playRockexeBusterEffect(screen, bullet) {
-    if (!screen || !bullet) return;
+function playRockExeBusterEffect(screen, data, pos) {
+    if (!screen || !data || !pos || !data.busterEffectClass) return;
 
     const effect = document.createElement('div');
-    effect.className = 'rockexe-buster-effect';
-    effect.style.left = bullet.style.left;
-    effect.style.bottom = bullet.style.bottom;
+    effect.className = data.busterEffectClass;
+    effect.style.left = (pos.x + getAllyProjectileStartOffsetX()) + 'px';
+    effect.style.bottom = pos.y + 'px';
+    effect.style.width = (data.busterEffectWidth || data.bulletWidth || 40) + 'px';
+    effect.style.height = (data.busterEffectHeight || data.bulletHeight || 40) + 'px';
     screen.appendChild(effect);
 
     let frame = 1;
+    const maxFrame = Math.max(1, data.busterEffectFrameCount || 1);
+    const prefix = data.busterEffectFramePrefix || '';
     const timer = setInterval(() => {
         frame += 1;
-        if (frame > 3) {
+        if (frame > maxFrame) {
             clearInterval(timer);
             effect.remove();
             return;
         }
-        effect.style.backgroundImage = `url("sprites/partner/rockexe/rockexe_bustter_ef_${String(frame).padStart(2, '0')}.png")`;
-    }, 55);
+        effect.style.backgroundImage = `url("${prefix}${String(frame).padStart(2, '0')}.png")`;
+    }, data.busterEffectFrameInterval || 45);
 
     setTimeout(() => {
         clearInterval(timer);
         effect.remove();
-    }, 220);
+    }, (data.busterEffectFrameInterval || 45) * (maxFrame + 1));
 }
 
 function playPartnerChargeAttackAnimation(type) {
@@ -3240,6 +3246,21 @@ function createProjectileExplosion(screen, centerX, centerY, radius = 40) {
     setTimeout(() => explosion.remove(), 320);
 }
 
+
+function getEnemyHpBarCenterPoint() {
+    const screen = document.querySelector('.game-screen');
+    const hpBar = document.querySelector('#enemy-area .boss-hp-container');
+    if (!screen || !hpBar) return null;
+
+    const screenRect = screen.getBoundingClientRect();
+    const hpRect = hpBar.getBoundingClientRect();
+
+    return {
+        x: hpRect.left - screenRect.left + hpRect.width / 2,
+        y: screenRect.bottom - hpRect.bottom + hpRect.height / 2
+    };
+}
+
 function getEnemyImpactPoint() {
     const screen = document.querySelector('.game-screen');
     const enemy = document.getElementById('enemy-img');
@@ -3247,10 +3268,12 @@ function getEnemyImpactPoint() {
 
     const screenRect = screen.getBoundingClientRect();
     const enemyRect = enemy.getBoundingClientRect();
+    const hpCenter = getEnemyHpBarCenterPoint();
 
-    // 폭발도 적의 실제 렌더링 중앙에 맞춥니다.
+    // 아군 투사체의 도착/폭발 X축은 적 체력바 중앙 +10px 기준으로 통일합니다.
+    // Y축은 폭발 이펙트가 적 몸통에 보이도록 기존 적 스프라이트 중앙을 유지합니다.
     return {
-        x: enemyRect.left - screenRect.left + enemyRect.width / 2,
+        x: (hpCenter ? hpCenter.x : enemyRect.left - screenRect.left + enemyRect.width / 2) + ALLY_PROJECTILE_EXTRA_TRAVEL_PX,
         y: screenRect.bottom - enemyRect.bottom + enemyRect.height / 2
     };
 }
@@ -3292,7 +3315,7 @@ function firePartnerBuster(type) {
         screen.appendChild(bullet);
 
         if (type === 'exeRockman' && !isChargeShot) {
-            playRockexeBusterEffect(screen, bullet);
+            playRockExeBusterEffect(screen, data, pos);
         }
 
         let chargeFrameTimer = null;
@@ -3591,10 +3614,11 @@ function getBulletTravel(startX) {
 
     const screenRect = screen.getBoundingClientRect();
     const enemyRect = enemy.getBoundingClientRect();
+    const hpCenter = getEnemyHpBarCenterPoint();
 
-    // 적 스프라이트도 CSS 렌더링 크기가 달라질 수 있으므로,
-    // 실제 화면에 보이는 적 이미지의 중앙을 탄 도착/삭제 기준으로 사용합니다.
-    const impactX = enemyRect.left - screenRect.left + enemyRect.width / 2;
+    // 아군 탄의 도착/삭제 X좌표는 적 스프라이트가 아니라 체력바 중앙을 기준으로 통일합니다.
+    // PNG 내부 좌측 정렬 여백 때문에 닿기 전 사라져 보이지 않도록 +10px 더 이동합니다.
+    const impactX = (hpCenter ? hpCenter.x : enemyRect.left - screenRect.left + enemyRect.width / 2) + ALLY_PROJECTILE_EXTRA_TRAVEL_PX;
 
     return Math.max(28, impactX - startX);
 }
@@ -3657,7 +3681,8 @@ function getRockBulletPosition(isChargeShot = false) {
     const height = isChargeShot ? ROCKMAN_40_CANVAS_CONFIG.chargeBulletHeight : ROCKMAN_40_CANVAS_CONFIG.bulletHeight;
     return {
         // 탄환 PNG 내부 실제 탄은 좌측에 붙어 있으므로, div 왼쪽을 총구 끝에 맞춥니다.
-        x: pos.x,
+        // 모바일에서는 차지 이펙트는 그대로 두고 불릿 시작점만 살짝 왼쪽으로 당깁니다.
+        x: pos.x + getAllyProjectileStartOffsetX(),
         y: pos.y - height / 2
             + (ROCKMAN_40_CANVAS_CONFIG.bulletOffsetY || 0)
             + (isChargeShot ? (ROCKMAN_40_CANVAS_CONFIG.chargeBulletOffsetY || 0) : 0),
@@ -7096,7 +7121,7 @@ if (partnerArea && isSuperRockUnlocked()) {
     partnerArea.classList.remove('active');
 }
 if (rushImg) {
-    setRushVisibility(gameData.rushOwned && !isSuperRockUnlocked());
+    rushImg.style.display = (gameData.rushOwned && !isSuperRockUnlocked()) ? 'block' : 'none';
 }
 
     if (beatArea) {
@@ -7146,6 +7171,8 @@ if (xArea) {
 }
 
 if (xImg) {
+  xImg.style.width = X_40_CANVAS_CONFIG.width + 'px';
+  xImg.style.height = X_40_CANVAS_CONFIG.height + 'px';
   xImg.style.display = gameData.xOwned ? 'block' : 'none';
 }
 
@@ -7158,9 +7185,9 @@ if (rockexeArea) {
 }
 
 if (rockexeImg) {
-  rockexeImg.style.display = gameData.exeRockmanOwned ? 'block' : 'none';
   rockexeImg.style.width = ROCKEXE_40_CANVAS_CONFIG.width + 'px';
   rockexeImg.style.height = ROCKEXE_40_CANVAS_CONFIG.height + 'px';
+  rockexeImg.style.display = gameData.exeRockmanOwned ? 'block' : 'none';
 }
 
 const zeroArea = document.getElementById('zero-area');
@@ -7172,9 +7199,9 @@ if (zeroArea) {
 }
 
 if (zeroImg) {
-  zeroImg.style.display = gameData.zeroOwned ? 'block' : 'none';
   zeroImg.style.width = '61px';
   zeroImg.style.height = '61px';
+  zeroImg.style.display = gameData.zeroOwned ? 'block' : 'none';
 }
 
     const rushUpgrade = document.querySelector('.rush-upgrade');
