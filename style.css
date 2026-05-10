@@ -15296,3 +15296,126 @@ body.mobile-mode .zero-afterimage {
           drop-shadow(0 0 6px #ff4fd8)
           drop-shadow(0 0 10px #b000ff) !important;
 }
+
+
+/* v183: 에어맨 보스 피격/사망 연출, 보스그룹 노출, 모바일 하단탭 고정 보정 */
+#enemy-img.airman-hit-flash {
+  animation: airmanBossHitFlashV183 0.26s steps(2, end) !important;
+  filter: brightness(2.15) saturate(1.35) drop-shadow(0 0 8px #bfefff) !important;
+}
+
+@keyframes airmanBossHitFlashV183 {
+  0% { opacity: 1; filter: brightness(1) saturate(1); }
+  25% { opacity: 0.35; filter: brightness(2.7) saturate(1.45) drop-shadow(0 0 8px #c9f7ff); }
+  50% { opacity: 1; filter: brightness(1.4) saturate(1.15); }
+  75% { opacity: 0.45; filter: brightness(2.4) saturate(1.35) drop-shadow(0 0 8px #ffffff); }
+  100% { opacity: 1; filter: brightness(1) saturate(1); }
+}
+
+#enemy-img.airman-dead-blink {
+  animation: airmanDeadBlinkV183 0.16s steps(2, end) infinite !important;
+}
+
+#enemy-img.airman-death-fade {
+  animation: airmanDeathFadeV183 0.82s ease-out forwards !important;
+}
+
+@keyframes airmanDeadBlinkV183 {
+  0% { opacity: 1; filter: brightness(1.2) saturate(1.1) drop-shadow(0 0 4px #0a1e5c); }
+  50% { opacity: 0.28; filter: brightness(3.1) saturate(1.9) drop-shadow(0 0 9px #001b55); }
+  100% { opacity: 1; filter: brightness(1.2) saturate(1.1) drop-shadow(0 0 4px #0a1e5c); }
+}
+
+@keyframes airmanDeathFadeV183 {
+  0% { opacity: 1; transform: scale(1); filter: brightness(2.6) saturate(1.6) drop-shadow(0 0 10px #001a4f); }
+  45% { opacity: 0.92; transform: scale(1.18); filter: brightness(3.4) saturate(2) drop-shadow(0 0 18px #001f66); }
+  100% { opacity: 0; transform: scale(0.64); filter: brightness(0.35) saturate(2.2) drop-shadow(0 0 20px #02092d); }
+}
+
+.airman-death-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #061744;
+  border: 1px solid #0b2b78;
+  box-shadow: 0 0 8px #00123f, 0 0 14px #0b2b78;
+  pointer-events: none;
+  z-index: 45;
+  animation: airmanDeathParticleV183 1.28s ease-out forwards;
+}
+
+@keyframes airmanDeathParticleV183 {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  65% { opacity: 0.95; }
+  100% { transform: translate(var(--x), var(--y)) scale(0.15); opacity: 0; }
+}
+
+#boss-tab .boss-group-panel:not(.open) {
+  display: none !important;
+}
+
+#boss-tab #boss-group-classic.open {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+#boss-tab #boss-group-irregular.open,
+#boss-tab #boss-group-virus.open,
+#boss-tab #boss-group-zero.open {
+  display: block !important;
+}
+
+#boss-group-irregular .classic-boss-card-template,
+#boss-group-virus .classic-boss-card-template,
+#boss-group-zero .classic-boss-card-template,
+#boss-group-irregular #boss-card-cutman,
+#boss-group-irregular #boss-card-airman,
+#boss-group-virus #boss-card-cutman,
+#boss-group-virus #boss-card-airman,
+#boss-group-zero #boss-card-cutman,
+#boss-group-zero #boss-card-airman {
+  display: none !important;
+}
+
+html.mobile-mode,
+body.mobile-mode {
+  min-height: 100% !important;
+  overscroll-behavior-x: none !important;
+}
+
+html.mobile-mode body.mobile-tabs-fixed-v183 .tab-bookmark-left,
+html.mobile-mode body.mobile-tabs-fixed-v183 .tab-bookmark,
+html.mobile-mode body .tab-bookmark-left,
+html.mobile-mode body .tab-bookmark,
+body.mobile-mode.mobile-tabs-fixed-v183 .tab-bookmark-left,
+body.mobile-mode.mobile-tabs-fixed-v183 .tab-bookmark,
+body.mobile-mode .tab-bookmark-left,
+body.mobile-mode .tab-bookmark {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  margin: 0 !important;
+  transform: translate3d(0,0,0) !important;
+  backface-visibility: hidden !important;
+  will-change: transform !important;
+  z-index: 2147483000 !important;
+}
+
+html.mobile-mode body .tab-bookmark-left,
+body.mobile-mode .tab-bookmark-left {
+  bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+
+html.mobile-mode body .tab-bookmark,
+body.mobile-mode .tab-bookmark {
+  bottom: calc(47px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+html.mobile-mode body .container,
+body.mobile-mode .container {
+  padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
+}

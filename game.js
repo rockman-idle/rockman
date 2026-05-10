@@ -4182,10 +4182,12 @@ function killEnemy() {
     if (isBossBattle && BOSS_BATTLE_DATA[currentBossType]) {
         const deathDelay = currentBossType === 'classic_cutman'
             ? playCutmanBossDeathEffect()
-            : (playEnemyDeathEffect(), 500);
+            : (currentBossType === 'classic_airman' ? playAirmanBossDeathEffect() : (playEnemyDeathEffect(), 500));
 
         if (currentBossType === 'classic_cutman') {
             giveBossBattleReward(Math.max(0, (deathDelay || 500) - 260));
+        } else if (currentBossType === 'classic_airman') {
+            giveBossBattleReward(Math.max(0, (deathDelay || 1500) - 360));
         } else {
             giveBossBattleReward();
         }
@@ -4271,6 +4273,70 @@ function killEnemy() {
     }, 500);
 }
 
+
+
+function playAirmanBossDeathEffect() {
+    const enemy = document.getElementById('enemy-img');
+    const screen = document.querySelector('.game-screen');
+    const enemyArea = document.getElementById('enemy-area');
+    const bossData = getBossData(currentBossType);
+
+    if (!enemy || !screen) {
+        playEnemyDeathEffect();
+        return 700;
+    }
+
+    const screenRect = screen.getBoundingClientRect();
+    const enemyRect = enemy.getBoundingClientRect();
+    const centerX = enemyRect.left - screenRect.left + enemyRect.width / 2;
+    const centerY = screenRect.bottom - enemyRect.top - enemyRect.height / 2;
+
+    enemy.classList.remove('hit-shake', 'airman-hit-flash', 'enemy-death', 'airman-dead-blink', 'airman-death-fade');
+    enemy.style.opacity = '1';
+    enemy.style.transform = '';
+    enemy.src = bossData?.sprite || 'sprites/boss/super-rboss/airman/airman_st.png';
+
+    setTimeout(() => {
+        if (!enemy.isConnected) return;
+        enemy.classList.add('airman-dead-blink');
+    }, 260);
+
+    setTimeout(() => {
+        if (!enemy.isConnected) return;
+        enemy.classList.remove('airman-dead-blink');
+        enemy.classList.add('airman-death-fade');
+
+        const particles = [
+            [0, -46], [26, -36], [44, -14], [48, 12], [28, 34],
+            [0, 46], [-28, 34], [-48, 12], [-44, -14], [-26, -36],
+            [18, -55], [-18, -55]
+        ];
+
+        particles.forEach((pos, index) => {
+            const p = document.createElement('div');
+            p.className = 'airman-death-particle';
+            p.style.left = centerX + 'px';
+            p.style.bottom = centerY + 'px';
+            p.style.setProperty('--x', pos[0] + 'px');
+            p.style.setProperty('--y', pos[1] + 'px');
+            p.style.animationDelay = (index % 3) * 0.035 + 's';
+            screen.appendChild(p);
+            setTimeout(() => p.remove(), 1600);
+        });
+    }, 760);
+
+    setTimeout(() => {
+        if (!enemy.isConnected) return;
+        enemy.classList.remove('airman-dead-blink');
+        enemy.classList.remove('airman-death-fade');
+        enemy.style.opacity = '0';
+    }, 1550);
+
+    if (enemyArea) enemyArea.classList.add('airman-death-area');
+    setTimeout(() => enemyArea?.classList.remove('airman-death-area'), 1700);
+
+    return 1700;
+}
 
 function playCutmanBossDeathEffect() {
     const enemy = document.getElementById('enemy-img');
@@ -10241,3 +10307,144 @@ if (updateDevelopmentLabUIBeforeUnifiedV182 && !window.__updateDevelopmentUnifie
 
 document.addEventListener('DOMContentLoaded', applyUnifiedPcMobileLayoutV182);
 applyUnifiedPcMobileLayoutV182();
+
+
+/* v183: 에어맨 피격/사망 연출 + 보스그룹/모바일 하단탭 최종 보정 */
+function playAirmanBossHitEffectV183() {
+    if (!isBossBattle || currentBossType !== 'classic_airman' || enemyDead || playerDead) return;
+    const enemy = document.getElementById('enemy-img');
+    if (!enemy) return;
+    enemy.classList.remove('airman-hit-flash');
+    void enemy.offsetWidth;
+    enemy.classList.add('airman-hit-flash');
+    setTimeout(() => enemy?.classList?.remove('airman-hit-flash'), 260);
+}
+
+if (typeof applyEnemyDamage === 'function' && !window.__applyEnemyDamageAirmanHitV183) {
+    window.__applyEnemyDamageAirmanHitV183 = true;
+    const applyEnemyDamageBeforeAirmanHitV183 = applyEnemyDamage;
+    applyEnemyDamage = function(rawDamage, isChargeShot = false, isBusterAttack = true) {
+        const hit = applyEnemyDamageBeforeAirmanHitV183(rawDamage, isChargeShot, isBusterAttack);
+        if (hit && isBossBattle && currentBossType === 'classic_airman' && !enemyDead) {
+            playAirmanBossHitEffectV183();
+        }
+        return hit;
+    };
+}
+
+function getBossRewardIconHtmlV183(cardId) {
+    const third = cardId === 'boss-card-airman'
+        ? { src: 'sprites/boss/reward/bluesbusterchip.png', alt: '브루스버스터 데이터칩' }
+        : { src: 'sprites/boss/reward/superrockchip.png', alt: '슈퍼록맨 데이터칩' };
+    return [
+        { src: 'sprites/item/screw.png', alt: '나사', cls: 'boss-reward-icon boss-reward-only-icon boss-reward-screw-icon' },
+        { src: 'sprites/boss/reward/cardchip.png', alt: '카드칩', cls: 'boss-reward-icon boss-reward-only-icon boss-reward-chip-icon' },
+        { src: third.src, alt: third.alt, cls: 'boss-reward-icon boss-reward-only-icon boss-reward-chip-icon' }
+    ].map(item => `<span class="boss-reward-item icon-only" title="${item.alt}"><img class="${item.cls}" src="${item.src}" alt="${item.alt}"></span>`).join('');
+}
+
+function applyBossGroupVisibilityV183(activeGroup = null) {
+    const panels = ['classic', 'irregular', 'virus', 'zero'];
+    let resolved = activeGroup;
+    if (!resolved) {
+        const activeBtn = document.querySelector('.boss-category-btn.active');
+        if (activeBtn?.id) resolved = activeBtn.id.replace('boss-group-', '').replace('-btn', '');
+    }
+    if (!resolved || !panels.includes(resolved)) resolved = 'classic';
+
+    panels.forEach(group => {
+        const panel = document.getElementById(`boss-group-${group}`);
+        const btn = document.getElementById(`boss-group-${group}-btn`);
+        if (!panel) return;
+        const open = group === resolved;
+        panel.classList.toggle('open', open);
+        panel.style.setProperty('display', open ? (group === 'classic' ? 'flex' : 'block') : 'none', 'important');
+        if (group === 'classic') {
+            panel.style.setProperty('flex-direction', 'column', 'important');
+            panel.style.setProperty('gap', '10px', 'important');
+        }
+        if (btn) btn.classList.toggle('active', open);
+    });
+}
+
+function applyUnifiedBossCardsV183() {
+    const root = document.getElementById('boss-tab');
+    const classic = document.getElementById('boss-group-classic');
+    if (!root || !classic) return;
+
+    ['boss-group-irregular', 'boss-group-virus', 'boss-group-zero'].forEach(panelId => {
+        const panel = document.getElementById(panelId);
+        if (!panel) return;
+        panel.querySelectorAll('.classic-boss-card-template, #boss-card-cutman, #boss-card-airman').forEach(el => el.remove());
+    });
+
+    ['boss-card-cutman', 'boss-card-airman'].forEach(cardId => {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        if (card.parentElement !== classic) classic.appendChild(card);
+        const main = card.querySelector('.boss-card-main');
+        const preview = card.querySelector('.boss-card-preview');
+        if (!main || !preview) return;
+
+        card.classList.add('classic-boss-card-template');
+        card.dataset.bossKey = cardId === 'boss-card-airman' ? 'classic_airman' : 'classic_cutman';
+        card.querySelectorAll('.reward-text-label, .boss-card-reward-text, .boss-card-rewards').forEach(el => el.remove());
+
+        let line = card.querySelector('.boss-card-reward-line');
+        if (!line) line = document.createElement('div');
+        line.className = `${cardId === 'boss-card-airman' ? 'airman' : 'cutman'}-reward-line boss-card-reward-line boss-reward-icons-only-line`;
+        line.setAttribute('aria-label', '획득 보상');
+        line.innerHTML = getBossRewardIconHtmlV183(cardId);
+        main.appendChild(line);
+
+        let msg = card.querySelector('.boss-card-message');
+        if (!msg) {
+            msg = document.createElement('div');
+            msg.className = 'boss-card-message';
+            msg.id = cardId === 'boss-card-airman' ? 'airman-card-message' : 'cutman-card-message';
+        }
+        main.appendChild(msg);
+
+        const entryCost = card.querySelector('.boss-entry-cost');
+        if (entryCost) entryCost.innerHTML = '<img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1';
+    });
+
+    const activePanel = document.querySelector('.boss-group-panel.open');
+    const activeGroup = activePanel?.id?.replace('boss-group-', '') || 'classic';
+    applyBossGroupVisibilityV183(activeGroup);
+
+    if (typeof startAirmanPreviewAnimationV165 === 'function') startAirmanPreviewAnimationV165();
+    if (typeof startCutmanPreviewV14 === 'function') startCutmanPreviewV14();
+}
+
+normalizeCutmanBossCardUI = applyUnifiedBossCardsV183;
+stabilizeBossCardsV168 = applyUnifiedBossCardsV183;
+applyBossCardV164 = applyUnifiedBossCardsV183;
+applyBossCardV163 = applyUnifiedBossCardsV183;
+applyUnifiedBossCardsV182 = applyUnifiedBossCardsV183;
+
+if (typeof toggleBossGroup === 'function' && !window.__toggleBossGroupV183) {
+    window.__toggleBossGroupV183 = true;
+    const toggleBossGroupBeforeV183 = toggleBossGroup;
+    toggleBossGroup = function(groupKey) {
+        toggleBossGroupBeforeV183(groupKey);
+        applyUnifiedBossCardsV183();
+        applyBossGroupVisibilityV183(groupKey);
+    };
+}
+
+if (typeof showTab === 'function' && !window.__mobileFixedTabsOnShowV183) {
+    window.__mobileFixedTabsOnShowV183 = true;
+    const showTabBeforeV183 = showTab;
+    showTab = function(tabName) {
+        showTabBeforeV183(tabName);
+        if (tabName === 'boss') applyUnifiedBossCardsV183();
+        requestAnimationFrame(() => document.body.classList.toggle('mobile-tabs-fixed-v183', document.body.classList.contains('mobile-mode') || document.documentElement.classList.contains('mobile-mode')));
+    };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    applyUnifiedBossCardsV183();
+    document.body.classList.toggle('mobile-tabs-fixed-v183', document.body.classList.contains('mobile-mode') || document.documentElement.classList.contains('mobile-mode'));
+});
+applyUnifiedBossCardsV183();
