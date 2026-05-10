@@ -2356,10 +2356,8 @@ html.mobile-mode body #zero-img {
   object-fit: contain;
   pointer-events: none;
   z-index: 6;
-  opacity: 0.62;
-  /* 제로 대시 잔상: 기존 청록 계열에서 마젠타/보라 계열로 변경 */
-  filter: brightness(1.75) saturate(2.6) hue-rotate(285deg) drop-shadow(0 0 5px #ff4dff) drop-shadow(0 0 9px rgba(255, 77, 255, 0.7));
-  mix-blend-mode: screen;
+  opacity: 0.55;
+  filter: brightness(1.6) saturate(1.2) hue-rotate(160deg);
   animation: zeroAfterimageFade 0.36s ease-out forwards;
 }
 
@@ -3173,7 +3171,7 @@ html.mobile-mode body #zero-img {
 }
 
 @keyframes cutmanCutterErase {
-  0%, 40% { transform: translateX(0) rotate(0deg); opacity: 0; }
+  0%, 40% { transform: translateX(0); opacity: 0; }
   45% { opacity: 1; }
   78% { transform: translateX(48px) rotate(420deg); opacity: 1; }
   86%, 100% { transform: translateX(52px) rotate(500deg); opacity: 0; }
@@ -10951,4 +10949,4350 @@ body.mobile-mode .soul-upgrade-row b {
   font-size: 9.5px !important;
   white-space: nowrap !important;
   letter-spacing: -0.55px !important;
+}
+
+/* v148: 에어맨 보스전 */
+#boss-group-classic.open {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.airman-card {
+  background: linear-gradient(135deg, #1d78d8 0%, #39a7ff 48%, #e9f7ff 100%);
+}
+
+.airman-card:hover {
+  box-shadow: 0 0 12px rgba(63, 180, 255, 0.95);
+}
+
+.airman-preview-stage {
+  position: relative;
+  overflow: hidden;
+}
+
+.airman-preview-img,
+.airman-preview-fan {
+  position: absolute;
+  right: 6px;
+  bottom: 8px;
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.airman-preview-fan {
+  opacity: 0;
+  animation: airmanPreviewFan 1.8s ease-in-out infinite;
+}
+
+.airman-preview-tornado {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  right: 44px;
+  opacity: 0;
+  animation: airmanPreviewTornado 1.8s linear infinite;
+}
+
+.airman-preview-tornado.tornado-a { top: 12px; animation-delay: 0.05s; }
+.airman-preview-tornado.tornado-b { top: 32px; animation-delay: 0.22s; }
+.airman-preview-tornado.tornado-c { top: 52px; animation-delay: 0.39s; }
+
+@keyframes airmanPreviewFan {
+  0%, 42%, 100% { opacity: 0; }
+  45%, 92% { opacity: 1; }
+}
+
+@keyframes airmanPreviewTornado {
+  0% { transform: translateX(0); opacity: 0; }
+  12% { opacity: 1; }
+  76% { opacity: 1; }
+  100% { transform: translateX(-86px); opacity: 0; }
+}
+
+.airman-boss-tornado {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-radius: 0;
+  image-rendering: pixelated;
+  object-fit: contain;
+  background: transparent;
+  filter: drop-shadow(0 0 5px rgba(130, 220, 255, 0.9));
+  z-index: 34;
+  pointer-events: none;
+}
+
+.airman-boss-wind {
+  position: absolute;
+  width: 46px;
+  height: 28px;
+  border-radius: 0;
+  image-rendering: pixelated;
+  object-fit: contain;
+  background: transparent;
+  opacity: 0.92;
+  filter: drop-shadow(0 0 6px rgba(180, 235, 255, 0.9));
+  z-index: 35;
+  pointer-events: none;
+}
+
+.airman-wind-pushed {
+  animation: airmanWindPush 1.15s ease-in-out;
+}
+
+@keyframes airmanWindPush {
+  0% { transform: translateX(0); }
+  35% { transform: translateX(-170px); }
+  72% { transform: translateX(-170px); }
+  100% { transform: translateX(0); }
+}
+
+body.mobile-mode .airman-wind-pushed,
+html.mobile-mode body .airman-wind-pushed {
+  animation: airmanWindPushMobile 1.15s ease-in-out;
+}
+
+@keyframes airmanWindPushMobile {
+  0% { transform: translateX(0); }
+  35% { transform: translateX(-135px); }
+  72% { transform: translateX(-135px); }
+  100% { transform: translateX(0); }
+}
+
+
+/* v149: 에어맨 보스 카드/보상 라인 정렬 보정 */
+#boss-card-airman,
+.airman-card {
+  min-height: 104px !important;
+  height: 104px !important;
+  padding: 0 !important;
+  align-items: stretch !important;
+  overflow: visible !important;
+}
+
+#boss-card-airman .boss-portrait-box,
+.airman-card .boss-portrait-box {
+  flex: 0 0 112px !important;
+  width: 112px !important;
+  height: 104px !important;
+  overflow: hidden !important;
+}
+
+#boss-card-airman .boss-portrait-img,
+.airman-card .boss-portrait-img {
+  width: 112px !important;
+  height: 104px !important;
+  object-fit: cover !important;
+  image-rendering: pixelated;
+}
+
+#boss-card-airman .boss-card-main,
+.airman-card .boss-card-main {
+  height: 104px !important;
+  padding: 5px 6px 4px 8px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  min-width: 0 !important;
+}
+
+#boss-card-airman .boss-card-topline,
+.airman-card .boss-card-topline {
+  height: 28px !important;
+  margin-bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+#boss-card-airman .boss-card-name,
+.airman-card .boss-card-name {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+#boss-card-airman .boss-entry-cost,
+.airman-card .boss-entry-cost {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  flex: 0 0 auto !important;
+  min-width: 44px !important;
+  padding: 3px 7px !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  text-align: center !important;
+}
+
+#boss-card-airman .boss-entry-cost img,
+.airman-card .boss-entry-cost img {
+  display: inline-block !important;
+  width: 18px !important;
+  height: 18px !important;
+  image-rendering: pixelated;
+  object-fit: contain;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#boss-card-airman .boss-card-preview,
+.airman-card .boss-card-preview {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+  height: 66px !important;
+  min-height: 66px !important;
+  position: relative !important;
+  overflow: visible !important;
+  gap: 0 !important;
+  margin-top: 0 !important;
+}
+
+#boss-card-airman .boss-demo-stage,
+.airman-card .boss-demo-stage,
+#boss-card-airman .airman-preview-stage,
+.airman-card .airman-preview-stage {
+  position: relative !important;
+  width: 170px !important;
+  height: 34px !important;
+  margin-left: -12px !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  transform: scale(1.28) !important;
+  transform-origin: left center !important;
+  overflow: visible !important;
+  border-bottom: none !important;
+}
+
+/* 에어맨 카드 속 보스는 컷맨과 같은 방향으로, 아군 쪽을 보게 뒤집습니다. */
+#boss-card-airman .airman-preview-img,
+#boss-card-airman .airman-preview-fan,
+.airman-card .airman-preview-img,
+.airman-card .airman-preview-fan {
+  right: 4px !important;
+  bottom: -6px !important;
+  width: 46px !important;
+  height: 46px !important;
+  transform: scaleX(-1) !important;
+  transform-origin: center center !important;
+}
+
+#boss-card-airman .airman-preview-tornado,
+.airman-card .airman-preview-tornado {
+  width: 24px !important;
+  height: 24px !important;
+  right: 42px !important;
+}
+
+#boss-card-airman .airman-preview-tornado.tornado-a,
+.airman-card .airman-preview-tornado.tornado-a { top: 0 !important; }
+#boss-card-airman .airman-preview-tornado.tornado-b,
+.airman-card .airman-preview-tornado.tornado-b { top: 12px !important; }
+#boss-card-airman .airman-preview-tornado.tornado-c,
+.airman-card .airman-preview-tornado.tornado-c { top: 24px !important; }
+
+/* 컷맨/에어맨 보상 라인을 같은 규칙으로 통일합니다. */
+#boss-card-airman .airman-reward-line,
+.airman-card .airman-reward-line,
+#boss-card-airman .boss-card-reward-line,
+.airman-card .boss-card-reward-line,
+#boss-card-cutman .cutman-reward-line,
+.cutman-card .cutman-reward-line,
+#boss-card-cutman .boss-card-reward-line,
+.cutman-card .boss-card-reward-line {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 3px !important;
+  width: 100% !important;
+  height: 24px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  color: #fff !important;
+  font-size: 8px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.65px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  text-align: left !important;
+  overflow: visible !important;
+  border-top: none !important;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.75), 0 0 5px rgba(0,0,0,0.9) !important;
+}
+
+#boss-card-airman .boss-reward-item,
+.airman-card .boss-reward-item,
+#boss-card-cutman .boss-reward-item,
+.cutman-card .boss-reward-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 1px !important;
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+}
+
+#boss-card-airman .reward-text-label,
+.airman-card .reward-text-label,
+#boss-card-cutman .reward-text-label,
+.cutman-card .reward-text-label {
+  flex: 0 0 auto !important;
+  margin-right: 0 !important;
+}
+
+#boss-card-airman .boss-card-reward-line img,
+.airman-card .boss-card-reward-line img,
+#boss-card-airman .boss-reward-chip-icon,
+.airman-card .boss-reward-chip-icon,
+#boss-card-airman .boss-reward-icon,
+.airman-card .boss-reward-icon,
+#boss-card-cutman .boss-card-reward-line img,
+.cutman-card .boss-card-reward-line img,
+#boss-card-cutman .boss-reward-chip-icon,
+.cutman-card .boss-reward-chip-icon,
+#boss-card-cutman .boss-reward-icon,
+.cutman-card .boss-reward-icon {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 17px !important;
+  height: 17px !important;
+  image-rendering: pixelated;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-left: 0 !important;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.85));
+}
+
+#boss-card-airman .boss-card-message,
+.airman-card .boss-card-message,
+#boss-card-cutman .boss-card-message,
+.cutman-card .boss-card-message {
+  bottom: 25px !important;
+}
+
+
+/* v151: 컷맨 카드 내용 복구 + 보상 아이콘 확대 + 에어맨 미리보기 회전 제거
+   v150의 과한 공통 CSS가 컷맨 카드 높이/미리보기 영역을 다시 눌러서
+   컷맨 내용이 사라져 보이던 문제를 제거하고, v149 안정 레이아웃을 기준으로 유지합니다. */
+#boss-card-cutman .boss-card-reward-line img,
+.cutman-card .boss-card-reward-line img,
+#boss-card-airman .boss-card-reward-line img,
+.airman-card .boss-card-reward-line img,
+#boss-card-cutman .boss-reward-chip-icon,
+.cutman-card .boss-reward-chip-icon,
+#boss-card-airman .boss-reward-chip-icon,
+.airman-card .boss-reward-chip-icon,
+#boss-card-cutman .boss-reward-icon,
+.cutman-card .boss-reward-icon,
+#boss-card-airman .boss-reward-icon,
+.airman-card .boss-reward-icon {
+  width: 20px !important;
+  height: 20px !important;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  image-rendering: pixelated;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+#boss-card-cutman .boss-card-reward-line,
+.cutman-card .boss-card-reward-line,
+#boss-card-airman .boss-card-reward-line,
+.airman-card .boss-card-reward-line {
+  gap: 2px !important;
+  overflow: visible !important;
+}
+
+#boss-card-airman .boss-card-reward-line,
+.airman-card .boss-card-reward-line {
+  font-size: 7.5px !important;
+  letter-spacing: -0.95px !important;
+}
+
+.airman-preview-tornado {
+  animation-name: airmanPreviewTornado !important;
+}
+
+@keyframes airmanPreviewTornado {
+  0% { transform: translateX(0); opacity: 0; }
+  12% { opacity: 1; }
+  76% { opacity: 1; }
+  100% { transform: translateX(-86px); opacity: 0; }
+}
+
+/* v152: 에어맨 보스카드를 컷맨 카드 기준 레이아웃에 맞춤 */
+#boss-card-cutman.boss-select-card,
+#boss-card-airman.boss-select-card,
+.cutman-card.boss-select-card,
+.airman-card.boss-select-card {
+  display: grid !important;
+  grid-template-columns: 112px 1fr !important;
+  width: 100% !important;
+  min-height: 104px !important;
+  height: 104px !important;
+  padding: 0 !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#boss-card-cutman .boss-portrait-box,
+#boss-card-airman .boss-portrait-box,
+.cutman-card .boss-portrait-box,
+.airman-card .boss-portrait-box {
+  flex: 0 0 112px !important;
+  width: 112px !important;
+  height: 104px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#boss-card-cutman .boss-portrait-img,
+#boss-card-airman .boss-portrait-img,
+.cutman-card .boss-portrait-img,
+.airman-card .boss-portrait-img {
+  width: 112px !important;
+  height: 104px !important;
+  object-fit: cover !important;
+  image-rendering: pixelated !important;
+  display: block !important;
+}
+
+#boss-card-cutman .boss-card-main,
+#boss-card-airman .boss-card-main,
+.cutman-card .boss-card-main,
+.airman-card .boss-card-main {
+  position: relative !important;
+  height: 104px !important;
+  padding: 5px 6px 4px 8px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  min-width: 0 !important;
+}
+
+#boss-card-cutman .boss-card-topline,
+#boss-card-airman .boss-card-topline,
+.cutman-card .boss-card-topline,
+.airman-card .boss-card-topline {
+  height: 28px !important;
+  margin-bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+#boss-card-cutman .boss-card-preview,
+#boss-card-airman .boss-card-preview,
+.cutman-card .boss-card-preview,
+.airman-card .boss-card-preview {
+  position: absolute !important;
+  left: 8px !important;
+  right: 8px !important;
+  top: 38px !important;
+  bottom: 4px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+  gap: 0 !important;
+  margin-top: 0 !important;
+  overflow: visible !important;
+}
+
+#boss-card-airman .boss-demo-stage,
+#boss-card-airman .airman-preview-stage,
+.airman-card .boss-demo-stage,
+.airman-card .airman-preview-stage {
+  position: relative !important;
+  width: 160px !important;
+  height: 42px !important;
+  margin-left: -8px !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  transform: scale(1.18) !important;
+  transform-origin: left center !important;
+  overflow: visible !important;
+  border-bottom: none !important;
+}
+
+/* 에어맨 카드 미리보기: airman_w_01~02만 반복, 스프라이트 위치는 컷맨 미리보기와 같은 축 */
+#boss-card-airman .airman-preview-img,
+.airman-card .airman-preview-img {
+  display: none !important;
+}
+
+#boss-card-airman .airman-preview-fan,
+.airman-card .airman-preview-fan {
+  position: absolute !important;
+  left: 0 !important;
+  right: auto !important;
+  top: -6px !important;
+  bottom: auto !important;
+  width: 50px !important;
+  height: 50px !important;
+  display: block !important;
+  opacity: 1 !important;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+/* 에어맨 카드 미리보기: 소용돌이 1개만 오른쪽으로 이동, 회전 없이 JS가 1-2-3 프레임 반복 */
+#boss-card-airman .airman-preview-tornado,
+.airman-card .airman-preview-tornado {
+  position: absolute !important;
+  left: 42px !important;
+  right: auto !important;
+  top: 10px !important;
+  width: 26px !important;
+  height: 26px !important;
+  display: block !important;
+  opacity: 0 !important;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+  transform: translateX(0) !important;
+  animation: airmanPreviewTornadoRightV152 1.45s linear infinite !important;
+  animation-delay: 0s !important;
+}
+
+@keyframes airmanPreviewTornadoRightV152 {
+  0% { transform: translateX(0); opacity: 0; }
+  12% { opacity: 1; }
+  76% { opacity: 1; }
+  100% { transform: translateX(94px); opacity: 0; }
+}
+
+#boss-card-airman .boss-action-panel {
+  position: absolute !important;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 8px !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  z-index: 30 !important;
+  grid-column: auto !important;
+  transform-origin: center bottom !important;
+  border-color: #0bff80 !important;
+  background: linear-gradient(to bottom, rgba(3, 22, 12, 0.97), rgba(1, 9, 5, 0.99)) !important;
+  backdrop-filter: blur(1px);
+}
+
+#boss-card-airman .boss-action-panel.open {
+  display: block !important;
+}
+
+/* v153: 보스카드 레이아웃 전면 재작성
+   카드 높이만 맞추면 내부 요소가 밀리던 기존 누적 CSS를 마지막 규칙에서 고정합니다.
+   컷맨/에어맨은 같은 카드 골격을 사용하고, 배경색/미리보기 스프라이트만 다르게 둡니다. */
+#boss-group-classic.open {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+#boss-card-cutman.boss-select-card,
+#boss-card-airman.boss-select-card {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 112px minmax(0, 1fr) !important;
+  width: 100% !important;
+  height: 104px !important;
+  min-height: 104px !important;
+  max-height: 104px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 5px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  align-items: stretch !important;
+}
+
+#boss-card-cutman.boss-select-card {
+  background: #f33822 !important;
+}
+
+#boss-card-airman.boss-select-card {
+  background: #65caff !important;
+}
+
+#boss-card-cutman .boss-portrait-box,
+#boss-card-airman .boss-portrait-box {
+  position: relative !important;
+  width: 112px !important;
+  height: 104px !important;
+  min-width: 112px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  background: #101010 !important;
+  box-sizing: border-box !important;
+}
+
+#boss-card-cutman .boss-portrait-img,
+#boss-card-airman .boss-portrait-img {
+  width: 112px !important;
+  height: 104px !important;
+  display: block !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  image-rendering: pixelated !important;
+  transform: none !important;
+}
+
+#boss-card-cutman .boss-card-main,
+#boss-card-airman .boss-card-main {
+  position: relative !important;
+  height: 104px !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#boss-card-cutman .boss-card-topline,
+#boss-card-airman .boss-card-topline {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+  height: 34px !important;
+  padding: 0 7px 0 9px !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  box-sizing: border-box !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.75) !important;
+  z-index: 8 !important;
+}
+
+#boss-card-cutman .boss-card-name,
+#boss-card-airman .boss-card-name {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  color: #ffffff !important;
+  font-size: 21px !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.28) !important;
+}
+
+#boss-card-cutman .boss-level-label,
+#boss-card-airman .boss-level-label {
+  font-size: 14px !important;
+  margin-left: 4px !important;
+  vertical-align: 1px !important;
+}
+
+#boss-card-cutman .boss-entry-cost,
+#boss-card-airman .boss-entry-cost {
+  flex: 0 0 auto !important;
+  min-width: 44px !important;
+  height: 26px !important;
+  padding: 2px 7px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  color: #b8ffcf !important;
+  background: #073014 !important;
+  border: 1px solid #4eff85 !important;
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
+
+#boss-card-cutman .boss-entry-cost img,
+#boss-card-airman .boss-entry-cost img {
+  width: 17px !important;
+  height: 17px !important;
+  display: inline-block !important;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#boss-card-cutman .boss-card-preview,
+#boss-card-airman .boss-card-preview {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 34px !important;
+  bottom: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: block !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  z-index: 2 !important;
+}
+
+#boss-card-cutman .boss-demo-stage,
+#boss-card-cutman .cutman-preview-stage-v14,
+#boss-card-airman .boss-demo-stage,
+#boss-card-airman .airman-preview-stage {
+  position: absolute !important;
+  left: 8px !important;
+  top: 2px !important;
+  width: 150px !important;
+  height: 41px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+  transform-origin: left top !important;
+  background: transparent !important;
+  z-index: 2 !important;
+}
+
+#cutman-preview-img-v14 {
+  position: absolute !important;
+  left: 10px !important;
+  top: -5px !important;
+  width: 50px !important;
+  height: 50px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+  transform: scaleX(-1) !important;
+  z-index: 2 !important;
+}
+
+#cutman-preview-cutter-v14 {
+  position: absolute !important;
+  left: 50px !important;
+  top: 11px !important;
+  width: 25px !important;
+  height: 25px !important;
+  display: block !important;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+  z-index: 3 !important;
+}
+
+#cutman-preview-rockbullet-v14 {
+  position: absolute !important;
+  left: 104px !important;
+  top: 17px !important;
+  width: 25px !important;
+  height: 12px !important;
+  display: block !important;
+  background-image: url("sprites/rock/rock_bullet_01.png") !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+  image-rendering: pixelated !important;
+  z-index: 2 !important;
+}
+
+#cutman-preview-pop-v14 {
+  position: absolute !important;
+  left: 109px !important;
+  top: 17px !important;
+  width: 13px !important;
+  height: 13px !important;
+  display: block !important;
+  z-index: 4 !important;
+}
+
+#boss-card-airman .airman-preview-fan {
+  position: absolute !important;
+  left: 14px !important;
+  top: -6px !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 50px !important;
+  height: 50px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  transform: none !important;
+  animation: none !important;
+  z-index: 2 !important;
+}
+
+#boss-card-airman .airman-preview-tornado {
+  position: absolute !important;
+  left: 60px !important;
+  top: 10px !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 27px !important;
+  height: 27px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 0 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  transform: translateX(0) !important;
+  filter: drop-shadow(0 0 3px rgba(255,255,255,0.85)) !important;
+  animation: airmanCardTornadoFlyV153 1.55s linear infinite !important;
+  z-index: 3 !important;
+}
+
+@keyframes airmanCardTornadoFlyV153 {
+  0% { transform: translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  78% { opacity: 1; }
+  100% { transform: translateX(88px); opacity: 0; }
+}
+
+#boss-card-cutman .boss-card-reward-line,
+#boss-card-airman .boss-card-reward-line {
+  position: absolute !important;
+  left: 8px !important;
+  right: 5px !important;
+  bottom: 3px !important;
+  height: 19px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 3px !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  color: #ffffff !important;
+  font-size: 7.6px !important;
+  line-height: 1 !important;
+  letter-spacing: -0.85px !important;
+  font-weight: 900 !important;
+  text-align: left !important;
+  border: 0 !important;
+  background: transparent !important;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.9), 0 0 5px rgba(0,0,0,0.9) !important;
+  box-sizing: border-box !important;
+  z-index: 9 !important;
+}
+
+#boss-card-cutman .reward-text-label,
+#boss-card-airman .reward-text-label,
+#boss-card-cutman .boss-reward-item,
+#boss-card-airman .boss-reward-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex: 0 0 auto !important;
+  gap: 1px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: nowrap !important;
+}
+
+#boss-card-cutman .boss-card-reward-line img,
+#boss-card-airman .boss-card-reward-line img,
+#boss-card-cutman .boss-reward-icon,
+#boss-card-airman .boss-reward-icon,
+#boss-card-cutman .boss-reward-chip-icon,
+#boss-card-airman .boss-reward-chip-icon {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  vertical-align: middle !important;
+  margin: 0 !important;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.85)) !important;
+}
+
+#boss-card-cutman .boss-card-message,
+#boss-card-airman .boss-card-message {
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 23px !important;
+  z-index: 20 !important;
+}
+
+#boss-card-cutman .boss-action-panel,
+#boss-card-airman .boss-action-panel {
+  position: absolute !important;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 8px !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  z-index: 30 !important;
+}
+
+
+/* v155: 보스카드 공통 골격 재정리
+   - 공통: 카드/초상화/제목줄/입장권/보상줄/액션 패널
+   - 개별: 각 보스 미리보기 스프라이트, 불릿, 특수 애니메이션
+   앞으로 추가 보스는 .classic-boss-card-template 골격을 그대로 쓰고
+   boss-demo-stage 내부 스프라이트만 보스별 클래스로 배치합니다. */
+#boss-group-classic.open {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+#boss-group-classic .classic-boss-card-template.boss-select-card,
+#boss-card-cutman.boss-select-card,
+#boss-card-airman.boss-select-card {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 112px minmax(0, 1fr) !important;
+  width: 100% !important;
+  height: 104px !important;
+  min-height: 104px !important;
+  max-height: 104px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 5px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  align-items: stretch !important;
+  font-family: Arial, "Malgun Gothic", "맑은 고딕", sans-serif !important;
+}
+
+#boss-card-cutman.boss-select-card { background: #f33822 !important; }
+#boss-card-airman.boss-select-card { background: #65caff !important; }
+
+#boss-group-classic .classic-boss-card-template .boss-portrait-box {
+  position: relative !important;
+  width: 112px !important;
+  height: 104px !important;
+  min-width: 112px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  background: #101010 !important;
+  box-sizing: border-box !important;
+  z-index: 1 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-portrait-img {
+  width: 112px !important;
+  height: 104px !important;
+  display: block !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  image-rendering: pixelated !important;
+  transform: none !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-main {
+  position: relative !important;
+  height: 104px !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-topline {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+  height: 32px !important;
+  padding: 0 7px 0 9px !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  box-sizing: border-box !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.72) !important;
+  z-index: 60 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-name {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  color: #ffffff !important;
+  font-size: 21px !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.28), 0 0 5px rgba(0,0,0,0.35) !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-level-label {
+  display: inline-block !important;
+  margin-left: 4px !important;
+  color: #fff6d2 !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  vertical-align: 1px !important;
+  letter-spacing: -0.5px !important;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.35), 0 0 5px rgba(255,215,0,0.55) !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-entry-cost {
+  flex: 0 0 auto !important;
+  min-width: 44px !important;
+  height: 25px !important;
+  padding: 2px 7px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  color: #b8ffcf !important;
+  background: #073014 !important;
+  border: 1px solid #4eff85 !important;
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-entry-cost img {
+  width: 17px !important;
+  height: 17px !important;
+  display: inline-block !important;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-preview {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 32px !important;
+  bottom: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: block !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  z-index: 2 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-demo-stage {
+  position: absolute !important;
+  left: 8px !important;
+  top: 2px !important;
+  width: 188px !important;
+  height: 45px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+  transform-origin: left top !important;
+  background: transparent !important;
+  z-index: 4 !important;
+}
+
+/* 컷맨 미리보기: 공통 카드 골격과 분리된 보스별 구성 */
+#boss-card-cutman .cutman-preview-stage-v14 {
+  left: 8px !important;
+  top: 2px !important;
+  width: 188px !important;
+  height: 45px !important;
+}
+
+#cutman-preview-img-v14 {
+  position: absolute !important;
+  left: 10px !important;
+  top: -4px !important;
+  width: 50px !important;
+  height: 50px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+  transform: scaleX(-1) !important;
+  z-index: 4 !important;
+}
+
+#cutman-preview-cutter-v14 {
+  position: absolute !important;
+  left: 50px !important;
+  top: 11px !important;
+  width: 25px !important;
+  height: 25px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+  z-index: 5 !important;
+}
+
+#cutman-preview-rockbullet-v14 {
+  position: absolute !important;
+  left: 120px !important;
+  top: 17px !important;
+  width: 25px !important;
+  height: 12px !important;
+  display: block !important;
+  background-image: url("sprites/rock/rock_bullet_01.png") !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+  image-rendering: pixelated !important;
+  z-index: 4 !important;
+}
+
+#cutman-preview-pop-v14 {
+  position: absolute !important;
+  left: 113px !important;
+  top: 17px !important;
+  width: 13px !important;
+  height: 13px !important;
+  display: block !important;
+  z-index: 6 !important;
+}
+
+/* 에어맨 미리보기: 팬 01~02 반복, 소용돌이 1개 우측 이동, 록맨 밀림 */
+#boss-card-airman .airman-preview-stage {
+  left: 8px !important;
+  top: 2px !important;
+  width: 188px !important;
+  height: 45px !important;
+}
+
+#boss-card-airman .airman-preview-fan {
+  position: absolute !important;
+  left: 10px !important;
+  top: -4px !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 50px !important;
+  height: 50px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  transform: scaleX(-1) !important;
+  transform-origin: center center !important;
+  animation: none !important;
+  z-index: 4 !important;
+}
+
+#boss-card-airman .airman-preview-tornado {
+  position: absolute !important;
+  left: 55px !important;
+  top: 8px !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 30px !important;
+  height: 30px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  transform: translateX(0) !important;
+  filter: drop-shadow(0 0 3px rgba(255,255,255,0.9)) drop-shadow(0 0 3px rgba(0,0,0,0.5)) !important;
+  animation: airmanCardTornadoFlyV155 1.45s linear infinite !important;
+  z-index: 6 !important;
+}
+
+#boss-card-airman .airman-preview-rockman {
+  position: absolute !important;
+  left: 142px !important;
+  top: 8px !important;
+  width: 34px !important;
+  height: 34px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  transform-origin: center bottom !important;
+  animation: airmanPreviewRockmanPushV155 1.45s ease-in-out infinite !important;
+  z-index: 5 !important;
+}
+
+@keyframes airmanCardTornadoFlyV155 {
+  0% { transform: translateX(0); opacity: 0; }
+  12% { transform: translateX(0); opacity: 1; }
+  78% { transform: translateX(98px); opacity: 1; }
+  100% { transform: translateX(116px); opacity: 0; }
+}
+
+@keyframes airmanPreviewRockmanPushV155 {
+  0%, 18% { transform: translateX(0) scaleX(-1); opacity: 1; }
+  56% { transform: translateX(-22px) scaleX(-1); opacity: 1; }
+  76% { transform: translateX(-34px) scaleX(-1); opacity: 0.82; }
+  100% { transform: translateX(0) scaleX(-1); opacity: 1; }
+}
+
+/* 보상줄은 공통. 보스별 보상 내용은 HTML/JS에서만 교체합니다. */
+#boss-group-classic .classic-boss-card-template .boss-card-reward-line {
+  position: absolute !important;
+  left: 8px !important;
+  right: 6px !important;
+  bottom: 4px !important;
+  height: 20px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 3px !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  color: #ffffff !important;
+  font-size: 8.7px !important;
+  line-height: 1 !important;
+  letter-spacing: -0.9px !important;
+  font-weight: 900 !important;
+  text-align: left !important;
+  border: 0 !important;
+  background: rgba(0,0,0,0.10) !important;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.95), 0 0 5px rgba(0,0,0,0.95) !important;
+  box-sizing: border-box !important;
+  z-index: 50 !important;
+  pointer-events: none !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-reward-line .reward-text-label,
+#boss-group-classic .classic-boss-card-template .boss-card-reward-line .boss-reward-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex: 0 0 auto !important;
+  gap: 1px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: nowrap !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-reward-line img,
+#boss-group-classic .classic-boss-card-template .boss-reward-icon,
+#boss-group-classic .classic-boss-card-template .boss-reward-chip-icon {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  vertical-align: middle !important;
+  margin: 0 !important;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.85)) !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-message {
+  position: absolute !important;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 27px !important;
+  z-index: 70 !important;
+}
+
+#boss-card-cutman .boss-action-panel,
+#boss-card-airman .boss-action-panel {
+  position: absolute !important;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 8px !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  z-index: 90 !important;
+}
+
+#boss-card-cutman .boss-action-panel:not(.open),
+#boss-card-airman .boss-action-panel:not(.open) {
+  display: none !important;
+}
+
+
+/* v156: 보스카드 최종 공통 레이아웃 정리
+   기존에 누적된 cutman/airman 개별 보정은 유지하되, 마지막 규칙으로 카드 골격만 다시 고정합니다.
+   공통화 대상: 카드 크기, 초상화, 제목줄, 입장권, 보상줄, 액션 패널.
+   보스별 차이: .boss-demo-stage 내부의 미리보기 스프라이트만 개별 배치합니다. */
+#boss-group-classic.open {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+#boss-group-classic .classic-boss-card-template.boss-select-card,
+#boss-card-cutman.boss-select-card,
+#boss-card-airman.boss-select-card {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 112px minmax(0, 1fr) !important;
+  width: 100% !important;
+  height: 104px !important;
+  min-height: 104px !important;
+  max-height: 104px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 5px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  align-items: stretch !important;
+  font-family: Arial, "Malgun Gothic", "맑은 고딕", sans-serif !important;
+}
+
+#boss-card-cutman.boss-select-card { background: #f33822 !important; }
+#boss-card-airman.boss-select-card { background: #65caff !important; }
+
+#boss-group-classic .classic-boss-card-template .boss-portrait-box {
+  position: relative !important;
+  width: 112px !important;
+  height: 104px !important;
+  min-width: 112px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  background: #101010 !important;
+  box-sizing: border-box !important;
+  z-index: 1 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-portrait-img {
+  width: 112px !important;
+  height: 104px !important;
+  display: block !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  image-rendering: pixelated !important;
+  transform: none !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-main {
+  position: relative !important;
+  height: 104px !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-topline {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+  height: 32px !important;
+  padding: 0 7px 0 9px !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  box-sizing: border-box !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.72) !important;
+  z-index: 60 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-name {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  color: #ffffff !important;
+  font-size: 21px !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.28), 0 0 5px rgba(0,0,0,0.35) !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-level-label {
+  display: inline-block !important;
+  margin-left: 4px !important;
+  color: #fff6d2 !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  vertical-align: 1px !important;
+  letter-spacing: -0.5px !important;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.35), 0 0 5px rgba(255,215,0,0.55) !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-entry-cost {
+  flex: 0 0 auto !important;
+  min-width: 44px !important;
+  height: 25px !important;
+  padding: 2px 7px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  color: #b8ffcf !important;
+  background: #073014 !important;
+  border: 1px solid #4eff85 !important;
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  z-index: 70 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-entry-cost img {
+  width: 17px !important;
+  height: 17px !important;
+  display: inline-block !important;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-preview {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 32px !important;
+  height: 49px !important;
+  min-height: 49px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: block !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  z-index: 2 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-demo-stage {
+  position: absolute !important;
+  left: 8px !important;
+  top: 2px !important;
+  width: 188px !important;
+  height: 45px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+  transform-origin: left top !important;
+  background: transparent !important;
+  z-index: 4 !important;
+}
+
+/* 보상줄은 .boss-card-main의 직접 자식으로 올려서 미리보기/액션 패널과 충돌하지 않게 고정합니다. */
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line,
+#boss-card-cutman .boss-card-main > .boss-card-reward-line,
+#boss-card-airman .boss-card-main > .boss-card-reward-line {
+  position: absolute !important;
+  left: 8px !important;
+  right: 6px !important;
+  bottom: 4px !important;
+  height: 20px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 3px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  color: #ffffff !important;
+  font-size: 8.7px !important;
+  line-height: 1 !important;
+  letter-spacing: -0.9px !important;
+  font-weight: 900 !important;
+  text-align: left !important;
+  border: 0 !important;
+  background: rgba(0,0,0,0.10) !important;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.95), 0 0 5px rgba(0,0,0,0.95) !important;
+  box-sizing: border-box !important;
+  z-index: 80 !important;
+  pointer-events: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-reward-line .reward-text-label,
+#boss-group-classic .classic-boss-card-template .boss-card-reward-line .boss-reward-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex: 0 0 auto !important;
+  gap: 1px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: nowrap !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-reward-line img,
+#boss-group-classic .classic-boss-card-template .boss-reward-icon,
+#boss-group-classic .classic-boss-card-template .boss-reward-chip-icon {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  vertical-align: middle !important;
+  margin: 0 !important;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.85)) !important;
+}
+
+/* 컷맨 미리보기 */
+#boss-card-cutman .cutman-preview-stage-v14 {
+  left: 8px !important;
+  top: 2px !important;
+  width: 188px !important;
+  height: 45px !important;
+}
+
+#cutman-preview-img-v14 {
+  position: absolute !important;
+  left: 10px !important;
+  top: -4px !important;
+  width: 50px !important;
+  height: 50px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+  transform: scaleX(-1) !important;
+  z-index: 4 !important;
+}
+
+#cutman-preview-cutter-v14 {
+  position: absolute !important;
+  left: 50px !important;
+  top: 11px !important;
+  width: 25px !important;
+  height: 25px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+  z-index: 5 !important;
+}
+
+#cutman-preview-rockbullet-v14 {
+  position: absolute !important;
+  left: 120px !important;
+  top: 17px !important;
+  width: 25px !important;
+  height: 12px !important;
+  display: block !important;
+  background-image: url("sprites/rock/rock_bullet_01.png") !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+  image-rendering: pixelated !important;
+  z-index: 4 !important;
+}
+
+#cutman-preview-pop-v14 {
+  position: absolute !important;
+  left: 113px !important;
+  top: 17px !important;
+  width: 13px !important;
+  height: 13px !important;
+  display: block !important;
+  z-index: 6 !important;
+}
+
+/* 에어맨 미리보기: 에어맨은 좌우반전, 소용돌이는 오른쪽으로 진행, 록맨도 맞은 뒤 같은 방향/속도감으로 밀립니다. */
+#boss-card-airman .airman-preview-stage {
+  left: 8px !important;
+  top: 2px !important;
+  width: 188px !important;
+  height: 45px !important;
+}
+
+#boss-card-airman .airman-preview-fan {
+  position: absolute !important;
+  left: 10px !important;
+  top: -4px !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 50px !important;
+  height: 50px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  transform: scaleX(-1) !important;
+  transform-origin: center center !important;
+  animation: none !important;
+  z-index: 4 !important;
+}
+
+#boss-card-airman .airman-preview-tornado {
+  position: absolute !important;
+  left: 56px !important;
+  top: 9px !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 28px !important;
+  height: 28px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  filter: drop-shadow(0 0 3px rgba(255,255,255,0.9)) drop-shadow(0 0 3px rgba(0,0,0,0.5)) !important;
+  animation: airmanCardTornadoFlyV156 1.45s linear infinite !important;
+  z-index: 6 !important;
+}
+
+#boss-card-airman .airman-preview-rockman {
+  position: absolute !important;
+  left: 130px !important;
+  top: 8px !important;
+  width: 34px !important;
+  height: 34px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  transform-origin: center bottom !important;
+  animation: airmanPreviewRockmanPushV156 1.45s linear infinite !important;
+  z-index: 5 !important;
+}
+
+@keyframes airmanCardTornadoFlyV156 {
+  0% { transform: translateX(0); opacity: 0; }
+  10% { transform: translateX(0); opacity: 1; }
+  72% { transform: translateX(76px); opacity: 1; }
+  100% { transform: translateX(104px); opacity: 0; }
+}
+
+@keyframes airmanPreviewRockmanPushV156 {
+  0%, 44% { transform: translateX(0) scaleX(-1); opacity: 1; }
+  72% { transform: translateX(34px) scaleX(-1); opacity: 1; }
+  100% { transform: translateX(54px) scaleX(-1); opacity: 0.72; }
+}
+
+#boss-card-cutman .boss-card-message,
+#boss-card-airman .boss-card-message {
+  position: absolute !important;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 27px !important;
+  z-index: 95 !important;
+}
+
+#boss-card-cutman .boss-action-panel,
+#boss-card-airman .boss-action-panel {
+  position: absolute !important;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 8px !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  z-index: 110 !important;
+}
+
+#boss-card-cutman .boss-action-panel:not(.open),
+#boss-card-airman .boss-action-panel:not(.open) {
+  display: none !important;
+}
+
+
+/* v157: 보스카드 공통 보상줄/미리보기 최종 보정
+   - 컷맨/에어맨 획득 가능 라인의 폰트/아이콘 크기를 같은 규칙으로 통일
+   - 보상줄을 미리보기 스프라이트 아래쪽으로 내려 겹침 방지
+   - 에어맨 소용돌이는 한 개가 왼쪽에서 오른쪽으로 확실히 이동
+   - 록맨 st는 정위치 대기 후 같은 방향으로 밀려남 */
+#boss-group-classic .classic-boss-card-template.boss-select-card,
+#boss-card-cutman.boss-select-card,
+#boss-card-airman.boss-select-card {
+  height: 114px !important;
+  min-height: 114px !important;
+  max-height: 114px !important;
+  grid-template-columns: 112px minmax(0, 1fr) !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-portrait-box,
+#boss-group-classic .classic-boss-card-template .boss-portrait-img {
+  height: 114px !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-main {
+  height: 114px !important;
+  overflow: hidden !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-preview {
+  top: 32px !important;
+  height: 51px !important;
+  min-height: 51px !important;
+  max-height: 51px !important;
+  overflow: visible !important;
+  z-index: 2 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-demo-stage {
+  top: 1px !important;
+  height: 49px !important;
+  overflow: visible !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line,
+#boss-card-cutman .boss-card-main > .boss-card-reward-line,
+#boss-card-airman .boss-card-main > .boss-card-reward-line,
+#boss-card-cutman .boss-card-reward-line,
+#boss-card-airman .boss-card-reward-line {
+  position: absolute !important;
+  left: 7px !important;
+  right: 5px !important;
+  bottom: 4px !important;
+  top: auto !important;
+  height: 23px !important;
+  min-height: 23px !important;
+  max-height: 23px !important;
+  padding: 0 2px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 3px !important;
+  flex-wrap: nowrap !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  font-size: 8.8px !important;
+  line-height: 1 !important;
+  letter-spacing: -0.85px !important;
+  font-weight: 900 !important;
+  color: #fff !important;
+  background: rgba(0, 0, 0, 0.14) !important;
+  border: 0 !important;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,0.85) !important;
+  box-sizing: border-box !important;
+  z-index: 90 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  pointer-events: none !important;
+}
+
+#boss-card-cutman .boss-card-reward-line .reward-text-label,
+#boss-card-airman .boss-card-reward-line .reward-text-label,
+#boss-card-cutman .boss-card-reward-line .boss-reward-item,
+#boss-card-airman .boss-card-reward-line .boss-reward-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 1px !important;
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  font-size: inherit !important;
+  line-height: 1 !important;
+  letter-spacing: inherit !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+#boss-card-cutman .boss-card-reward-line .reward-text-label,
+#boss-card-airman .boss-card-reward-line .reward-text-label {
+  flex: 0 0 auto !important;
+}
+
+#boss-card-cutman .boss-card-reward-line img,
+#boss-card-airman .boss-card-reward-line img,
+#boss-card-cutman .boss-reward-icon,
+#boss-card-airman .boss-reward-icon,
+#boss-card-cutman .boss-reward-chip-icon,
+#boss-card-airman .boss-reward-chip-icon {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  display: inline-block !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  vertical-align: middle !important;
+  margin: 0 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.85)) !important;
+}
+
+#boss-card-airman.boss-select-card {
+  background: #65caff !important;
+}
+
+#boss-card-airman .airman-preview-stage {
+  left: 8px !important;
+  top: 1px !important;
+  width: 206px !important;
+  height: 49px !important;
+  overflow: visible !important;
+}
+
+#boss-card-airman .airman-preview-fan {
+  left: 8px !important;
+  top: -3px !important;
+  width: 50px !important;
+  height: 50px !important;
+  transform: scaleX(-1) !important;
+  z-index: 5 !important;
+}
+
+#boss-card-airman .airman-preview-tornado {
+  left: 58px !important;
+  top: 13px !important;
+  width: 30px !important;
+  height: 30px !important;
+  z-index: 8 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  animation: airmanCardTornadoFlyV157 1.55s linear infinite !important;
+  filter: drop-shadow(0 0 3px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(0,0,0,0.65)) !important;
+}
+
+#boss-card-airman .airman-preview-rockman {
+  left: 130px !important;
+  top: 9px !important;
+  width: 34px !important;
+  height: 34px !important;
+  z-index: 6 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: scaleX(-1) !important;
+  animation: airmanPreviewRockmanPushV157 1.55s linear infinite !important;
+}
+
+@keyframes airmanCardTornadoFlyV157 {
+  0% { transform: translateX(0); opacity: 0; }
+  8% { transform: translateX(0); opacity: 1; }
+  55% { transform: translateX(72px); opacity: 1; }
+  86% { transform: translateX(118px); opacity: 1; }
+  100% { transform: translateX(142px); opacity: 0; }
+}
+
+@keyframes airmanPreviewRockmanPushV157 {
+  0%, 52% { transform: translateX(0) scaleX(-1); opacity: 1; }
+  86% { transform: translateX(50px) scaleX(-1); opacity: 1; }
+  100% { transform: translateX(72px) scaleX(-1); opacity: 0.74; }
+}
+
+#boss-card-cutman .cutman-preview-stage-v14 {
+  top: 1px !important;
+}
+
+#boss-card-cutman .boss-card-message,
+#boss-card-airman .boss-card-message {
+  bottom: 31px !important;
+}
+
+#boss-card-cutman .boss-action-panel,
+#boss-card-airman .boss-action-panel {
+  bottom: 10px !important;
+}
+
+/* v158: 보스카드 레이아웃 최종 정리
+   - 보상줄을 미리보기 영역 밖, boss-card-main 직속 하단으로 고정
+   - 에어맨 미리보기는 span/background 기반으로 확실히 프레임+이동 처리 */
+#boss-group-classic .classic-boss-card-template.boss-select-card,
+#boss-card-cutman.boss-select-card,
+#boss-card-airman.boss-select-card {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 112px minmax(0, 1fr) !important;
+  width: 100% !important;
+  height: 120px !important;
+  min-height: 120px !important;
+  max-height: 120px !important;
+  overflow: hidden !important;
+  border-radius: 5px !important;
+  box-sizing: border-box !important;
+}
+
+#boss-card-cutman.boss-select-card { background: #f33822 !important; }
+#boss-card-airman.boss-select-card { background: #65caff !important; }
+
+#boss-group-classic .classic-boss-card-template .boss-portrait-box,
+#boss-group-classic .classic-boss-card-template .boss-portrait-img {
+  width: 112px !important;
+  height: 120px !important;
+  min-height: 120px !important;
+  max-height: 120px !important;
+  overflow: hidden !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-portrait-img {
+  object-fit: cover !important;
+  object-position: center center !important;
+  image-rendering: pixelated !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-main {
+  position: relative !important;
+  height: 120px !important;
+  min-height: 120px !important;
+  max-height: 120px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-topline {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 7px 0 9px !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.72) !important;
+  box-sizing: border-box !important;
+  z-index: 60 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-name {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  color: #fff !important;
+  font-size: 21px !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.28), 0 0 5px rgba(0,0,0,0.35) !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-level-label {
+  margin-left: 4px !important;
+  color: #fff6d2 !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  vertical-align: 1px !important;
+  letter-spacing: -0.5px !important;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.35), 0 0 5px rgba(255,215,0,0.55) !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-entry-cost {
+  flex: 0 0 auto !important;
+  min-width: 44px !important;
+  height: 25px !important;
+  padding: 2px 7px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  color: #b8ffcf !important;
+  background: #073014 !important;
+  border: 1px solid #4eff85 !important;
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-entry-cost img {
+  width: 17px !important;
+  height: 17px !important;
+  display: inline-block !important;
+  image-rendering: pixelated !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-preview {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 32px !important;
+  height: 56px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: block !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  z-index: 2 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-demo-stage {
+  position: absolute !important;
+  left: 8px !important;
+  top: 2px !important;
+  width: 206px !important;
+  height: 52px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+  background: transparent !important;
+  z-index: 4 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line,
+#boss-card-cutman .boss-card-main > .boss-card-reward-line,
+#boss-card-airman .boss-card-main > .boss-card-reward-line {
+  position: absolute !important;
+  left: 7px !important;
+  right: 5px !important;
+  bottom: 4px !important;
+  top: auto !important;
+  height: 25px !important;
+  min-height: 25px !important;
+  max-height: 25px !important;
+  padding: 0 2px !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 3px !important;
+  flex-wrap: nowrap !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  color: #ffffff !important;
+  font-size: 8.8px !important;
+  line-height: 1 !important;
+  letter-spacing: -0.85px !important;
+  font-weight: 900 !important;
+  text-align: left !important;
+  border: 0 !important;
+  background: rgba(0,0,0,0.16) !important;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,0.85) !important;
+  box-sizing: border-box !important;
+  z-index: 90 !important;
+  pointer-events: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line .reward-text-label,
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line .boss-reward-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex: 0 0 auto !important;
+  gap: 1px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: nowrap !important;
+  font-size: inherit !important;
+  line-height: 1 !important;
+  letter-spacing: inherit !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line img,
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line .boss-reward-icon,
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line .boss-reward-chip-icon {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  display: inline-block !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  vertical-align: middle !important;
+  margin: 0 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.85)) !important;
+}
+
+#boss-card-cutman .cutman-preview-stage-v14 {
+  left: 8px !important;
+  top: 2px !important;
+  width: 206px !important;
+  height: 52px !important;
+}
+
+#cutman-preview-img-v14 {
+  position: absolute !important;
+  left: 10px !important;
+  top: -3px !important;
+  width: 50px !important;
+  height: 50px !important;
+  transform: scaleX(-1) !important;
+  display: block !important;
+  image-rendering: pixelated !important;
+  z-index: 4 !important;
+}
+
+#cutman-preview-cutter-v14 {
+  position: absolute !important;
+  left: 50px !important;
+  top: 12px !important;
+  width: 25px !important;
+  height: 25px !important;
+  display: block !important;
+  image-rendering: pixelated !important;
+  z-index: 5 !important;
+}
+
+#cutman-preview-rockbullet-v14 {
+  position: absolute !important;
+  left: 120px !important;
+  top: 18px !important;
+  width: 25px !important;
+  height: 12px !important;
+  display: block !important;
+  background-image: url("sprites/rock/rock_bullet_01.png") !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  image-rendering: pixelated !important;
+  z-index: 4 !important;
+}
+
+#cutman-preview-pop-v14 {
+  position: absolute !important;
+  left: 113px !important;
+  top: 18px !important;
+  width: 13px !important;
+  height: 13px !important;
+  display: block !important;
+  z-index: 6 !important;
+}
+
+#boss-card-airman .airman-preview-stage {
+  left: 8px !important;
+  top: 2px !important;
+  width: 220px !important;
+  height: 52px !important;
+}
+
+#boss-card-airman .airman-preview-fan,
+#boss-card-airman .airman-preview-tornado,
+#boss-card-airman .airman-preview-rockman {
+  position: absolute !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+  image-rendering: pixelated !important;
+}
+
+#boss-card-airman .airman-preview-fan {
+  left: 8px !important;
+  top: -3px !important;
+  width: 50px !important;
+  height: 50px !important;
+  background-image: url("sprites/boss/super-rboss/airman/airman_w_01.png") !important;
+  transform: scaleX(-1) !important;
+  transform-origin: center center !important;
+  animation: airmanPreviewFanFramesV158 0.22s steps(1, end) infinite !important;
+  z-index: 5 !important;
+}
+
+#boss-card-airman .airman-preview-tornado {
+  left: 57px !important;
+  top: 13px !important;
+  width: 30px !important;
+  height: 30px !important;
+  background-image: url("sprites/boss/super-rboss/airman/airman_bullet_01.png") !important;
+  filter: drop-shadow(0 0 3px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(0,0,0,0.65)) !important;
+  animation: airmanCardTornadoFlyFramesV158 1.55s linear infinite !important;
+  z-index: 8 !important;
+}
+
+#boss-card-airman .airman-preview-rockman {
+  left: 130px !important;
+  top: 5px !important;
+  width: 34px !important;
+  height: 34px !important;
+  background-image: url("sprites/rock/rock_st.png") !important;
+  transform: scaleX(-1) !important;
+  transform-origin: center bottom !important;
+  animation: airmanPreviewRockmanPushV158 1.55s linear infinite !important;
+  z-index: 6 !important;
+}
+
+@keyframes airmanPreviewFanFramesV158 {
+  0%, 49.99% { background-image: url("sprites/boss/super-rboss/airman/airman_w_01.png"); }
+  50%, 100% { background-image: url("sprites/boss/super-rboss/airman/airman_w_02.png"); }
+}
+
+@keyframes airmanCardTornadoFlyFramesV158 {
+  0% { transform: translateX(0); opacity: 0; background-image: url("sprites/boss/super-rboss/airman/airman_bullet_01.png"); }
+  8% { transform: translateX(0); opacity: 1; background-image: url("sprites/boss/super-rboss/airman/airman_bullet_01.png"); }
+  23% { background-image: url("sprites/boss/super-rboss/airman/airman_bullet_02.png"); }
+  38% { background-image: url("sprites/boss/super-rboss/airman/airman_bullet_03.png"); }
+  53% { transform: translateX(72px); opacity: 1; background-image: url("sprites/boss/super-rboss/airman/airman_bullet_01.png"); }
+  72% { background-image: url("sprites/boss/super-rboss/airman/airman_bullet_02.png"); }
+  86% { transform: translateX(118px); opacity: 1; background-image: url("sprites/boss/super-rboss/airman/airman_bullet_03.png"); }
+  100% { transform: translateX(142px); opacity: 0; background-image: url("sprites/boss/super-rboss/airman/airman_bullet_01.png"); }
+}
+
+@keyframes airmanPreviewRockmanPushV158 {
+  0%, 52% { transform: translateX(0) scaleX(-1); opacity: 1; }
+  86% { transform: translateX(50px) scaleX(-1); opacity: 1; }
+  100% { transform: translateX(72px) scaleX(-1); opacity: 0.74; }
+}
+
+#boss-card-cutman .boss-card-message,
+#boss-card-airman .boss-card-message {
+  bottom: 33px !important;
+}
+
+#boss-card-cutman .boss-action-panel,
+#boss-card-airman .boss-action-panel {
+  bottom: 12px !important;
+}
+
+/* v159: 보스카드 레이아웃 최종 고정
+   이전 v149~v158 누적 보정이 서로 덮어쓰던 문제를 마지막 규칙으로 정리합니다.
+   공통: 카드 골격/초상화/제목줄/입장권/보상줄/간격.
+   개별: boss-demo-stage 내부 미리보기 스프라이트만 보스별로 다르게 배치합니다. */
+#boss-group-classic.open {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+#boss-card-cutman.boss-select-card,
+#boss-card-airman.boss-select-card,
+#boss-group-classic .classic-boss-card-template.boss-select-card {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 112px minmax(0, 1fr) !important;
+  width: 100% !important;
+  height: 128px !important;
+  min-height: 128px !important;
+  max-height: 128px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 5px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  align-items: stretch !important;
+  font-family: Arial, "Malgun Gothic", "맑은 고딕", sans-serif !important;
+}
+
+#boss-card-cutman.boss-select-card { background: #f33822 !important; }
+#boss-card-airman.boss-select-card { background: #65caff !important; }
+
+#boss-card-cutman .boss-portrait-box,
+#boss-card-airman .boss-portrait-box,
+#boss-group-classic .classic-boss-card-template .boss-portrait-box {
+  position: relative !important;
+  width: 112px !important;
+  min-width: 112px !important;
+  height: 128px !important;
+  min-height: 128px !important;
+  max-height: 128px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: #101010 !important;
+  box-sizing: border-box !important;
+  z-index: 1 !important;
+}
+
+#boss-card-cutman .boss-portrait-img,
+#boss-card-airman .boss-portrait-img,
+#boss-group-classic .classic-boss-card-template .boss-portrait-img {
+  width: 112px !important;
+  height: 128px !important;
+  min-height: 128px !important;
+  max-height: 128px !important;
+  display: block !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  image-rendering: pixelated !important;
+  transform: none !important;
+}
+
+#boss-card-cutman .boss-card-main,
+#boss-card-airman .boss-card-main,
+#boss-group-classic .classic-boss-card-template .boss-card-main {
+  position: relative !important;
+  height: 128px !important;
+  min-height: 128px !important;
+  max-height: 128px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+#boss-card-cutman .boss-card-topline,
+#boss-card-airman .boss-card-topline,
+#boss-group-classic .classic-boss-card-template .boss-card-topline {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  margin: 0 !important;
+  padding: 0 7px 0 9px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.72) !important;
+  box-sizing: border-box !important;
+  z-index: 80 !important;
+}
+
+#boss-card-cutman .boss-card-name,
+#boss-card-airman .boss-card-name,
+#boss-group-classic .classic-boss-card-template .boss-card-name {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  color: #fff !important;
+  font-size: 21px !important;
+  line-height: 1 !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.28), 0 0 5px rgba(0,0,0,0.35) !important;
+}
+
+#boss-card-cutman .boss-level-label,
+#boss-card-airman .boss-level-label,
+#boss-group-classic .classic-boss-card-template .boss-level-label {
+  display: inline-block !important;
+  margin-left: 4px !important;
+  color: #fff6d2 !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  vertical-align: 1px !important;
+  letter-spacing: -0.5px !important;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.35), 0 0 5px rgba(255,215,0,0.55) !important;
+}
+
+#boss-card-cutman .boss-entry-cost,
+#boss-card-airman .boss-entry-cost,
+#boss-group-classic .classic-boss-card-template .boss-entry-cost {
+  flex: 0 0 auto !important;
+  min-width: 44px !important;
+  height: 25px !important;
+  padding: 2px 7px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  color: #b8ffcf !important;
+  background: #073014 !important;
+  border: 1px solid #4eff85 !important;
+  border-radius: 0 !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
+
+#boss-card-cutman .boss-entry-cost img,
+#boss-card-airman .boss-entry-cost img,
+#boss-group-classic .classic-boss-card-template .boss-entry-cost img {
+  width: 17px !important;
+  height: 17px !important;
+  display: inline-block !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+#boss-card-cutman .boss-card-preview,
+#boss-card-airman .boss-card-preview,
+#boss-group-classic .classic-boss-card-template .boss-card-preview {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 32px !important;
+  height: 62px !important;
+  min-height: 62px !important;
+  max-height: 62px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  z-index: 2 !important;
+}
+
+#boss-card-cutman .boss-demo-stage,
+#boss-card-airman .boss-demo-stage,
+#boss-group-classic .classic-boss-card-template .boss-demo-stage {
+  position: absolute !important;
+  left: 8px !important;
+  top: 4px !important;
+  width: 218px !important;
+  height: 54px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: visible !important;
+  background: transparent !important;
+  transform: none !important;
+  z-index: 4 !important;
+}
+
+/* 보상줄은 모든 보스에서 반드시 boss-card-main 직속 하단에 고정합니다. */
+#boss-card-cutman .boss-card-main > .boss-card-reward-line,
+#boss-card-airman .boss-card-main > .boss-card-reward-line,
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line {
+  position: absolute !important;
+  left: 7px !important;
+  right: 5px !important;
+  top: auto !important;
+  bottom: 5px !important;
+  height: 27px !important;
+  min-height: 27px !important;
+  max-height: 27px !important;
+  margin: 0 !important;
+  padding: 0 2px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 3px !important;
+  flex-wrap: nowrap !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  color: #fff !important;
+  font-size: 8.8px !important;
+  line-height: 1 !important;
+  letter-spacing: -0.85px !important;
+  font-weight: 900 !important;
+  text-align: left !important;
+  border: 0 !important;
+  background: rgba(0,0,0,0.16) !important;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,0.85) !important;
+  box-sizing: border-box !important;
+  z-index: 100 !important;
+  pointer-events: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+#boss-card-cutman .boss-card-main > .boss-card-reward-line .reward-text-label,
+#boss-card-airman .boss-card-main > .boss-card-reward-line .reward-text-label,
+#boss-card-cutman .boss-card-main > .boss-card-reward-line .boss-reward-item,
+#boss-card-airman .boss-card-main > .boss-card-reward-line .boss-reward-item,
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line .reward-text-label,
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line .boss-reward-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 1px !important;
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  white-space: nowrap !important;
+  font-size: inherit !important;
+  line-height: 1 !important;
+  letter-spacing: inherit !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#boss-card-cutman .boss-card-main > .boss-card-reward-line img,
+#boss-card-airman .boss-card-main > .boss-card-reward-line img,
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line img {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  display: inline-block !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  vertical-align: middle !important;
+  margin: 0 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.85)) !important;
+}
+
+/* 컷맨 미리보기는 보상줄 위쪽 preview 영역 안에서만 움직입니다. */
+#boss-card-cutman .cutman-preview-stage-v14 {
+  left: 8px !important;
+  top: 4px !important;
+  width: 218px !important;
+  height: 54px !important;
+}
+
+#cutman-preview-img-v14 {
+  position: absolute !important;
+  left: 10px !important;
+  top: -2px !important;
+  width: 50px !important;
+  height: 50px !important;
+  transform: scaleX(-1) !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  z-index: 4 !important;
+}
+
+#cutman-preview-cutter-v14 {
+  position: absolute !important;
+  left: 50px !important;
+  top: 13px !important;
+  width: 25px !important;
+  height: 25px !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  z-index: 5 !important;
+}
+
+#cutman-preview-rockbullet-v14 {
+  position: absolute !important;
+  left: 120px !important;
+  top: 19px !important;
+  width: 25px !important;
+  height: 12px !important;
+  display: block !important;
+  background-image: url("sprites/rock/rock_bullet_01.png") !important;
+  background-size: 100% 100% !important;
+  background-repeat: no-repeat !important;
+  image-rendering: pixelated !important;
+  z-index: 4 !important;
+}
+
+#cutman-preview-pop-v14 {
+  position: absolute !important;
+  left: 113px !important;
+  top: 19px !important;
+  width: 13px !important;
+  height: 13px !important;
+  display: block !important;
+  z-index: 6 !important;
+}
+
+/* 에어맨 미리보기: span/background 기반으로 팬 프레임, 소용돌이 이동, 록맨 밀림을 강제합니다. */
+#boss-card-airman .airman-preview-stage {
+  left: 8px !important;
+  top: 4px !important;
+  width: 224px !important;
+  height: 54px !important;
+  overflow: visible !important;
+}
+
+#boss-card-airman .airman-preview-fan,
+#boss-card-airman .airman-preview-tornado,
+#boss-card-airman .airman-preview-rockman {
+  position: absolute !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+  image-rendering: pixelated !important;
+  pointer-events: none !important;
+  will-change: transform, opacity, background-image !important;
+}
+
+#boss-card-airman .airman-preview-fan {
+  left: 8px !important;
+  top: -2px !important;
+  width: 50px !important;
+  height: 50px !important;
+  background-image: url("sprites/boss/super-rboss/airman/airman_w_01.png") !important;
+  transform: scaleX(-1) !important;
+  transform-origin: center center !important;
+  animation: airmanPreviewFanFramesV159 0.22s steps(1, end) infinite !important;
+  z-index: 5 !important;
+}
+
+#boss-card-airman .airman-preview-tornado {
+  left: 58px !important;
+  top: 14px !important;
+  width: 30px !important;
+  height: 30px !important;
+  background-image: url("sprites/boss/super-rboss/airman/airman_bullet_01.png") !important;
+  filter: drop-shadow(0 0 3px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(0,0,0,0.65)) !important;
+  transform: translateX(0) !important;
+  animation: airmanCardTornadoFlyFramesV159 1.55s linear infinite !important;
+  z-index: 8 !important;
+}
+
+#boss-card-airman .airman-preview-rockman {
+  left: 132px !important;
+  top: 3px !important;
+  width: 34px !important;
+  height: 34px !important;
+  background-image: url("sprites/rock/rock_st.png") !important;
+  transform: scaleX(-1) !important;
+  transform-origin: center bottom !important;
+  animation: airmanPreviewRockmanPushV159 1.55s linear infinite !important;
+  z-index: 6 !important;
+}
+
+@keyframes airmanPreviewFanFramesV159 {
+  0%, 49.99% { background-image: url("sprites/boss/super-rboss/airman/airman_w_01.png"); }
+  50%, 100% { background-image: url("sprites/boss/super-rboss/airman/airman_w_02.png"); }
+}
+
+@keyframes airmanCardTornadoFlyFramesV159 {
+  0% { transform: translateX(0); opacity: 0; background-image: url("sprites/boss/super-rboss/airman/airman_bullet_01.png"); }
+  8% { transform: translateX(0); opacity: 1; background-image: url("sprites/boss/super-rboss/airman/airman_bullet_01.png"); }
+  23% { background-image: url("sprites/boss/super-rboss/airman/airman_bullet_02.png"); }
+  38% { background-image: url("sprites/boss/super-rboss/airman/airman_bullet_03.png"); }
+  53% { transform: translateX(72px); opacity: 1; background-image: url("sprites/boss/super-rboss/airman/airman_bullet_01.png"); }
+  72% { background-image: url("sprites/boss/super-rboss/airman/airman_bullet_02.png"); }
+  86% { transform: translateX(118px); opacity: 1; background-image: url("sprites/boss/super-rboss/airman/airman_bullet_03.png"); }
+  100% { transform: translateX(142px); opacity: 0; background-image: url("sprites/boss/super-rboss/airman/airman_bullet_01.png"); }
+}
+
+@keyframes airmanPreviewRockmanPushV159 {
+  0%, 52% { transform: translateX(0) scaleX(-1); opacity: 1; }
+  86% { transform: translateX(50px) scaleX(-1); opacity: 1; }
+  100% { transform: translateX(72px) scaleX(-1); opacity: 0.74; }
+}
+
+#boss-card-cutman .boss-card-message,
+#boss-card-airman .boss-card-message {
+  bottom: 36px !important;
+}
+
+#boss-card-cutman .boss-action-panel,
+#boss-card-airman .boss-action-panel {
+  bottom: 14px !important;
+}
+
+
+/* v161: 보스카드 보상줄 여백 미세 조정
+   - 카드 전체 구조는 v160 유지
+   - 미리보기 스프라이트와 획득 가능 보상줄 사이가 너무 벌어지지 않도록 보상줄만 살짝 위로 올림 */
+#boss-group-classic,
+#boss-group-classic.open {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+#boss-card-cutman.boss-select-card,
+#boss-card-airman.boss-select-card,
+#boss-group-classic .classic-boss-card-template.boss-select-card {
+  height: 148px !important;
+  min-height: 148px !important;
+  max-height: 148px !important;
+  margin: 0 0 0 0 !important;
+  grid-template-columns: 112px minmax(0, 1fr) !important;
+}
+
+#boss-card-cutman .boss-portrait-box,
+#boss-card-airman .boss-portrait-box,
+#boss-card-cutman .boss-portrait-img,
+#boss-card-airman .boss-portrait-img,
+#boss-group-classic .classic-boss-card-template .boss-portrait-box,
+#boss-group-classic .classic-boss-card-template .boss-portrait-img {
+  height: 148px !important;
+  min-height: 148px !important;
+  max-height: 148px !important;
+}
+
+#boss-card-cutman .boss-card-main,
+#boss-card-airman .boss-card-main,
+#boss-group-classic .classic-boss-card-template .boss-card-main {
+  height: 148px !important;
+  min-height: 148px !important;
+  max-height: 148px !important;
+  overflow: hidden !important;
+}
+
+#boss-card-cutman .boss-card-preview,
+#boss-card-airman .boss-card-preview,
+#boss-group-classic .classic-boss-card-template .boss-card-preview {
+  top: 34px !important;
+  height: 72px !important;
+  min-height: 72px !important;
+  max-height: 72px !important;
+  overflow: visible !important;
+}
+
+#boss-card-cutman .boss-demo-stage,
+#boss-card-airman .boss-demo-stage,
+#boss-group-classic .classic-boss-card-template .boss-demo-stage {
+  top: 4px !important;
+  height: 62px !important;
+  overflow: visible !important;
+}
+
+#boss-card-cutman .boss-card-main > .boss-card-reward-line,
+#boss-card-airman .boss-card-main > .boss-card-reward-line,
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line {
+  top: auto !important;
+  bottom: 14px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  padding: 0 4px !important;
+  font-size: 8.8px !important;
+  line-height: 1 !important;
+  letter-spacing: -0.85px !important;
+  z-index: 120 !important;
+}
+
+#boss-card-cutman .boss-card-main > .boss-card-reward-line img,
+#boss-card-airman .boss-card-main > .boss-card-reward-line img,
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line img {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+}
+
+#boss-card-cutman .cutman-preview-stage-v14,
+#boss-card-airman .airman-preview-stage {
+  top: 5px !important;
+  height: 62px !important;
+}
+
+#boss-card-airman .airman-preview-fan {
+  left: 8px !important;
+  top: 0px !important;
+  width: 50px !important;
+  height: 50px !important;
+  transform: scaleX(-1) !important;
+  animation: none !important;
+}
+
+#boss-card-airman .airman-preview-tornado {
+  left: 58px !important;
+  top: 18px !important;
+  width: 30px !important;
+  height: 30px !important;
+  transform: translateX(0) !important;
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+#boss-card-airman .airman-preview-rockman {
+  left: 132px !important;
+  top: 7px !important;
+  width: 34px !important;
+  height: 34px !important;
+  transform: scaleX(-1) !important;
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+#boss-card-cutman .boss-card-message,
+#boss-card-airman .boss-card-message {
+  bottom: 38px !important;
+}
+
+#boss-card-cutman .boss-action-panel,
+#boss-card-airman .boss-action-panel {
+  bottom: 14px !important;
+}
+
+/* v162: 보스카드 세로 높이 압축
+   - v160/v161 레이아웃과 애니메이션 구조는 유지
+   - portrait는 일부 잘려도 되도록 카드 높이만 줄여 전체 세로 길이를 정리 */
+#boss-card-cutman.boss-select-card,
+#boss-card-airman.boss-select-card,
+#boss-group-classic .classic-boss-card-template.boss-select-card {
+  height: 128px !important;
+  min-height: 128px !important;
+  max-height: 128px !important;
+  grid-template-columns: 112px minmax(0, 1fr) !important;
+}
+
+#boss-card-cutman .boss-portrait-box,
+#boss-card-airman .boss-portrait-box,
+#boss-card-cutman .boss-portrait-img,
+#boss-card-airman .boss-portrait-img,
+#boss-group-classic .classic-boss-card-template .boss-portrait-box,
+#boss-group-classic .classic-boss-card-template .boss-portrait-img {
+  height: 128px !important;
+  min-height: 128px !important;
+  max-height: 128px !important;
+  overflow: hidden !important;
+}
+
+#boss-card-cutman .boss-card-main,
+#boss-card-airman .boss-card-main,
+#boss-group-classic .classic-boss-card-template .boss-card-main {
+  height: 128px !important;
+  min-height: 128px !important;
+  max-height: 128px !important;
+}
+
+#boss-card-cutman .boss-card-preview,
+#boss-card-airman .boss-card-preview,
+#boss-group-classic .classic-boss-card-template .boss-card-preview {
+  top: 32px !important;
+  height: 62px !important;
+  min-height: 62px !important;
+  max-height: 62px !important;
+}
+
+#boss-card-cutman .boss-demo-stage,
+#boss-card-airman .boss-demo-stage,
+#boss-group-classic .classic-boss-card-template .boss-demo-stage {
+  top: 2px !important;
+  height: 58px !important;
+}
+
+#boss-card-cutman .cutman-preview-stage-v14,
+#boss-card-airman .airman-preview-stage {
+  top: 2px !important;
+  height: 58px !important;
+}
+
+#boss-card-cutman .boss-card-main > .boss-card-reward-line,
+#boss-card-airman .boss-card-main > .boss-card-reward-line,
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line {
+  bottom: 5px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+}
+
+#boss-card-airman .airman-preview-fan {
+  top: -1px !important;
+}
+
+#boss-card-airman .airman-preview-tornado {
+  top: 17px !important;
+}
+
+#boss-card-airman .airman-preview-rockman {
+  top: 6px !important;
+}
+
+
+/* v163: 보스카드 보상줄 아이콘 전용
+   - 보상 이름/획득 가능 문구 제거 후 아이콘 3개만 동일 크기로 표시합니다.
+   - 컷맨/에어맨 및 이후 같은 템플릿 보스 카드에 공통 적용됩니다. */
+#boss-card-cutman .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line,
+#boss-card-airman .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line,
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line {
+  left: 4px !important;
+  right: 4px !important;
+  bottom: 6px !important;
+  top: auto !important;
+  width: auto !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  padding: 0 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 13px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+  z-index: 140 !important;
+}
+
+#boss-card-cutman .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line .reward-text-label,
+#boss-card-airman .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line .reward-text-label {
+  display: none !important;
+}
+
+#boss-card-cutman .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line .boss-reward-item,
+#boss-card-airman .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line .boss-reward-item,
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line .boss-reward-item {
+  width: 25px !important;
+  height: 25px !important;
+  min-width: 25px !important;
+  max-width: 25px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 25px !important;
+  color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  text-indent: -9999px !important;
+  overflow: visible !important;
+}
+
+#boss-card-cutman .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line img,
+#boss-card-airman .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line img,
+#boss-group-classic .classic-boss-card-template .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line img,
+#boss-card-cutman .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line .boss-reward-icon,
+#boss-card-airman .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line .boss-reward-icon,
+#boss-card-cutman .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line .boss-reward-chip-icon,
+#boss-card-airman .boss-card-main > .boss-card-reward-line.boss-reward-icons-only-line .boss-reward-chip-icon {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  max-width: 24px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  display: block !important;
+  vertical-align: middle !important;
+  text-indent: 0 !important;
+}
+
+#boss-group-classic,
+#boss-group-classic.open {
+  gap: 10px !important;
+}
+
+
+/* v164: 보스카드 보상줄/탭 containment 최종 보정 */
+#boss-tab .boss-card-reward-line,
+#boss-tab .cutman-reward-line,
+#boss-tab .airman-reward-line,
+#boss-tab .boss-reward-icons-only-line {
+  position: absolute !important;
+  left: 8px !important;
+  right: 8px !important;
+  top: auto !important;
+  bottom: 6px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 13px !important;
+  padding: 0 6px !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: rgba(0, 0, 0, 0.14) !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
+  color: transparent !important;
+  text-shadow: none !important;
+  white-space: nowrap !important;
+  z-index: 180 !important;
+}
+
+#boss-tab .boss-card-reward-line .reward-text-label,
+#boss-tab .boss-card-reward-line .reward-name,
+#boss-tab .boss-card-reward-line .reward-label {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+#boss-tab .boss-card-reward-line .boss-reward-item,
+#boss-tab .boss-card-reward-line .boss-reward-item.icon-only {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  max-width: 28px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: transparent !important;
+  text-shadow: none !important;
+  white-space: nowrap !important;
+}
+
+#boss-tab .boss-card-reward-line .boss-reward-item::before,
+#boss-tab .boss-card-reward-line .boss-reward-item::after {
+  display: none !important;
+  content: none !important;
+}
+
+#boss-tab .boss-card-reward-line img,
+#boss-tab .boss-card-reward-line .boss-reward-icon,
+#boss-tab .boss-card-reward-line .boss-reward-chip-icon,
+#boss-tab .boss-card-reward-line .boss-reward-only-icon {
+  display: block !important;
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  max-width: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 0 0 26px !important;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5)) !important;
+}
+
+#boss-group-classic {
+  gap: 10px !important;
+}
+
+#boss-tab .boss-select-card.classic-boss-card-template {
+  height: 128px !important;
+  min-height: 128px !important;
+  max-height: 128px !important;
+  overflow: hidden !important;
+}
+
+#boss-tab .boss-card-main {
+  position: relative !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* 컨테이너 밖으로 빠졌던 상태/리부트/광산 탭 안전 고정 */
+.container > #mine-tab,
+.container > #status-tab,
+.container > #transcend-tab,
+.container > #sync-tab {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+}
+
+.container > #mine-tab .system-panel,
+.container > #status-tab .system-panel,
+.container > #transcend-tab .system-panel,
+.container > #boss-tab .system-panel,
+.container > #armor-tab .system-panel,
+.container > #partner-tab .partner-panel,
+.container > #card-tab .card-panel {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.container > #mine-tab .mine-enhance-layout,
+.container > #transcend-tab .transcend-upgrade-grid,
+.container > #status-tab .status-stat-rows {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+
+/* v165: 피격 스프라이트 / 보스카드 보상 아이콘 / 개발실 칩 보유 표시 정리 */
+#rockman-img.rockman-hit-sprite-active {
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+}
+
+#boss-tab .boss-card-reward-line .boss-reward-only-icon.reward-screw-icon {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  max-width: 22px !important;
+  min-height: 22px !important;
+  max-height: 22px !important;
+  flex-basis: 22px !important;
+}
+
+#boss-tab .boss-card-reward-line .boss-reward-only-icon.reward-cardchip-icon,
+#boss-tab .boss-card-reward-line .boss-reward-only-icon.reward-datachip-icon {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  max-width: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
+  flex-basis: 26px !important;
+}
+
+.development-chip-status-row {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 5px !important;
+}
+
+.development-chip-status-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  padding: 5px 7px !important;
+  box-sizing: border-box !important;
+}
+
+.development-chip-status-item .development-chip-label {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  text-align: left !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.development-chip-icon {
+  flex: 0 0 22px !important;
+  width: 22px !important;
+  height: 22px !important;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.45)) !important;
+}
+
+.development-chip-status-item b {
+  flex: 0 0 auto !important;
+  min-width: 32px !important;
+  text-align: right !important;
+}
+
+#boss-card-airman .airman-preview-rockman {
+  background-image: url("sprites/rock/rock_st.png");
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+  image-rendering: pixelated !important;
+}
+
+/* v166: 보스카드 액션 패널이 보상 아이콘보다 항상 위에 뜨도록 정리 */
+#boss-card-cutman .boss-action-panel,
+#boss-card-airman .boss-action-panel,
+#boss-tab .classic-boss-card-template .boss-action-panel {
+  z-index: 600 !important;
+  box-shadow: inset 0 0 12px rgba(11,255,128,0.18), 0 0 12px rgba(11,255,128,0.45) !important;
+}
+
+#boss-card-cutman .boss-action-panel.open,
+#boss-card-airman .boss-action-panel.open,
+#boss-tab .classic-boss-card-template .boss-action-panel.open {
+  z-index: 650 !important;
+}
+
+#boss-card-cutman .boss-card-reward-line,
+#boss-card-airman .boss-card-reward-line,
+#boss-tab .classic-boss-card-template .boss-card-reward-line {
+  z-index: 120 !important;
+}
+
+/* v166: 에어맨 보스전 소용돌이 체력/피격 피드백 */
+.airman-boss-tornado-v166 {
+  width: 36px !important;
+  height: 36px !important;
+  z-index: 36 !important;
+  filter: drop-shadow(0 0 6px rgba(140, 225, 255, 0.95)) !important;
+}
+
+.airman-boss-tornado-v166.airman-tornado-stationary {
+  filter: drop-shadow(0 0 8px rgba(170, 240, 255, 1)) !important;
+}
+
+.airman-boss-tornado-v166.airman-tornado-pushed {
+  filter: drop-shadow(0 0 9px rgba(210, 250, 255, 1)) !important;
+}
+
+.airman-boss-tornado-v166.airman-tornado-damaged {
+  animation: airmanTornadoDamagedV166 0.16s steps(2, end);
+}
+
+@keyframes airmanTornadoDamagedV166 {
+  0% { opacity: 1; filter: brightness(1.7) drop-shadow(0 0 9px #fff); }
+  50% { opacity: 0.45; filter: brightness(2.2) drop-shadow(0 0 12px #fff); }
+  100% { opacity: 1; filter: brightness(1) drop-shadow(0 0 6px rgba(140, 225, 255, 0.95)); }
+}
+
+/* v167: 보스재생실 카드 레이아웃 흔들림 제거
+   - 이전 버전의 JS 지연 보정이 탭 진입 직후 카드가 넓었다가 줄어드는 잔상을 만들었습니다.
+   - 이제 보스카드는 처음 렌더링 순간부터 고정 크기/고정 그리드로 표시합니다.
+   - 이후 보스 추가 시에도 .classic-boss-card-template 골격은 그대로 두고, 미리보기 내부만 보스별로 바꿉니다. */
+#boss-tab .boss-panel-v2 {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+}
+
+#boss-group-classic,
+#boss-group-classic.open,
+#boss-tab .boss-group-panel.open {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+#boss-tab .boss-select-card,
+#boss-tab .classic-boss-card-template,
+#boss-card-cutman,
+#boss-card-airman {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 112px minmax(0, 1fr) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: 128px !important;
+  min-height: 128px !important;
+  max-height: 128px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  transition: filter 0.12s ease-out, box-shadow 0.12s ease-out !important;
+  transform: none !important;
+  contain: layout paint !important;
+}
+
+#boss-tab .boss-select-card:hover,
+#boss-tab .classic-boss-card-template:hover,
+#boss-card-cutman:hover,
+#boss-card-airman:hover {
+  transform: none !important;
+}
+
+#boss-tab .boss-portrait-box,
+#boss-tab .boss-portrait-img,
+#boss-card-cutman .boss-portrait-box,
+#boss-card-cutman .boss-portrait-img,
+#boss-card-airman .boss-portrait-box,
+#boss-card-airman .boss-portrait-img {
+  width: 112px !important;
+  min-width: 112px !important;
+  max-width: 112px !important;
+  height: 128px !important;
+  min-height: 128px !important;
+  max-height: 128px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+#boss-tab .boss-card-main,
+#boss-card-cutman .boss-card-main,
+#boss-card-airman .boss-card-main {
+  position: relative !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 128px !important;
+  min-height: 128px !important;
+  max-height: 128px !important;
+  padding: 0 7px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+#boss-tab .boss-card-topline,
+#boss-card-cutman .boss-card-topline,
+#boss-card-airman .boss-card-topline {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+  height: 32px !important;
+  padding: 0 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  box-sizing: border-box !important;
+  border-bottom: 1px solid rgba(255,255,255,0.7) !important;
+  z-index: 40 !important;
+}
+
+#boss-tab .boss-card-name,
+#boss-card-cutman .boss-card-name,
+#boss-card-airman .boss-card-name {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+#boss-tab .boss-entry-cost,
+#boss-card-cutman .boss-entry-cost,
+#boss-card-airman .boss-entry-cost {
+  flex: 0 0 auto !important;
+  min-width: 46px !important;
+  height: 26px !important;
+  padding: 2px 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+}
+
+#boss-tab .boss-card-preview,
+#boss-card-cutman .boss-card-preview,
+#boss-card-airman .boss-card-preview {
+  position: absolute !important;
+  left: 6px !important;
+  right: 6px !important;
+  top: 34px !important;
+  height: 60px !important;
+  min-height: 60px !important;
+  max-height: 60px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  z-index: 30 !important;
+}
+
+#boss-tab .boss-demo-stage,
+#boss-card-cutman .boss-demo-stage,
+#boss-card-airman .boss-demo-stage {
+  position: relative !important;
+  left: auto !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 60px !important;
+  min-height: 60px !important;
+  max-height: 60px !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+#boss-tab .boss-card-main > .boss-card-reward-line,
+#boss-card-cutman .boss-card-main > .boss-card-reward-line,
+#boss-card-airman .boss-card-main > .boss-card-reward-line {
+  position: absolute !important;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 5px !important;
+  top: auto !important;
+  width: auto !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 13px !important;
+  padding: 0 6px !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: transparent !important;
+  text-shadow: none !important;
+  z-index: 120 !important;
+}
+
+#boss-tab .boss-card-message,
+#boss-card-cutman .boss-card-message,
+#boss-card-airman .boss-card-message {
+  z-index: 500 !important;
+}
+
+#boss-tab .boss-action-panel,
+#boss-card-cutman .boss-action-panel,
+#boss-card-airman .boss-action-panel {
+  z-index: 650 !important;
+}
+
+/* v169: 에어맨 전투 조정
+   - 밀려난 아군은 더 천천히 복귀합니다.
+   - 복귀 구간에서는 JS가 각 캐릭터의 걷기 프레임을 재생합니다. */
+.airman-wind-pushed {
+  animation: airmanWindPushV169 2.85s ease-in-out !important;
+}
+
+@keyframes airmanWindPushV169 {
+  0% { transform: translateX(0); }
+  31% { transform: translateX(-170px); }
+  48% { transform: translateX(-170px); }
+  100% { transform: translateX(0); }
+}
+
+body.mobile-mode .airman-wind-pushed,
+html.mobile-mode body .airman-wind-pushed {
+  animation: airmanWindPushMobileV169 2.85s ease-in-out !important;
+}
+
+@keyframes airmanWindPushMobileV169 {
+  0% { transform: translateX(0); }
+  31% { transform: translateX(-135px); }
+  48% { transform: translateX(-135px); }
+  100% { transform: translateX(0); }
+}
+
+.airman-wind-returning img,
+img.airman-wind-returning {
+  image-rendering: pixelated;
+}
+
+/* v169: 전투 중 에어맨 소용돌이를 본체보다 높게 보이도록 크기/그림자 유지 */
+.airman-boss-tornado-v166 {
+  width: 36px !important;
+  height: 36px !important;
+}
+
+/* v171: 에어맨 바람 복귀 시간 추가 지연 + 브루스버스터 개발/전투 */
+.airman-wind-pushed {
+  animation: airmanWindPushV171 3.65s ease-in-out !important;
+}
+
+@keyframes airmanWindPushV171 {
+  0% { transform: translateX(0); }
+  28% { transform: translateX(-170px); }
+  54% { transform: translateX(-170px); }
+  100% { transform: translateX(0); }
+}
+
+body.mobile-mode .airman-wind-pushed,
+html.mobile-mode body .airman-wind-pushed {
+  animation: airmanWindPushMobileV171 3.65s ease-in-out !important;
+}
+
+@keyframes airmanWindPushMobileV171 {
+  0% { transform: translateX(0); }
+  28% { transform: translateX(-135px); }
+  54% { transform: translateX(-135px); }
+  100% { transform: translateX(0); }
+}
+
+#blues-buster-dev-sprite.development-upgrade-sprite {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.blues-stand-bullet {
+  position: absolute;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 0 !important;
+  background-image: url("sprites/partner/blues/blues_st_bullet_01.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: 31;
+}
+
+.blues-buster-unlock-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  z-index: 9998;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.blues-buster-unlock-overlay.active {
+  display: flex;
+}
+
+.blues-buster-unlock-box {
+  width: min(430px, calc(100vw - 28px));
+  padding: 15px 14px 14px;
+  background: linear-gradient(to bottom, #071021, #03060b);
+  border: 3px solid #2d7dff;
+  border-radius: 10px;
+  box-shadow: 0 0 18px rgba(45, 125, 255, 0.75), inset 0 0 18px rgba(45, 125, 255, 0.16);
+}
+
+.blues-buster-unlock-stage {
+  position: relative;
+  height: 104px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  background: linear-gradient(to right, #02050c, #071833, #02050c);
+  border: 1px solid #1a4fba;
+  border-radius: 8px;
+}
+
+.blues-buster-unlock-img {
+  position: absolute;
+  left: 125px;
+  bottom: 24px;
+  width: 54px;
+  height: 54px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.blues-buster-unlock-bullet {
+  position: absolute;
+  left: 172px;
+  bottom: 29px;
+  width: 44px;
+  height: 44px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  opacity: 0;
+}
+
+.blues-buster-unlock-bullet.active.loop {
+  opacity: 1;
+  animation: bluesBusterUnlockBulletMove 0.92s linear infinite, bluesBusterUnlockBulletFrame 0.21s steps(3) infinite;
+}
+
+@keyframes bluesBusterUnlockBulletMove {
+  0% { transform: translateX(0); opacity: 0; }
+  12% { opacity: 1; }
+  100% { transform: translateX(190px); opacity: 0; }
+}
+
+@keyframes bluesBusterUnlockBulletFrame {
+  0% { content: url("sprites/partner/blues/blues_st_bullet_01.png"); }
+  33% { content: url("sprites/partner/blues/blues_st_bullet_02.png"); }
+  66%, 100% { content: url("sprites/partner/blues/blues_st_bullet_03.png"); }
+}
+
+.blues-buster-unlock-text {
+  opacity: 0;
+  color: #b9dcff;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.55;
+  text-align: center;
+  text-shadow: 0 0 8px rgba(45, 125, 255, 0.8);
+}
+
+.blues-buster-unlock-text.active {
+  animation: bluesBusterUnlockTextPop 0.32s ease-out forwards;
+}
+
+.blues-buster-unlock-text b {
+  color: #ffffff;
+  text-shadow: 0 0 9px #2d7dff;
+}
+
+@keyframes bluesBusterUnlockTextPop {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#development-blues-buster-card.complete .development-upgrade-name::after {
+  content: " COMPLETE";
+  color: #7fb5ff;
+  font-size: 10px;
+  margin-left: 5px;
+  text-shadow: 0 0 7px rgba(45, 125, 255, 0.9);
+}
+
+
+/* v172: 개발실 데이터칩 보유칸 정리 + 브루스버스터 연출 보정 */
+.development-chip-status-row {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  margin: 6px 0 9px !important;
+}
+
+.development-chip-status-item {
+  display: grid !important;
+  grid-template-rows: auto auto !important;
+  align-items: center !important;
+  justify-items: center !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+  min-height: 52px !important;
+  padding: 6px 4px !important;
+  box-sizing: border-box !important;
+  background: #080808 !important;
+  border: 1px solid #2b4f63 !important;
+  border-radius: 6px !important;
+  box-shadow: inset 0 0 8px rgba(0, 212, 255, 0.08) !important;
+}
+
+.development-chip-status-item .development-chip-label {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  color: #d9f6ff !important;
+  font-size: 9.5px !important;
+  font-weight: 900 !important;
+  line-height: 1.15 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.development-chip-count-line {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.development-chip-icon {
+  flex: 0 0 23px !important;
+  width: 23px !important;
+  height: 23px !important;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.45)) !important;
+}
+
+.development-chip-status-item b {
+  flex: 0 0 auto !important;
+  min-width: 24px !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  text-align: left !important;
+}
+
+#blues-buster-dev-progress-text,
+#development-blues-buster-card .development-chip-owned {
+  display: none !important;
+}
+
+.blues-buster-unlock-bullet.active {
+  opacity: 1;
+}
+
+@media (max-width: 420px) {
+  .development-chip-status-row {
+    gap: 4px !important;
+  }
+  .development-chip-status-item {
+    padding: 5px 3px !important;
+  }
+  .development-chip-status-item .development-chip-label {
+    font-size: 8.5px !important;
+    letter-spacing: -0.5px !important;
+  }
+  .development-chip-icon {
+    flex-basis: 21px !important;
+    width: 21px !important;
+    height: 21px !important;
+  }
+}
+
+
+/* v173: 개발실 데이터칩 보유칸 중앙정렬/칩 확대 + 에어맨 바람 복귀 중 공격 방지 보조 */
+.development-chip-status-item .development-chip-label {
+  text-align: center !important;
+}
+
+.development-chip-count-line {
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+.development-chip-icon {
+  flex-basis: 27px !important;
+  width: 27px !important;
+  height: 27px !important;
+}
+
+.development-chip-status-item b {
+  min-width: 28px !important;
+  text-align: center !important;
+}
+
+/* v174: 개발실 데이터칩 보유칸 최종 정렬 + 브루스버스터 완료 팝업 양식 통일 */
+.development-chip-status-row {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  margin: 0 0 8px !important;
+  align-items: stretch !important;
+}
+
+.development-chip-status-item {
+  min-height: 60px !important;
+  padding: 6px 3px 5px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+
+.development-chip-status-item .development-chip-label {
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  display: block !important;
+  color: #d9f6ff !important;
+  font-size: 9.3px !important;
+  font-weight: 900 !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.5px !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
+}
+
+.development-chip-count-line {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: 100% !important;
+  min-height: 31px !important;
+}
+
+.development-chip-icon {
+  flex: 0 0 30px !important;
+  width: 30px !important;
+  height: 30px !important;
+  image-rendering: pixelated !important;
+  object-fit: contain !important;
+}
+
+.development-chip-status-item b {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 24px !important;
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+}
+
+.blues-buster-unlock-box {
+  width: min(430px, 92vw) !important;
+  min-height: 142px !important;
+  padding: 14px 16px 16px !important;
+  box-sizing: border-box !important;
+  background: linear-gradient(to bottom, rgba(5, 14, 34, 0.96), rgba(1, 4, 10, 0.98)) !important;
+  border: 2px solid #2d7dff !important;
+  border-radius: 10px !important;
+  box-shadow:
+    0 0 18px rgba(45, 125, 255, 0.7),
+    0 0 32px rgba(0, 212, 255, 0.18),
+    inset 0 0 16px rgba(45, 125, 255, 0.14) !important;
+  text-align: center !important;
+}
+
+.blues-buster-unlock-stage {
+  height: 74px !important;
+  margin-bottom: 8px !important;
+  background: linear-gradient(to right, #02050c, #071833, #02050c) !important;
+  border: 1px solid #1a4fba !important;
+  border-radius: 8px !important;
+}
+
+.blues-buster-unlock-text {
+  display: none !important;
+  margin-top: 8px !important;
+  color: #d9f8ff !important;
+  font-family: Arial, 'Malgun Gothic', '맑은 고딕', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  line-height: 1.55 !important;
+  text-align: center !important;
+  text-shadow: 0 0 5px #000 !important;
+  opacity: 1 !important;
+}
+
+.blues-buster-unlock-text.active {
+  display: block !important;
+  animation: superRockUnlockTextPop 0.25s ease-out !important;
+}
+
+.blues-buster-unlock-text b {
+  color: #9fdfff !important;
+  font-weight: 1000 !important;
+  text-shadow: 0 0 8px rgba(45, 125, 255, 0.95) !important;
+}
+
+@media (max-width: 420px) {
+  .development-chip-status-item .development-chip-label {
+    font-size: 8.5px !important;
+    letter-spacing: -0.7px !important;
+  }
+  .development-chip-icon {
+    flex-basis: 27px !important;
+    width: 27px !important;
+    height: 27px !important;
+  }
+}
+
+
+/* v175: 개발실 데이터칩 보유카드 내부 이중 테두리 제거 */
+.development-chip-status-item {
+  box-shadow: none !important;
+}
+
+
+/* v176: 개발실 데이터칩 보유카드 내부/외곽 중첩 테두리 완전 제거 */
+.development-chip-status-item,
+#development-chip-status-row .development-chip-status-item {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+.development-chip-status-item::before,
+.development-chip-status-item::after,
+#development-chip-status-row .development-chip-status-item::before,
+#development-chip-status-row .development-chip-status-item::after {
+  content: none !important;
+  display: none !important;
+}
+
+.development-chip-count-line,
+.development-chip-label,
+.development-chip-icon,
+.development-chip-status-item b {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+/* v177: 브루스버스터 개발완료 팝업 색상/내부 테두리 정리 */
+.blues-buster-unlock-box {
+  background: linear-gradient(to bottom, rgba(54, 27, 4, 0.97), rgba(18, 8, 1, 0.98)) !important;
+  border: 2px solid #ff9a22 !important;
+  box-shadow:
+    0 0 18px rgba(255, 154, 34, 0.72),
+    0 0 34px rgba(255, 111, 0, 0.22) !important;
+}
+
+.blues-buster-unlock-stage {
+  background: linear-gradient(to right, #130701, #321400, #130701) !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+.blues-buster-unlock-stage::before,
+.blues-buster-unlock-stage::after {
+  content: none !important;
+  display: none !important;
+}
+
+.blues-buster-unlock-text {
+  color: #fff2dd !important;
+  text-shadow: 0 0 5px #000 !important;
+}
+
+.blues-buster-unlock-text b {
+  color: #ffd061 !important;
+  text-shadow: 0 0 8px rgba(255, 160, 34, 0.95) !important;
+}
+
+/* v179: 에어맨 바람 복귀 안정화
+   밀려난 동료는 더 오래 복귀하고, 완전히 ST로 돌아온 뒤에만 공격합니다. */
+.airman-wind-pushed {
+  animation: airmanWindPushV179 4.8s ease-in-out !important;
+}
+
+@keyframes airmanWindPushV179 {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-170px); }
+  43% { transform: translateX(-170px); }
+  100% { transform: translateX(0); }
+}
+
+body.mobile-mode .airman-wind-pushed,
+html.mobile-mode body .airman-wind-pushed {
+  animation: airmanWindPushMobileV179 4.8s ease-in-out !important;
+}
+
+@keyframes airmanWindPushMobileV179 {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-135px); }
+  43% { transform: translateX(-135px); }
+  100% { transform: translateX(0); }
+}
+
+/* v182: PC/모바일 공통 레이아웃 단일 기준
+   - 보스카드/개발실 칩 보유칸은 이 블록 하나를 최종 기준으로 사용합니다.
+   - mobile-mode에서도 같은 DOM/클래스를 그대로 쓰고, 폭만 화면에 맞춥니다. */
+html body .boss-group-panel.open,
+html.mobile-mode body .boss-group-panel.open,
+body.mobile-mode .boss-group-panel.open {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+html body .classic-boss-card-template,
+html.mobile-mode body .classic-boss-card-template,
+body.mobile-mode .classic-boss-card-template,
+html body .boss-select-card,
+html.mobile-mode body .boss-select-card,
+body.mobile-mode .boss-select-card {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 92px minmax(0, 1fr) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 128px !important;
+  min-height: 128px !important;
+  max-height: 128px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  transform: none !important;
+  transition: filter 0.12s ease-out, box-shadow 0.12s ease-out !important;
+  box-sizing: border-box !important;
+  border-radius: 6px !important;
+}
+
+html body .boss-select-card:hover,
+html.mobile-mode body .boss-select-card:hover,
+body.mobile-mode .boss-select-card:hover {
+  transform: none !important;
+}
+
+html body .boss-portrait-box,
+html.mobile-mode body .boss-portrait-box,
+body.mobile-mode .boss-portrait-box {
+  width: 92px !important;
+  height: 128px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+html body .boss-portrait-img,
+html.mobile-mode body .boss-portrait-img,
+body.mobile-mode .boss-portrait-img {
+  width: 92px !important;
+  height: 128px !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  image-rendering: pixelated !important;
+}
+
+html body .boss-card-main,
+html.mobile-mode body .boss-card-main,
+body.mobile-mode .boss-card-main {
+  position: relative !important;
+  min-width: 0 !important;
+  height: 128px !important;
+  min-height: 128px !important;
+  max-height: 128px !important;
+  padding: 5px 7px 32px 8px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+html body .boss-card-topline,
+html.mobile-mode body .boss-card-topline,
+body.mobile-mode .boss-card-topline {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 5px !important;
+  height: 24px !important;
+  padding: 0 0 2px !important;
+  margin: 0 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.42) !important;
+  box-sizing: border-box !important;
+}
+
+html body .boss-card-name,
+html.mobile-mode body .boss-card-name,
+body.mobile-mode .boss-card-name {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  font-size: 17px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+html body .boss-level-label,
+html.mobile-mode body .boss-level-label,
+body.mobile-mode .boss-level-label {
+  font-size: 10px !important;
+}
+
+html body .boss-entry-cost,
+html.mobile-mode body .boss-entry-cost,
+body.mobile-mode .boss-entry-cost {
+  flex: 0 0 auto !important;
+  min-width: 42px !important;
+  height: 21px !important;
+  padding: 2px 5px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+html body .boss-ticket-icon-small,
+html.mobile-mode body .boss-ticket-icon-small,
+body.mobile-mode .boss-ticket-icon-small {
+  width: 15px !important;
+  height: 15px !important;
+  flex: 0 0 15px !important;
+}
+
+html body .boss-card-preview,
+html.mobile-mode body .boss-card-preview,
+body.mobile-mode .boss-card-preview {
+  position: absolute !important;
+  left: 8px !important;
+  right: 7px !important;
+  top: 30px !important;
+  height: 60px !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+html body .boss-demo-stage,
+html.mobile-mode body .boss-demo-stage,
+body.mobile-mode .boss-demo-stage {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  width: 100% !important;
+  height: 60px !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+  border: 0 !important;
+}
+
+html body .boss-card-reward-line,
+html.mobile-mode body .boss-card-reward-line,
+body.mobile-mode .boss-card-reward-line {
+  position: absolute !important;
+  left: 8px !important;
+  right: 7px !important;
+  bottom: 4px !important;
+  top: auto !important;
+  height: 27px !important;
+  min-height: 27px !important;
+  max-height: 27px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 13px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  z-index: 150 !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
+
+html body .boss-card-reward-line .reward-text-label,
+html.mobile-mode body .boss-card-reward-line .reward-text-label,
+body.mobile-mode .boss-card-reward-line .reward-text-label {
+  display: none !important;
+}
+
+html body .boss-reward-item,
+html.mobile-mode body .boss-reward-item,
+body.mobile-mode .boss-reward-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  flex: 0 0 28px !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  overflow: visible !important;
+}
+
+html body .boss-reward-item img,
+html body .boss-card-reward-line img,
+html.mobile-mode body .boss-reward-item img,
+html.mobile-mode body .boss-card-reward-line img,
+body.mobile-mode .boss-reward-item img,
+body.mobile-mode .boss-card-reward-line img {
+  display: block !important;
+  width: 27px !important;
+  height: 27px !important;
+  max-width: 27px !important;
+  max-height: 27px !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.65)) !important;
+}
+
+html body .boss-reward-screw-icon,
+html.mobile-mode body .boss-reward-screw-icon,
+body.mobile-mode .boss-reward-screw-icon {
+  width: 23px !important;
+  height: 23px !important;
+  max-width: 23px !important;
+  max-height: 23px !important;
+}
+
+html body .boss-action-panel,
+html.mobile-mode body .boss-action-panel,
+body.mobile-mode .boss-action-panel {
+  z-index: 500 !important;
+}
+
+/* 보스별 미리보기만 개별 배치 */
+html body #boss-card-airman,
+html.mobile-mode body #boss-card-airman,
+body.mobile-mode #boss-card-airman {
+  background: #62cfff !important;
+}
+
+html body #boss-card-airman .boss-portrait-box,
+html.mobile-mode body #boss-card-airman .boss-portrait-box,
+body.mobile-mode #boss-card-airman .boss-portrait-box {
+  background: #62cfff !important;
+}
+
+html body .airman-preview-fan,
+html.mobile-mode body .airman-preview-fan,
+body.mobile-mode .airman-preview-fan {
+  position: absolute !important;
+  left: 6px !important;
+  bottom: 3px !important;
+  width: 50px !important;
+  height: 50px !important;
+  background: url("sprites/boss/super-rboss/airman/airman_w_01.png") center / 100% 100% no-repeat !important;
+  image-rendering: pixelated !important;
+  transform: scaleX(-1) !important;
+  z-index: 3 !important;
+}
+
+html body .airman-preview-tornado,
+html.mobile-mode body .airman-preview-tornado,
+body.mobile-mode .airman-preview-tornado {
+  position: absolute !important;
+  left: 52px !important;
+  bottom: 18px !important;
+  width: 28px !important;
+  height: 28px !important;
+  background: url("sprites/boss/super-rboss/airman/airman_bullet_01.png") center / 100% 100% no-repeat !important;
+  image-rendering: pixelated !important;
+  opacity: 1;
+  z-index: 4 !important;
+}
+
+html body .airman-preview-rockman,
+html.mobile-mode body .airman-preview-rockman,
+body.mobile-mode .airman-preview-rockman {
+  position: absolute !important;
+  left: 125px !important;
+  bottom: 12px !important;
+  width: 40px !important;
+  height: 40px !important;
+  background: url("sprites/rock/rock_st.png") center / 100% 100% no-repeat !important;
+  image-rendering: pixelated !important;
+  transform: scaleX(-1) !important;
+  z-index: 2 !important;
+}
+
+html body .cutman-preview-stage-v14,
+html.mobile-mode body .cutman-preview-stage-v14,
+body.mobile-mode .cutman-preview-stage-v14 {
+  transform: none !important;
+}
+
+/* 개발실 데이터칩 보유수량 카드도 PC/모바일 공통 구조 사용 */
+html body .development-chip-status-row,
+html.mobile-mode body .development-chip-status-row,
+body.mobile-mode .development-chip-status-row {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 0 9px !important;
+  box-sizing: border-box !important;
+}
+
+html body .development-chip-status-item,
+html.mobile-mode body .development-chip-status-item,
+body.mobile-mode .development-chip-status-item,
+html body #development-chip-status-row .development-chip-status-item,
+html.mobile-mode body #development-chip-status-row .development-chip-status-item,
+body.mobile-mode #development-chip-status-row .development-chip-status-item {
+  min-width: 0 !important;
+  min-height: 54px !important;
+  padding: 6px 3px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  text-align: center !important;
+  background: #080808 !important;
+  border: 1px solid #344b5c !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 6px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+html body .development-chip-status-item::before,
+html body .development-chip-status-item::after,
+html.mobile-mode body .development-chip-status-item::before,
+html.mobile-mode body .development-chip-status-item::after,
+body.mobile-mode .development-chip-status-item::before,
+body.mobile-mode .development-chip-status-item::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body .development-chip-label,
+html body .development-chip-status-name,
+html.mobile-mode body .development-chip-label,
+html.mobile-mode body .development-chip-status-name,
+body.mobile-mode .development-chip-label,
+body.mobile-mode .development-chip-status-name {
+  display: block !important;
+  width: 100% !important;
+  color: #bfefff !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  line-height: 1.15 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  letter-spacing: -0.5px !important;
+}
+
+html body .development-chip-count-line,
+html body .development-chip-status-count-line,
+html.mobile-mode body .development-chip-count-line,
+html.mobile-mode body .development-chip-status-count-line,
+body.mobile-mode .development-chip-count-line,
+body.mobile-mode .development-chip-status-count-line {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  width: 100% !important;
+  text-align: center !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html body .development-chip-icon,
+html body .development-chip-status-icon,
+html.mobile-mode body .development-chip-icon,
+html.mobile-mode body .development-chip-status-icon,
+body.mobile-mode .development-chip-icon,
+body.mobile-mode .development-chip-status-icon {
+  width: 29px !important;
+  height: 29px !important;
+  max-width: 29px !important;
+  max-height: 29px !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  flex: 0 0 29px !important;
+}
+
+html body .development-chip-status-item b,
+html.mobile-mode body .development-chip-status-item b,
+body.mobile-mode .development-chip-status-item b {
+  display: inline-block !important;
+  margin: 0 !important;
+  color: #ffd31a !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* 제로 잔상 마젠타: PC/모바일 동일 */
+html body .zero-afterimage,
+html.mobile-mode body .zero-afterimage,
+body.mobile-mode .zero-afterimage {
+  filter: brightness(1.75) saturate(2.15) hue-rotate(285deg)
+          drop-shadow(0 0 6px #ff4fd8)
+          drop-shadow(0 0 10px #b000ff) !important;
 }

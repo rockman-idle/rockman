@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=zero_afterimage_magenta_v181">
+<link rel="stylesheet" href="style.css?v=unified_pc_mobile_v182">
 </head>
 
 <body>
@@ -26,6 +26,7 @@
     <img src="sprites/rock/rock_02.png">
     <img src="sprites/rock/rock_03.png">
     <img src="sprites/rock/rock_st.png">
+    <img src="sprites/rock/rock_hit.png">
     <img src="sprites/rock/rock_bullet_01.png">
     <img src="sprites/rock/rock_c_bullet_01.png">
     <img src="sprites/rock/rock_c_bullet_02.png">
@@ -54,6 +55,15 @@
     <img src="sprites/partner/blues/blues_st_01.png">
     <img src="sprites/partner/blues/blues_st_02.png">
     <img src="sprites/partner/blues/blues_st_03.png">
+    <img src="sprites/partner/blues/blues_c_01.png">
+    <img src="sprites/partner/blues/blues_c_02.png">
+    <img src="sprites/partner/blues/blues_c_03.png">
+    <img src="sprites/partner/blues/blues_c_04.png">
+    <img src="sprites/partner/blues/blues_c_05.png">
+    <img src="sprites/partner/blues/blues_c_06.png">
+    <img src="sprites/partner/blues/blues_st_bullet_01.png">
+    <img src="sprites/partner/blues/blues_st_bullet_02.png">
+    <img src="sprites/partner/blues/blues_st_bullet_03.png">
     <img src="sprites/partner/blues/blues_join_01.png">
     <img src="sprites/partner/blues/blues_join_02.png">
     <img src="sprites/partner/blues/blues_join_03.png">
@@ -163,6 +173,7 @@
     <img src="sprites/boss/reward/cardchip.png">
     <img src="sprites/boss/reward/superrockchip.png">
     <img src="sprites/boss/reward/bluesbusterchip.png">
+    <img src="sprites/boss/reward/superfortechip.png">
     <img src="sprites/mine/pickelman_01.png">
     <img src="sprites/mine/pickelman_02.png">
     <img src="sprites/mine/pickelman_03.png">
@@ -205,6 +216,20 @@
             <div>록맨의 공격력 + 10%</div>
             <div>이제부터 록맨의 차지샷이 <b>로켓펀치</b>로 변경됩니다.</div>
             <div>기존 차지샷의 2배 공격력</div>
+        </div>
+    </div>
+</div>
+
+<div id="blues-buster-unlock-overlay" class="blues-buster-unlock-overlay">
+    <div class="blues-buster-unlock-box">
+        <div class="blues-buster-unlock-stage">
+            <img id="blues-buster-unlock-img" class="blues-buster-unlock-img" src="sprites/partner/blues/blues_c_01.png" alt="브루스버스터">
+            <img id="blues-buster-unlock-bullet" class="blues-buster-unlock-bullet" src="sprites/partner/blues/blues_st_bullet_01.png" alt="브루스버스터 탄">
+        </div>
+        <div id="blues-buster-unlock-text" class="blues-buster-unlock-text">
+            <div>브루스의 공격력 + 10%</div>
+            <div>이제부터 정지한 적과 전투할 때 <b>버스터</b>로 공격합니다.</div>
+            <div>싱크로율 MAX일 때 브루스버스터 공격력 <b>200%</b></div>
         </div>
     </div>
 </div>
@@ -721,9 +746,27 @@
             <span id="development-section-hint">클래식 보스전에서 데이터칩을 수급합니다.</span>
           </div>
           <div id="development-chip-status-row" class="development-chip-status-row">
-            <div class="development-chip-status-item">슈퍼록맨 데이터칩 <b id="dev-superrock-chip-owned">0</b></div>
-            <div class="development-chip-status-item">브루스버스터칩 <b id="dev-bluesbuster-chip-owned">0</b></div>
-            <div class="development-chip-status-item">슈퍼포르테칩 <b id="dev-superforte-chip-owned">0</b></div>
+            <div class="development-chip-status-item">
+              <span class="development-chip-label">슈퍼록맨 데이터칩</span>
+              <div class="development-chip-count-line">
+                <img class="development-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩">
+                <b id="dev-superrock-chip-owned">0</b>
+              </div>
+            </div>
+            <div class="development-chip-status-item">
+              <span class="development-chip-label">브루스버스터 데이터칩</span>
+              <div class="development-chip-count-line">
+                <img class="development-chip-icon" src="sprites/boss/reward/bluesbusterchip.png" alt="브루스버스터 데이터칩">
+                <b id="dev-bluesbuster-chip-owned">0</b>
+              </div>
+            </div>
+            <div class="development-chip-status-item">
+              <span class="development-chip-label">슈퍼포르테 데이터칩</span>
+              <div class="development-chip-count-line">
+                <img class="development-chip-icon" src="sprites/boss/reward/superfortechip.png" alt="슈퍼포르테 데이터칩">
+                <b id="dev-superforte-chip-owned">0</b>
+              </div>
+            </div>
           </div>
 
           <div id="development-classic-list" class="development-upgrade-list active">
@@ -762,18 +805,24 @@
             <div id="development-blues-buster-card" class="development-upgrade-card" onclick="selectDevelopmentItem('bluesBuster')">
               <div class="development-upgrade-left">
                 <div class="development-sprite-box">
-                  <img class="development-upgrade-sprite" src="sprites/partner/blues/blues_portrait.png" alt="브루스버스터">
+                  <img id="blues-buster-dev-sprite" class="development-upgrade-sprite blues-buster-dev-sprite" src="sprites/partner/blues/blues_c_01.png" alt="브루스버스터">
                 </div>
               </div>
               <div class="development-upgrade-main">
                 <div class="development-upgrade-title-row">
                   <div>
                     <div class="development-upgrade-name">브루스버스터</div>
-                    <div class="development-upgrade-desc">브루스 원거리 버스터 연구</div>
+                    <div class="development-upgrade-desc">원거리 버스터 연구</div>
                   </div>
-                  <div class="development-chip-owned muted">준비중</div>
                 </div>
-                <div class="development-locked-note">다음 단계에서 데이터칩/효과 연결 예정</div>
+                <div class="development-progress-row">
+                  <div class="development-box-gauge" id="blues-buster-dev-gauge">
+                    <span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span><span class="development-progress-box"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="development-upgrade-actions">
+                <button id="blues-buster-dev-btn" class="development-enhance-btn" type="button" onclick="upgradeBluesBusterDevelopment(event)">개발</button>
               </div>
             </div>
 
@@ -825,17 +874,15 @@
     </div>
 
     <div id="boss-group-classic" class="boss-group-panel open">
-      <div id="boss-card-cutman" class="boss-select-card classic-boss-card-template cutman-card" role="button" tabindex="0" onclick="openBossActionPanel('classic_cutman')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); openBossActionPanel('classic_cutman');}">
+      <div id="boss-card-cutman" class="boss-select-card classic-boss-card-template cutman-card" role="button" tabindex="0" data-boss-key="classic_cutman" onclick="openBossActionPanel('classic_cutman')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); openBossActionPanel('classic_cutman');}">
         <div class="boss-portrait-box">
           <img class="boss-portrait-img" src="sprites/boss/super-rboss/cutman/cutman_portrait.png" alt="컷맨">
         </div>
-
         <div class="boss-card-main">
           <div class="boss-card-topline">
             <div class="boss-card-name">컷맨 <span id="cutman-boss-level-label" class="boss-level-label">Lv. 1</span></div>
             <div class="boss-entry-cost"><img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1</div>
           </div>
-
           <div class="boss-card-preview">
             <div class="boss-demo-stage cutman-preview-stage-v14">
               <img id="cutman-preview-img-v14" class="cutman-preview-img-v14" src="sprites/boss/super-rboss/cutman/cutman_at_01.png" alt="컷맨">
@@ -843,25 +890,19 @@
               <span id="cutman-preview-rockbullet-v14" class="cutman-preview-rockbullet-v14"></span>
               <span id="cutman-preview-pop-v14" class="cutman-preview-pop-v14"></span>
             </div>
-
-            <div class="cutman-reward-line boss-card-reward-line">
-              <span class="reward-text-label">획득 가능 :</span>
-              <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
-              <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
-              <span class="boss-reward-item">슈퍼록맨 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
-            </div>
-
-            <div id="cutman-card-message" class="boss-card-message"></div>
-
-            <div id="cutman-boss-action-panel" class="boss-action-panel" onclick="event.preventDefault(); event.stopPropagation(); return false;">
-              <div class="boss-action-panel-info">
-                최고 클리어 <b id="cutman-cleared-level-text">Lv. 0</b> / 다음 도전 <b id="cutman-next-level-text">Lv. 1</b>
-              </div>
-              <div class="boss-action-buttons">
-                <button id="cutman-challenge-btn" class="boss-action-btn boss-action-challenge" onclick="event.preventDefault(); event.stopPropagation(); startBossLevelChallenge('classic_cutman'); return false;">다음 레벨 도전</button>
-                <button id="cutman-sweep-1-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_cutman', 1); return false;">1회 소탕</button>
-                <button id="cutman-sweep-10-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_cutman', 10); return false;">10회 소탕</button>
-              </div>
+          </div>
+          <div class="cutman-reward-line boss-card-reward-line boss-reward-icons-only-line" aria-label="획득 보상">
+            <span class="boss-reward-item icon-only" title="나사"><img class="boss-reward-icon boss-reward-only-icon" src="sprites/item/screw.png" alt="나사"></span>
+            <span class="boss-reward-item icon-only" title="카드칩"><img class="boss-reward-icon boss-reward-only-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+            <span class="boss-reward-item icon-only" title="슈퍼록맨 데이터칩"><img class="boss-reward-icon boss-reward-only-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
+          </div>
+          <div id="cutman-card-message" class="boss-card-message"></div>
+          <div id="cutman-boss-action-panel" class="boss-action-panel" onclick="event.preventDefault(); event.stopPropagation(); return false;">
+            <div class="boss-action-panel-info">최고 클리어 <b id="cutman-cleared-level-text">Lv. 0</b> / 다음 도전 <b id="cutman-next-level-text">Lv. 1</b></div>
+            <div class="boss-action-buttons">
+              <button id="cutman-challenge-btn" class="boss-action-btn boss-action-challenge" onclick="event.preventDefault(); event.stopPropagation(); startBossLevelChallenge('classic_cutman'); return false;">다음 레벨 도전</button>
+              <button id="cutman-sweep-1-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_cutman', 1); return false;">1회 소탕</button>
+              <button id="cutman-sweep-10-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_cutman', 10); return false;">10회 소탕</button>
             </div>
           </div>
         </div>
@@ -871,58 +912,41 @@
         <div class="boss-portrait-box">
           <img class="boss-portrait-img" src="sprites/boss/super-rboss/airman/airman_portrait.png" alt="에어맨">
         </div>
-
         <div class="boss-card-main">
           <div class="boss-card-topline">
             <div class="boss-card-name">에어맨 <span id="airman-boss-level-label" class="boss-level-label">Lv. 1</span></div>
             <div class="boss-entry-cost"><img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1</div>
           </div>
-
           <div class="boss-card-preview">
             <div class="boss-demo-stage airman-preview-stage">
-              <img class="airman-preview-img" src="sprites/boss/super-rboss/airman/airman_st.png" alt="에어맨">
-              <img class="airman-preview-fan" src="sprites/boss/super-rboss/airman/airman_w_01.png" alt="에어맨 팬">
-              <img class="airman-preview-tornado tornado-a" src="sprites/boss/super-rboss/airman/airman_bullet_01.png" alt="에어맨 소용돌이">
-              <img class="airman-preview-tornado tornado-b" src="sprites/boss/super-rboss/airman/airman_bullet_02.png" alt="에어맨 소용돌이">
-              <img class="airman-preview-tornado tornado-c" src="sprites/boss/super-rboss/airman/airman_bullet_03.png" alt="에어맨 소용돌이">
+              <span class="airman-preview-fan" role="img" aria-label="에어맨 팬"></span>
+              <span class="airman-preview-tornado" role="img" aria-label="에어맨 소용돌이"></span>
+              <span class="airman-preview-rockman" role="img" aria-label="밀려나는 록맨"></span>
             </div>
-
-            <div class="airman-reward-line boss-card-reward-line">
-              <span class="reward-text-label">획득 가능 :</span>
-              <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
-              <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
-              <span class="boss-reward-item">브루스버스터 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/bluesbusterchip.png" alt="브루스버스터 데이터칩"></span>
-            </div>
-
-            <div id="airman-card-message" class="boss-card-message"></div>
-
-            <div id="airman-boss-action-panel" class="boss-action-panel" onclick="event.preventDefault(); event.stopPropagation(); return false;">
-              <div class="boss-action-panel-info">
-                최고 클리어 <b id="airman-cleared-level-text">Lv. 0</b> / 다음 도전 <b id="airman-next-level-text">Lv. 1</b>
-              </div>
-              <div class="boss-action-buttons">
-                <button id="airman-challenge-btn" class="boss-action-btn boss-action-challenge" onclick="event.preventDefault(); event.stopPropagation(); startBossLevelChallenge('classic_airman'); return false;">다음 레벨 도전</button>
-                <button id="airman-sweep-1-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_airman', 1); return false;">1회 소탕</button>
-                <button id="airman-sweep-10-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_airman', 10); return false;">10회 소탕</button>
-              </div>
+          </div>
+          <div class="airman-reward-line boss-card-reward-line boss-reward-icons-only-line" aria-label="획득 보상">
+            <span class="boss-reward-item icon-only" title="나사"><img class="boss-reward-icon boss-reward-only-icon" src="sprites/item/screw.png" alt="나사"></span>
+            <span class="boss-reward-item icon-only" title="카드칩"><img class="boss-reward-icon boss-reward-only-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+            <span class="boss-reward-item icon-only" title="브루스버스터 데이터칩"><img class="boss-reward-icon boss-reward-only-icon" src="sprites/boss/reward/bluesbusterchip.png" alt="브루스버스터 데이터칩"></span>
+          </div>
+          <div id="airman-card-message" class="boss-card-message"></div>
+          <div id="airman-boss-action-panel" class="boss-action-panel" onclick="event.preventDefault(); event.stopPropagation(); return false;">
+            <div class="boss-action-panel-info">최고 클리어 <b id="airman-cleared-level-text">Lv. 0</b> / 다음 도전 <b id="airman-next-level-text">Lv. 1</b></div>
+            <div class="boss-action-buttons">
+              <button id="airman-challenge-btn" class="boss-action-btn boss-action-challenge" onclick="event.preventDefault(); event.stopPropagation(); startBossLevelChallenge('classic_airman'); return false;">다음 레벨 도전</button>
+              <button id="airman-sweep-1-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_airman', 1); return false;">1회 소탕</button>
+              <button id="airman-sweep-10-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_airman', 10); return false;">10회 소탕</button>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div id="boss-group-irregular" class="boss-group-panel">
-      <div class="boss-empty-note">이레귤러 보스는 추후 추가 예정입니다.</div>
-    </div>
-    <div id="boss-group-virus" class="boss-group-panel">
-      <div class="boss-empty-note">바이러스 내비는 추후 추가 예정입니다.</div>
-    </div>
-    <div id="boss-group-zero" class="boss-group-panel">
-      <div class="boss-empty-note">록맨제로 보스는 추후 추가 예정입니다.</div>
-    </div>
+    <div id="boss-group-irregular" class="boss-group-panel"><div class="boss-empty-note">이레귤러 보스는 추후 추가 예정입니다.</div></div>
+    <div id="boss-group-virus" class="boss-group-panel"><div class="boss-empty-note">바이러스 내비는 추후 추가 예정입니다.</div></div>
+    <div id="boss-group-zero" class="boss-group-panel"><div class="boss-empty-note">록맨제로 보스는 추후 추가 예정입니다.</div></div>
+  </div>
 </div>
-</div> <!-- boss-tab -->
-
 
 <div id="mine-tab" class="tab-content">
   <div class="system-panel mine-panel">
@@ -1064,7 +1088,7 @@
   </div>
 </div>
 
-<script src="game.js?v=zero_afterimage_magenta_v181"></script>
+<script src="game.js?v=unified_pc_mobile_v182"></script>
 
 
 </body>

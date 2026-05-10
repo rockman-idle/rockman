@@ -16,6 +16,9 @@ const defaultData = {
     bossProgress: {
         classic_cutman: {
             clearedLevel: 0
+        },
+        classic_airman: {
+            clearedLevel: 0
         }
     },
 
@@ -23,7 +26,9 @@ const defaultData = {
         currentLabIndex: 0,
         selectedItem: 'superRock',
         superRockProgress: 0,
-        superRockUnlocked: false
+        superRockUnlocked: false,
+        bluesBusterProgress: 0,
+        bluesBusterUnlocked: false
     },
 
     transcend: {
@@ -206,6 +211,8 @@ gameData.development = { ...defaultData.development, ...(gameData.development ||
 gameData.development.currentLabIndex = Math.max(0, Math.min(3, Math.floor(gameData.development.currentLabIndex || 0)));
 gameData.development.selectedItem = gameData.development.selectedItem || 'superRock';
 gameData.development.superRockProgress = Math.max(0, Math.min(30, Math.floor(gameData.development.superRockProgress || 0)));
+gameData.development.bluesBusterProgress = Math.max(0, Math.min(30, Math.floor(gameData.development.bluesBusterProgress || 0)));
+gameData.development.bluesBusterUnlocked = !!gameData.development.bluesBusterUnlocked;
 
 gameData.transcend = { ...defaultData.transcend, ...(gameData.transcend || {}) };
 ['count', 'points', 'atkLv', 'hpLv', 'screwLv', 'partnerLv', 'cardChipLv'].forEach(key => {
@@ -692,6 +699,43 @@ const BOSS_BATTLE_DATA = {
             superRockChipMin: 1,
             superRockChipMax: 1
         }
+    },
+    classic_airman: {
+        group: 'classic',
+        name: '에어맨',
+        entryCost: 1,
+        hp: 6200,
+        atk: 18,
+        speed: 0,
+        attackInterval: 4700,
+        tornadoSpeed: 0.30,
+        fanSpeed: 0.22,
+        sprite: 'sprites/boss/super-rboss/airman/airman_st.png',
+        attackSprite: 'sprites/boss/super-rboss/airman/airman_at.png',
+        fanFrames: [
+            'sprites/boss/super-rboss/airman/airman_w_01.png',
+            'sprites/boss/super-rboss/airman/airman_w_02.png'
+        ],
+        bulletFrames: [
+            'sprites/boss/super-rboss/airman/airman_bullet_01.png',
+            'sprites/boss/super-rboss/airman/airman_bullet_02.png',
+            'sprites/boss/super-rboss/airman/airman_bullet_03.png'
+        ],
+        width: 60,
+        height: 60,
+        startX: 340,
+        bottom: 13,
+        marginTop: -8,
+        rewards: {
+            screwsMin: 230,
+            screwsMax: 380,
+            cardChipChance: 0.84,
+            cardChipMin: 1,
+            cardChipMax: 3,
+            bluesBusterChipChance: 0.07,
+            bluesBusterChipMin: 1,
+            bluesBusterChipMax: 1
+        }
     }
 };
 
@@ -731,6 +775,23 @@ function getBossScaledData(bossKey = 'classic_cutman', level = 1) {
         data.rewards.cardChipMin = base.rewards?.cardChipMin || 1;
         data.rewards.cardChipMax = Math.min(4, (base.rewards?.cardChipMax || 2) + Math.floor(levelOffset / 10));
         data.rewards.superRockChipChance = Math.min(0.18, (base.rewards?.superRockChipChance ?? 0.05) + levelOffset * 0.004);
+    } else if (bossKey === 'classic_airman') {
+        const levelOffset = lv - 1;
+        const hpScale = 1 + levelOffset * 0.48;
+        const atkScale = 1 + levelOffset * 0.085;
+        const rewardScale = 1 + levelOffset * 0.09;
+
+        data.hp = Math.max(base.hp, Math.floor((base.hp || 6200) * hpScale));
+        data.atk = Math.max(base.atk || 18, Math.floor((base.atk || 18) * atkScale));
+        data.attackInterval = Math.max(3400, Math.floor((base.attackInterval || 4700) - levelOffset * 65));
+        data.tornadoSpeed = Math.min(0.42, (base.tornadoSpeed || 0.30) + levelOffset * 0.0025);
+        data.fanSpeed = Math.min(0.34, (base.fanSpeed || 0.22) + levelOffset * 0.002);
+        data.rewards.screwsMin = Math.floor((base.rewards?.screwsMin || 230) * rewardScale);
+        data.rewards.screwsMax = Math.floor((base.rewards?.screwsMax || 380) * rewardScale);
+        data.rewards.cardChipChance = Math.min(0.97, (base.rewards?.cardChipChance ?? 0.84) + levelOffset * 0.006);
+        data.rewards.cardChipMin = base.rewards?.cardChipMin || 1;
+        data.rewards.cardChipMax = Math.min(5, (base.rewards?.cardChipMax || 3) + Math.floor(levelOffset / 10));
+        data.rewards.bluesBusterChipChance = Math.min(0.20, (base.rewards?.bluesBusterChipChance ?? 0.07) + levelOffset * 0.004);
     }
 
     return data;
@@ -928,6 +989,15 @@ let sniperJoeJumping = false;
 let sniperJoeAttacking = false;
 let cutmanBossActionTimer = null;
 let cutmanBossAttacking = false;
+let airmanBossActionTimer = null;
+let airmanBossAttacking = false;
+let airmanFanFrameTimer = null;
+
+// v170: 에어맨 소용돌이 등 다단히트 보스 패턴에서 록맨이 한 번에 여러 번 맞는 문제를 막는 피격 무적 시간입니다.
+const PLAYER_HIT_FLASH_DURATION_MS = 520;
+const PLAYER_HIT_EXTRA_INVULNERABLE_MS = 500;
+const PLAYER_HIT_INVULNERABLE_MS = PLAYER_HIT_FLASH_DURATION_MS + PLAYER_HIT_EXTRA_INVULNERABLE_MS;
+let playerHitInvulnerableUntil = 0;
 let superRockUnlockPaused = false;
 
 let rockFrame = 1;
@@ -1824,7 +1894,8 @@ function setupStage() {
 
     stopSniperJoeActions();
     stopCutmanBossActions();
-    document.querySelectorAll('.cutman-boss-cutter, .cutman-cutter-erase-pop').forEach(el => el.remove());
+    stopAirmanBossActions();
+    document.querySelectorAll('.cutman-boss-cutter, .cutman-cutter-erase-pop, .airman-boss-tornado, .airman-boss-wind').forEach(el => el.remove());
     updateBossBattleTabLockState();
 
     currentEnemyType = getStageEnemyType(s);
@@ -1935,12 +2006,47 @@ function isCutmanBossBattle() {
     return isBossBattle && currentBossType === 'classic_cutman';
 }
 
+function isAirmanBossBattle() {
+    return isBossBattle && currentBossType === 'classic_airman';
+}
+
 function isStillBossBattle() {
-    return isSniperJoeBattle() || isCutmanBossBattle();
+    return isSniperJoeBattle() || isCutmanBossBattle() || isAirmanBossBattle();
 }
 
 function isSniperJoeBattle() {
     return !isBossBattle && currentEnemyType === 'sniperjoe';
+}
+
+function isAirmanWindReturnWalkingTarget(el) {
+    if (!el) return false;
+    // 에어맨 바람에 밀려난 상태/복귀 중/복귀 직후 잠금 중에는 공격 타이머가 프레임을 건드리지 못하게 막습니다.
+    return el.classList?.contains('airman-wind-pushed')
+        || el.classList?.contains('airman-wind-returning')
+        || el.dataset?.airmanWindLocked === '1'
+        || el.parentElement?.classList?.contains('airman-wind-pushed')
+        || el.parentElement?.classList?.contains('airman-wind-returning')
+        || el.parentElement?.dataset?.airmanWindLocked === '1';
+}
+
+function isPartnerLockedByAirmanWind(type) {
+    const areaIdMap = {
+        blues: 'blues-area',
+        forte: 'forte-area',
+        x: 'x-area',
+        exeRockman: 'rockexe-area',
+        zero: 'zero-area'
+    };
+    const imgIdMap = {
+        blues: 'blues-img',
+        forte: 'forte-img',
+        x: 'x-img',
+        exeRockman: 'rockexe-img',
+        zero: 'zero-img'
+    };
+    const area = document.getElementById(areaIdMap[type]);
+    const img = document.getElementById(imgIdMap[type]);
+    return isAirmanWindReturnWalkingTarget(area) || isAirmanWindReturnWalkingTarget(img);
 }
 
 function applyStillBattleFrames() {
@@ -1953,13 +2059,13 @@ function applyStillBattleFrames() {
     const rockexeImg = document.getElementById('rockexe-img');
     const zeroImg = document.getElementById('zero-img');
 
-    if (rockman) rockman.src = getRockStandSprite();
+    if (rockman && !rockman.classList.contains('rockman-hit-sprite-active') && !isAirmanWindReturnWalkingTarget(rockman)) rockman.src = getRockStandSprite();
     if (rushImg) rushImg.style.display = isSuperRockUnlocked() ? 'none' : '';
     if (rushImg && gameData.rushOwned && !isSuperRockUnlocked()) rushImg.src = 'sprites/partner/rush/rush_st.png';
-    if (forteImg && gameData.forteOwned && !forteAttacking) forteImg.src = 'sprites/partner/forte/forte_st.png';
-    if (xImg && gameData.xOwned && !xAttacking) xImg.src = 'sprites/partner/x/x_st.png';
-    if (rockexeImg && gameData.exeRockmanOwned && !rockexeAttacking) rockexeImg.src = 'sprites/partner/rockexe/rockexe_st.png';
-    if (zeroImg && gameData.zeroOwned && !zeroAttacking) zeroImg.src = 'sprites/partner/zero/zero_st.png';
+    if (forteImg && gameData.forteOwned && !forteAttacking && !isAirmanWindReturnWalkingTarget(forteImg)) forteImg.src = 'sprites/partner/forte/forte_st.png';
+    if (xImg && gameData.xOwned && !xAttacking && !isAirmanWindReturnWalkingTarget(xImg)) xImg.src = 'sprites/partner/x/x_st.png';
+    if (rockexeImg && gameData.exeRockmanOwned && !rockexeAttacking && !isAirmanWindReturnWalkingTarget(rockexeImg)) rockexeImg.src = 'sprites/partner/rockexe/rockexe_st.png';
+    if (zeroImg && gameData.zeroOwned && !zeroAttacking && !isAirmanWindReturnWalkingTarget(zeroImg)) zeroImg.src = 'sprites/partner/zero/zero_st.png';
 }
 
 function stopSniperJoeActions() {
@@ -2053,13 +2159,23 @@ function fireSniperJoeBullet() {
     }, 130);
 }
 
+function isPlayerHitInvulnerable() {
+    return Date.now() < playerHitInvulnerableUntil;
+}
+
+function startPlayerHitInvulnerability(duration = PLAYER_HIT_INVULNERABLE_MS) {
+    playerHitInvulnerableUntil = Math.max(playerHitInvulnerableUntil, Date.now() + Math.max(0, duration));
+}
+
 function enemyHitsPlayerByBullet() {
-    if (playerDead || enemyDead) return;
+    if (playerDead || enemyDead) return false;
+    if (isPlayerHitInvulnerable()) return false;
 
     const damage = Math.max(1, Math.floor(enemyAtk));
     gameData.playerHp -= damage;
     if (gameData.playerHp < 0) gameData.playerHp = 0;
 
+    startPlayerHitInvulnerability();
     showPlayerDamageText(damage);
     playPlayerHitEffect();
 
@@ -2069,7 +2185,10 @@ function enemyHitsPlayerByBullet() {
     if (gameData.playerHp <= 0) {
         failStage();
     }
+
+    return true;
 }
+
 
 
 function animate() {
@@ -2091,6 +2210,11 @@ function animate() {
             if (!enemyDead && !cutmanBossAttacking) {
                 eImg.src = bossData.sprite || 'sprites/boss/super-rboss/cutman/cutman_at_01.png';
             }
+        } else if (isAirmanBossBattle()) {
+            const bossData = getBossData(currentBossType);
+            if (!enemyDead && !airmanBossAttacking) {
+                eImg.src = bossData.sprite || 'sprites/boss/super-rboss/airman/airman_st.png';
+            }
         }
 
         animateBeat();
@@ -2104,7 +2228,7 @@ function animate() {
 
     rockFrame += rockDir;
     if (rockFrame === 3 || rockFrame === 1) rockDir *= -1;
-    rImg.src = getRockWalkSprite(rockFrame);
+    if (!rImg.classList.contains('rockman-hit-sprite-active')) rImg.src = getRockWalkSprite(rockFrame);
 
     if (!enemyDead && !isBossBattle) {
         metFrame = (metFrame % 2) + 1;
@@ -2190,7 +2314,7 @@ function resetBluesWalkAnimation() {
 
 function animateBlues() {
   const bluesImg = document.getElementById('blues-img');
-  if (!bluesImg || !gameData.bluesOwned || bluesAttacking) return;
+  if (!bluesImg || !gameData.bluesOwned || bluesAttacking || isAirmanWindReturnWalkingTarget(bluesImg)) return;
 
   if (isStillBossBattle()) {
     const frame = bluesStandPattern[bluesStandIndex];
@@ -2206,7 +2330,7 @@ function animateBlues() {
 
 function animateForte() {
   const forteImg = document.getElementById('forte-img');
-  if (!forteImg || !gameData.forteOwned) return;
+  if (!forteImg || !gameData.forteOwned || isAirmanWindReturnWalkingTarget(forteImg)) return;
 
   if (isStillBossBattle()) {
     if (!forteAttacking) forteImg.src = 'sprites/partner/forte/forte_st.png';
@@ -2221,7 +2345,7 @@ function animateForte() {
 
 function animateX() {
   const xImg = document.getElementById('x-img');
-  if (!xImg || !gameData.xOwned) return;
+  if (!xImg || !gameData.xOwned || isAirmanWindReturnWalkingTarget(xImg)) return;
 
   if (isStillBossBattle()) {
     if (!xAttacking) xImg.src = 'sprites/partner/x/x_st.png';
@@ -2236,7 +2360,7 @@ function animateX() {
 
 function animateRockExe() {
   const rockexeImg = document.getElementById('rockexe-img');
-  if (!rockexeImg || !gameData.exeRockmanOwned || rockexeAttackAnimating) return;
+  if (!rockexeImg || !gameData.exeRockmanOwned || rockexeAttackAnimating || isAirmanWindReturnWalkingTarget(rockexeImg)) return;
 
   if (isStillBossBattle()) {
     if (!rockexeAttacking) rockexeImg.src = 'sprites/partner/rockexe/rockexe_st.png';
@@ -2251,7 +2375,7 @@ function animateRockExe() {
 
 function animateZero() {
   const zeroImg = document.getElementById('zero-img');
-  if (!zeroImg || !gameData.zeroOwned || zeroAttacking) return;
+  if (!zeroImg || !gameData.zeroOwned || zeroAttacking || isAirmanWindReturnWalkingTarget(zeroImg)) return;
 
   if (isStillBossBattle()) {
     zeroImg.src = 'sprites/partner/zero/zero_st.png';
@@ -2289,7 +2413,8 @@ function getPartnerDamage(type) {
     if (!data) return 0;
 
     const sync = getPartnerSyncPercent(type) / 100;
-    return Math.max(1, Math.floor(getCardAdjustedAtk(gameData.atk) * sync * (1 + getTranscendBonus('partner') + getEcanBonus('partner'))));
+    const bluesDevelopmentBonus = type === 'blues' && isBluesBusterUnlocked() ? 1.10 : 1;
+    return Math.max(1, Math.floor(getCardAdjustedAtk(gameData.atk) * sync * (1 + getTranscendBonus('partner') + getEcanBonus('partner')) * bluesDevelopmentBonus));
 }
 
 function togglePartnerAttackUpgrade() {
@@ -2758,10 +2883,15 @@ function startBluesAttack() {
 
   bluesAttackTimer = setInterval(() => {
     if (superRockUnlockPaused) return;
-    if (!gameData.bluesOwned || enemyDead || playerDead || bluesAttacking) return;
+    if (!gameData.bluesOwned || enemyDead || playerDead || bluesAttacking || isPartnerLockedByAirmanWind('blues')) return;
 
+    if (isStationaryEnemyBattleForBluesBuster()) {
+      fireBluesBusterShot();
+      return;
+    }
+
+    // 다가오는 적과 전투할 때는 기존처럼 돌진 + 넉백만 사용합니다.
     if (enemyX > 180) return;
-
     bluesShieldCharge();
   }, getPartnerAttackIntervalForType('blues'));
 }
@@ -2772,6 +2902,7 @@ function bluesShieldCharge() {
   const enemy = document.getElementById('enemy-img');
 
   if (!bluesArea || !bluesImg || !enemy) return;
+  if (isPartnerLockedByAirmanWind('blues')) return;
 
   bluesAttacking = true;
   let frame = 1;
@@ -2843,7 +2974,7 @@ function startForteAttack() {
 
   forteAttackTimer = setInterval(() => {
     if (superRockUnlockPaused) return;
-    if (!gameData.forteOwned || enemyDead || playerDead || forteAttacking) return;
+    if (!gameData.forteOwned || enemyDead || playerDead || forteAttacking || isPartnerLockedByAirmanWind('forte')) return;
 
     firePartnerBuster('forte');
   }, getPartnerAttackIntervalForType('forte'));
@@ -2854,7 +2985,7 @@ function startXAttack() {
 
   xAttackTimer = setInterval(() => {
     if (superRockUnlockPaused) return;
-    if (!gameData.xOwned || enemyDead || playerDead || xAttacking) return;
+    if (!gameData.xOwned || enemyDead || playerDead || xAttacking || isPartnerLockedByAirmanWind('x')) return;
 
     firePartnerBuster('x');
   }, getPartnerAttackIntervalForType('x'));
@@ -2865,7 +2996,7 @@ function startExeRockmanAttack() {
 
   rockexeAttackTimer = setInterval(() => {
     if (superRockUnlockPaused) return;
-    if (!gameData.exeRockmanOwned || enemyDead || playerDead || rockexeAttacking) return;
+    if (!gameData.exeRockmanOwned || enemyDead || playerDead || rockexeAttacking || isPartnerLockedByAirmanWind('exeRockman')) return;
 
     firePartnerBuster('exeRockman');
   }, getPartnerAttackIntervalForType('exeRockman'));
@@ -2876,7 +3007,7 @@ function startZeroAttack() {
 
   zeroAttackTimer = setInterval(() => {
     if (superRockUnlockPaused) return;
-    if (!gameData.zeroOwned || enemyDead || playerDead || zeroAttacking) return;
+    if (!gameData.zeroOwned || enemyDead || playerDead || zeroAttacking || isPartnerLockedByAirmanWind('zero')) return;
 
     zeroMeleeAttack();
   }, getPartnerAttackIntervalForType('zero', ZERO_ATTACK_INTERVAL_MULTIPLIER));
@@ -3284,6 +3415,7 @@ function firePartnerBuster(type) {
     const enemy = document.getElementById('enemy-img');
 
     if (!data || !screen || !enemy) return;
+    if (isPartnerLockedByAirmanWind(type)) return;
 
     // 공격 중복만 막고, 스프라이트 프레임은 건드리지 않습니다.
     // img.src를 공격/대기 프레임으로 바꾸면 발사 타이밍마다 애니메이션이 멈칫거립니다.
@@ -3446,9 +3578,11 @@ function enemyHitsPlayer() {
     if (playerDead) return;
     if (gameData.playerHp <= 0) return;
     if (enemyAttacking || enemyDead) return;
+    if (isPlayerHitInvulnerable()) return;
 
     enemyAttacking = true;
 
+    startPlayerHitInvulnerability();
     gameData.playerHp -= enemyAtk;
     if (gameData.playerHp < 0) gameData.playerHp = 0;
 
@@ -3485,13 +3619,27 @@ function flashAllyCharacter(elementId, shouldFlash = true) {
     const el = document.getElementById(elementId);
     if (!el) return;
 
+    const isRockman = elementId === 'rockman-img';
+    const hitSprite = isSuperRockUnlocked() ? SUPER_ROCK_SPRITES.stand : 'sprites/rock/rock_hit.png';
+    const restoreSprite = isRockman ? getRockStandSprite() : null;
+
+    if (isRockman) {
+        el.classList.add('rockman-hit-sprite-active');
+        el.dataset.hitRestoreSrc = restoreSprite;
+        el.src = hitSprite;
+    }
+
     el.classList.remove('ally-hit-flash');
     void el.offsetWidth;
     el.classList.add('ally-hit-flash');
 
     setTimeout(() => {
         el.classList.remove('ally-hit-flash');
-    }, 520);
+        if (isRockman) {
+            el.classList.remove('rockman-hit-sprite-active');
+            if (!playerDead) el.src = getRockStandSprite();
+        }
+    }, PLAYER_HIT_FLASH_DURATION_MS);
 }
 
 function playRockmanDeathEffect() {
@@ -3551,6 +3699,7 @@ function failStage() {
 
     stopSniperJoeActions();
     stopCutmanBossActions();
+    stopAirmanBossActions();
     updateBossBattleTabLockState();
     playRockmanDeathEffect();
 
@@ -3920,7 +4069,8 @@ function rollBossBattleReward(bossKey = currentBossType, level = currentBossLeve
     const rewardData = {
         screws,
         cardChip: 0,
-        superRockChip: 0
+        superRockChip: 0,
+        bluesBusterChip: 0
     };
 
     if (Math.random() < (rewards.cardChipChance ?? 0.78)) {
@@ -3935,6 +4085,12 @@ function rollBossBattleReward(bossKey = currentBossType, level = currentBossLeve
         rewardData.superRockChip = amount;
     }
 
+    if (Math.random() < (rewards.bluesBusterChipChance ?? 0)) {
+        const amount = rollInt(rewards.bluesBusterChipMin || 1, rewards.bluesBusterChipMax || 1);
+        gameData.materials.bluesBusterChip += amount;
+        rewardData.bluesBusterChip = amount;
+    }
+
     return rewardData;
 }
 
@@ -3942,6 +4098,7 @@ function mergeBossRewardTotals(total, reward) {
     total.screws = Math.floor(total.screws || 0) + Math.floor(reward.screws || 0);
     total.cardChip = Math.floor(total.cardChip || 0) + Math.floor(reward.cardChip || 0);
     total.superRockChip = Math.floor(total.superRockChip || 0) + Math.floor(reward.superRockChip || 0);
+    total.bluesBusterChip = Math.floor(total.bluesBusterChip || 0) + Math.floor(reward.bluesBusterChip || 0);
     return total;
 }
 
@@ -4019,6 +4176,7 @@ function killEnemy() {
     enemyHp = 0;
     stopSniperJoeActions();
     stopCutmanBossActions();
+    stopAirmanBossActions();
     updateBossBattleTabLockState();
 
     if (isBossBattle && BOSS_BATTLE_DATA[currentBossType]) {
@@ -4064,7 +4222,13 @@ function killEnemy() {
         if (Math.random() < (rewards.superRockChipChance || 0)) {
             const amount = rollInt(rewards.superRockChipMin || 1, rewards.superRockChipMax || 1);
             gameData.materials.superRockChip += amount;
-            rewardParts.push(`슈퍼록맨칩 +${amount}`);
+            rewardParts.push(`슈퍼록맨 데이터칩 +${amount}`);
+        }
+
+        if (Math.random() < (rewards.bluesBusterChipChance || 0)) {
+            const amount = rollInt(rewards.bluesBusterChipMin || 1, rewards.bluesBusterChipMax || 1);
+            gameData.materials.bluesBusterChip += amount;
+            rewardParts.push(`브루스버스터 데이터칩 +${amount}`);
         }
 
         playEnemyDeathEffect();
@@ -4275,6 +4439,12 @@ function showRewardText(reward) {
         if (reward.superRockChip) {
             parts.push(
                 `<span class="reward-inline-item"><img class="reward-inline-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"> 슈퍼록맨 데이터칩 +${reward.superRockChip}</span>`
+            );
+        }
+
+        if (reward.bluesBusterChip) {
+            parts.push(
+                `<span class="reward-inline-item"><img class="reward-inline-icon" src="sprites/boss/reward/bluesbusterchip.png" alt="브루스버스터 데이터칩"> 브루스버스터 데이터칩 +${reward.bluesBusterChip}</span>`
             );
         }
 
@@ -5105,6 +5275,7 @@ const DEVELOPMENT_LAB_DATA = [
 ];
 
 const DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS = 30;
+const DEVELOPMENT_BLUES_BUSTER_REQUIRED_CHIPS = 30;
 
 const SUPER_ROCK_SPRITES = {
     walk: [
@@ -5118,6 +5289,10 @@ const SUPER_ROCK_SPRITES = {
 
 function isSuperRockUnlocked() {
     return !!gameData.development?.superRockUnlocked;
+}
+
+function isBluesBusterUnlocked() {
+    return !!gameData.development?.bluesBusterUnlocked;
 }
 
 function getRockStandSprite() {
@@ -5202,7 +5377,7 @@ function changeDevelopmentLab(delta = 1, event = null) {
 
     updateDevelopmentLabUI();
     if (getCurrentDevelopmentLab().key === 'classic') {
-        playSuperRockDevelopmentSpriteIntro(true);
+        playClassicDevelopmentSpriteIntros(true);
     }
     saveData();
 }
@@ -5219,7 +5394,7 @@ function openDevelopmentGroup() {
 
     updateDevelopmentLabUI();
     if (getCurrentDevelopmentLab().key === 'classic') {
-        playSuperRockDevelopmentSpriteIntro(true);
+        playClassicDevelopmentSpriteIntros(true);
     }
     saveData();
 }
@@ -5230,6 +5405,9 @@ function selectDevelopmentItem(itemKey) {
     updateDevelopmentLabUI();
     if (itemKey === 'superRock' && getCurrentDevelopmentLab().key === 'classic') {
         playSuperRockDevelopmentSpriteIntro(true);
+    }
+    if (itemKey === 'bluesBuster' && getCurrentDevelopmentLab().key === 'classic') {
+        playBluesBusterDevelopmentSpriteIntro(true);
     }
     saveData();
 }
@@ -5339,7 +5517,7 @@ function closeSuperRockUnlockOverlay(applyUnlock = true) {
     saveData();
 
     const rockman = document.getElementById('rockman-img');
-    if (rockman) rockman.src = getRockStandSprite();
+    if (rockman && !rockman.classList.contains('rockman-hit-sprite-active')) rockman.src = getRockStandSprite();
 }
 
 function playSuperRockUnlockAnimation() {
@@ -5389,7 +5567,7 @@ function playSuperRockUnlockAnimation() {
                 superRockUnlockCloseReady = true;
                 updateUI();
                 const rockman = document.getElementById('rockman-img');
-                if (rockman) rockman.src = getRockStandSprite();
+                if (rockman && !rockman.classList.contains('rockman-hit-sprite-active')) rockman.src = getRockStandSprite();
             }, 260);
             return;
         }
@@ -5407,6 +5585,361 @@ function completeSuperRockDevelopmentUnlock() {
         freezeBattleForSuperRockUnlock();
         playSuperRockUnlockAnimation();
     }, 80);
+}
+
+
+
+const BLUES_BUSTER_SPRITES = {
+    chargePrefix: 'sprites/partner/blues/blues_c_',
+    bulletPrefix: 'sprites/partner/blues/blues_st_bullet_',
+    stand: 'sprites/partner/blues/blues_st_01.png'
+};
+
+let bluesBusterDevSpriteAnimTimer = null;
+let bluesBusterDevSpriteAnimToken = 0;
+let bluesBusterUnlockCloseReady = false;
+let bluesBusterUnlockTimers = [];
+let bluesBusterUnlockBulletFrameTimer = null;
+
+function getBluesBusterDevelopmentFrame(frame) {
+    return `${BLUES_BUSTER_SPRITES.chargePrefix}${String(frame).padStart(2, '0')}.png`;
+}
+
+function playBluesBusterDevelopmentSpriteIntro(force = false) {
+    const img = document.getElementById('blues-buster-dev-sprite');
+    if (!img) return;
+
+    bluesBusterDevSpriteAnimToken += 1;
+    const token = bluesBusterDevSpriteAnimToken;
+    if (bluesBusterDevSpriteAnimTimer) {
+        clearTimeout(bluesBusterDevSpriteAnimTimer);
+        bluesBusterDevSpriteAnimTimer = null;
+    }
+
+    let frame = 1;
+    img.src = getBluesBusterDevelopmentFrame(frame);
+    const step = () => {
+        if (token !== bluesBusterDevSpriteAnimToken) return;
+        frame += 1;
+        if (frame > 6) {
+            img.src = BLUES_BUSTER_SPRITES.stand;
+            bluesBusterDevSpriteAnimTimer = null;
+            return;
+        }
+        img.src = getBluesBusterDevelopmentFrame(frame);
+        bluesBusterDevSpriteAnimTimer = setTimeout(step, 110);
+    };
+    bluesBusterDevSpriteAnimTimer = setTimeout(step, 110);
+}
+
+function playClassicDevelopmentSpriteIntros(force = false) {
+    playSuperRockDevelopmentSpriteIntro(force);
+    playBluesBusterDevelopmentSpriteIntro(force);
+}
+
+function showBluesBusterDevelopmentNotice(message) {
+    const card = document.getElementById('development-blues-buster-card');
+    if (!card) {
+        showStageText(message);
+        return;
+    }
+    let notice = card.querySelector('.super-rock-dev-notice');
+    if (!notice) {
+        notice = document.createElement('div');
+        notice.className = 'super-rock-dev-notice';
+        card.appendChild(notice);
+    }
+    notice.textContent = message;
+    notice.classList.remove('active');
+    void notice.offsetWidth;
+    notice.classList.add('active');
+    setTimeout(() => notice.classList.remove('active'), 1400);
+}
+
+function upgradeBluesBusterDevelopment(event = null) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    if (!gameData.development) gameData.development = { ...defaultData.development };
+    if (!gameData.materials) gameData.materials = { ...defaultData.materials };
+
+    const progress = Math.max(0, Math.min(DEVELOPMENT_BLUES_BUSTER_REQUIRED_CHIPS, Math.floor(gameData.development.bluesBusterProgress || 0)));
+    if (progress >= DEVELOPMENT_BLUES_BUSTER_REQUIRED_CHIPS) {
+        if (!gameData.bluesOwned) {
+            showBluesBusterDevelopmentNotice('블루스가 필요합니다');
+            updateUI();
+            return;
+        }
+        if (!gameData.development.bluesBusterUnlocked) completeBluesBusterDevelopmentUnlock();
+        return;
+    }
+
+    if ((gameData.materials.bluesBusterChip || 0) <= 0) return;
+    gameData.materials.bluesBusterChip = Math.max(0, Math.floor(gameData.materials.bluesBusterChip || 0) - 1);
+    gameData.development.bluesBusterProgress = Math.min(DEVELOPMENT_BLUES_BUSTER_REQUIRED_CHIPS, progress + 1);
+
+    const card = document.getElementById('development-blues-buster-card');
+    if (card) {
+        card.classList.remove('developing', 'complete-pulse');
+        void card.offsetWidth;
+        card.classList.add(gameData.development.bluesBusterProgress >= DEVELOPMENT_BLUES_BUSTER_REQUIRED_CHIPS ? 'complete-pulse' : 'developing');
+        setTimeout(() => card.classList.remove('developing', 'complete-pulse'), 720);
+    }
+    playBluesBusterDevelopmentSpriteIntro(true);
+    updateUI();
+    saveData();
+}
+
+function clearBluesBusterUnlockSequenceTimers() {
+    bluesBusterUnlockTimers.forEach(timer => clearTimeout(timer));
+    bluesBusterUnlockTimers = [];
+    if (bluesBusterUnlockBulletFrameTimer) {
+        clearInterval(bluesBusterUnlockBulletFrameTimer);
+        bluesBusterUnlockBulletFrameTimer = null;
+    }
+
+    const bullet = document.getElementById('blues-buster-unlock-bullet');
+    if (bullet) {
+        bullet.getAnimations?.().forEach(animation => animation.cancel());
+        bullet.style.opacity = '';
+        bullet.style.transform = '';
+        bullet.classList.remove('active', 'loop');
+    }
+}
+
+function scheduleBluesBusterUnlockStep(fn, delay) {
+    const timer = setTimeout(() => {
+        bluesBusterUnlockTimers = bluesBusterUnlockTimers.filter(item => item !== timer);
+        fn();
+    }, delay);
+    bluesBusterUnlockTimers.push(timer);
+    return timer;
+}
+
+function closeBluesBusterUnlockOverlay(applyUnlock = true) {
+    const overlay = document.getElementById('blues-buster-unlock-overlay');
+    const bullet = document.getElementById('blues-buster-unlock-bullet');
+    if (!overlay || !overlay.classList.contains('active')) return;
+
+    clearBluesBusterUnlockSequenceTimers();
+
+    if (applyUnlock && !gameData.development.bluesBusterUnlocked) gameData.development.bluesBusterUnlocked = true;
+    overlay.classList.remove('active');
+    bluesBusterUnlockCloseReady = false;
+    if (bullet) bullet.classList.remove('active', 'loop');
+    unfreezeBattleAfterSuperRockUnlock();
+    updateUI();
+    saveData();
+    startBluesAttack();
+}
+
+function playBluesBusterUnlockAnimation() {
+    const overlay = document.getElementById('blues-buster-unlock-overlay');
+    const img = document.getElementById('blues-buster-unlock-img');
+    const bullet = document.getElementById('blues-buster-unlock-bullet');
+    const text = document.getElementById('blues-buster-unlock-text');
+    if (!overlay || !img || !bullet) return;
+
+    clearBluesBusterUnlockSequenceTimers();
+
+    overlay.classList.add('active');
+    overlay.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (bluesBusterUnlockCloseReady) closeBluesBusterUnlockOverlay(true);
+    };
+
+    bluesBusterUnlockCloseReady = false;
+    if (text) text.classList.remove('active');
+    bullet.classList.remove('active', 'loop');
+    bullet.style.opacity = '0';
+    bullet.style.transform = 'translateX(0px)';
+
+    const bulletFrames = [1, 2, 3].map(n => `${BLUES_BUSTER_SPRITES.bulletPrefix}${String(n).padStart(2, '0')}.png`);
+
+    const runBulletOnce = () => {
+        if (!overlay.classList.contains('active')) return;
+
+        let bulletFrame = 0;
+        bullet.src = bulletFrames[0];
+        bullet.style.opacity = '0';
+        bullet.style.transform = 'translateX(0px)';
+        bullet.classList.remove('loop');
+        bullet.classList.add('active');
+        void bullet.offsetWidth;
+
+        if (bluesBusterUnlockBulletFrameTimer) clearInterval(bluesBusterUnlockBulletFrameTimer);
+        bluesBusterUnlockBulletFrameTimer = setInterval(() => {
+            if (!overlay.classList.contains('active')) {
+                clearInterval(bluesBusterUnlockBulletFrameTimer);
+                bluesBusterUnlockBulletFrameTimer = null;
+                return;
+            }
+            bulletFrame = (bulletFrame + 1) % bulletFrames.length;
+            bullet.src = bulletFrames[bulletFrame];
+        }, 70);
+
+        const animation = bullet.animate(
+            [
+                { transform: 'translateX(0px)', opacity: 0, offset: 0 },
+                { transform: 'translateX(18px)', opacity: 1, offset: 0.12 },
+                { transform: 'translateX(208px)', opacity: 1, offset: 0.82 },
+                { transform: 'translateX(248px)', opacity: 0, offset: 1 }
+            ],
+            { duration: 980, easing: 'linear', fill: 'forwards' }
+        );
+
+        animation.onfinish = () => {
+            if (bluesBusterUnlockBulletFrameTimer) {
+                clearInterval(bluesBusterUnlockBulletFrameTimer);
+                bluesBusterUnlockBulletFrameTimer = null;
+            }
+            bullet.classList.remove('active', 'loop');
+            bullet.style.opacity = '0';
+            bullet.style.transform = 'translateX(0px)';
+            img.src = BLUES_BUSTER_SPRITES.stand;
+            scheduleBluesBusterUnlockStep(runChargeOnce, 280);
+        };
+    };
+
+    const runChargeOnce = () => {
+        if (!overlay.classList.contains('active')) return;
+
+        let frame = 1;
+        img.src = getBluesBusterDevelopmentFrame(frame);
+
+        const step = () => {
+            if (!overlay.classList.contains('active')) return;
+            frame += 1;
+            if (frame > 6) {
+                img.src = BLUES_BUSTER_SPRITES.stand;
+                runBulletOnce();
+                return;
+            }
+            img.src = getBluesBusterDevelopmentFrame(frame);
+            scheduleBluesBusterUnlockStep(step, 95);
+        };
+
+        scheduleBluesBusterUnlockStep(step, 95);
+    };
+
+    runChargeOnce();
+
+    scheduleBluesBusterUnlockStep(() => {
+        if (!overlay.classList.contains('active')) return;
+        if (!gameData.development.bluesBusterUnlocked) {
+            gameData.development.bluesBusterUnlocked = true;
+            saveData();
+        }
+        if (text) {
+            text.classList.remove('active');
+            void text.offsetWidth;
+            text.classList.add('active');
+        }
+        bluesBusterUnlockCloseReady = true;
+        updateUI();
+        startBluesAttack();
+    }, 760);
+}
+
+function completeBluesBusterDevelopmentUnlock() {
+    showTab('battle');
+    setTimeout(() => {
+        freezeBattleForSuperRockUnlock();
+        playBluesBusterUnlockAnimation();
+    }, 80);
+}
+
+function isStationaryEnemyBattleForBluesBuster() {
+    return isBluesBusterUnlocked() && (isStillBossBattle() || isSniperJoeBattle());
+}
+
+function getBluesBusterShotDamage() {
+    const syncPercent = getPartnerSyncPercent('blues');
+    // 싱크로율 MAX에서는 브루스버스터 공격력을 200%로 계산합니다.
+    if (syncPercent >= 100) {
+        return Math.max(1, Math.floor(getPartnerDamage('blues') * 2));
+    }
+
+    return getPartnerDamage('blues');
+}
+
+function fireBluesBusterShot() {
+    const bluesArea = document.getElementById('blues-area');
+    const bluesImg = document.getElementById('blues-img');
+    const enemy = document.getElementById('enemy-img');
+    const screen = document.querySelector('.game-screen');
+    if (!bluesArea || !bluesImg || !enemy || !screen) return;
+    if (isPartnerLockedByAirmanWind('blues')) return;
+
+    bluesAttacking = true;
+    const screenRect = screen.getBoundingClientRect();
+    const bluesRect = bluesImg.getBoundingClientRect();
+    const startX = bluesRect.right - screenRect.left - 2;
+    const startY = Math.max(0, screenRect.bottom - bluesRect.bottom - 2);
+
+    let shotFrame = 1;
+    bluesImg.src = getBluesBusterDevelopmentFrame(shotFrame);
+    const chargeTimer = setInterval(() => {
+        shotFrame += 1;
+        if (shotFrame > 6) {
+            clearInterval(chargeTimer);
+            return;
+        }
+        bluesImg.src = getBluesBusterDevelopmentFrame(shotFrame);
+    }, 95);
+
+    setTimeout(() => {
+        if (!bluesAttacking || enemyDead || playerDead) return;
+        const bullet = document.createElement('div');
+        bullet.className = 'partner-bullet blues-stand-bullet';
+        bullet.style.left = startX + 'px';
+        bullet.style.bottom = startY + 'px';
+        screen.appendChild(bullet);
+
+        const bulletFrames = [1, 2, 3].map(n => `sprites/partner/blues/blues_st_bullet_0${n}.png`);
+        let bulletFrame = 0;
+        bullet.style.backgroundImage = `url("${bulletFrames[0]}")`;
+        const bulletFrameTimer = setInterval(() => {
+            if (!bullet.isConnected) {
+                clearInterval(bulletFrameTimer);
+                return;
+            }
+            bulletFrame = (bulletFrame + 1) % bulletFrames.length;
+            bullet.style.backgroundImage = `url("${bulletFrames[bulletFrame]}")`;
+        }, 70);
+
+        const bulletFrontX = getElementFrontX(bullet);
+        const travel = getBulletTravel(bulletFrontX);
+        const duration = getPlayerProjectileDuration(bulletFrontX, travel);
+        bullet.animate([{ transform: 'translateX(0px)' }, { transform: `translateX(${travel}px)` }], { duration, easing: 'linear' });
+
+        setTimeout(() => {
+            clearInterval(bulletFrameTimer);
+            if (!bullet.isConnected || bullet.dataset.cutmanErased === '1') {
+                bullet.remove();
+                bluesImg.src = BLUES_BUSTER_SPRITES.stand;
+                bluesAttacking = false;
+                return;
+            }
+            const damage = getBluesBusterShotDamage();
+            const hit = applyEnemyDamage(damage, false, true);
+            if (hit && !enemyDead) playEnemyHit(enemy);
+            bullet.remove();
+            bluesImg.src = BLUES_BUSTER_SPRITES.stand;
+            bluesAttacking = false;
+            updateUI();
+            saveData();
+        }, duration);
+    }, 280);
+
+    setTimeout(() => {
+        if (bluesAttacking && !document.querySelector('.blues-stand-bullet')) {
+            bluesImg.src = BLUES_BUSTER_SPRITES.stand;
+            bluesAttacking = false;
+        }
+    }, 1400);
 }
 
 function updateDevelopmentLabUI() {
@@ -5498,6 +6031,35 @@ function updateDevelopmentLabUI() {
         superRockCard.classList.toggle('complete', progress >= DEVELOPMENT_SUPER_ROCK_REQUIRED_CHIPS);
     }
 
+    const bluesChipCount = Math.max(0, Math.floor(gameData.materials?.bluesBusterChip || 0));
+    const bluesProgress = Math.max(0, Math.min(DEVELOPMENT_BLUES_BUSTER_REQUIRED_CHIPS, Math.floor(gameData.development.bluesBusterProgress || 0)));
+    const bluesProgressText = document.getElementById('blues-buster-dev-progress-text');
+    if (bluesProgressText) bluesProgressText.innerText = `${bluesProgress} / ${DEVELOPMENT_BLUES_BUSTER_REQUIRED_CHIPS}`;
+
+    document.querySelectorAll('#blues-buster-dev-gauge .development-progress-box').forEach((box, index) => {
+        box.classList.toggle('filled', index < bluesProgress);
+    });
+
+    const bluesBtn = document.getElementById('blues-buster-dev-btn');
+    if (bluesBtn) {
+        const complete = bluesProgress >= DEVELOPMENT_BLUES_BUSTER_REQUIRED_CHIPS;
+        const unlocked = !!gameData.development.bluesBusterUnlocked;
+        const hasBlues = !!gameData.bluesOwned;
+        const canUpgrade = !complete && bluesChipCount > 0;
+        const canComplete = complete && !unlocked && hasBlues;
+        bluesBtn.disabled = !(canUpgrade || canComplete || (complete && !unlocked && !hasBlues));
+        bluesBtn.classList.toggle('active', canUpgrade || canComplete);
+        bluesBtn.innerText = complete ? (unlocked ? '완료됨' : '완료') : '개발';
+        bluesBtn.title = unlocked
+            ? '브루스버스터 개발 완료'
+            : (complete
+                ? (hasBlues ? '브루스버스터 개발을 완료합니다.' : '블루스가 필요합니다')
+                : (canUpgrade ? '브루스버스터 데이터칩 1개를 투입합니다.' : '브루스버스터 데이터칩이 부족합니다.'));
+    }
+
+    const bluesCard = document.getElementById('development-blues-buster-card');
+    if (bluesCard) bluesCard.classList.toggle('complete', bluesProgress >= DEVELOPMENT_BLUES_BUSTER_REQUIRED_CHIPS);
+
 }
 
 
@@ -5534,21 +6096,13 @@ function showTab(tabName) {
         setTimeout(() => {
             updateDevelopmentLabUI();
             if (getCurrentDevelopmentLab().key === 'classic') {
-                playSuperRockDevelopmentSpriteIntro(true);
+                playClassicDevelopmentSpriteIntros(true);
             }
         }, 0);
     }
 
-    if (tabName === 'boss' && typeof normalizeCutmanBossCardUI === 'function') {
-        setTimeout(normalizeCutmanBossCardUI, 0);
-    }
-
-    if (tabName === 'boss' && typeof normalizeBossTabLayoutV5 === 'function') {
-        setTimeout(normalizeBossTabLayoutV5, 0);
-    }
-
-    if (tabName === 'boss' && typeof startCutmanPreviewV14 === 'function') {
-        setTimeout(startCutmanPreviewV14, 0);
+    if (tabName === 'boss' && typeof stabilizeBossCardsV168 === 'function') {
+        stabilizeBossCardsV168();
     }
 }
 
@@ -5592,10 +6146,17 @@ function toggleBossGroup(groupKey) {
     if (btn) btn.classList.add('active');
 }
 
-function showBossCardMessage(message) {
+function getBossUiPrefix(bossKey = 'classic_cutman') {
+    if (bossKey === 'classic_airman') return 'airman';
+    return 'cutman';
+}
+
+function showBossCardMessage(message, bossKey = currentBossType || 'classic_cutman') {
+    const prefix = getBossUiPrefix(bossKey);
     const card =
+        document.getElementById(`boss-card-${prefix}`) ||
         document.getElementById('boss-card-cutman') ||
-        document.querySelector('.cutman-card') ||
+        document.querySelector(`[data-boss-key="${bossKey}"]`) ||
         document.querySelector('.boss-select-card');
 
     if (!card) {
@@ -5620,29 +6181,40 @@ function showBossCardMessage(message) {
     }, 900);
 }
 
-function updateBossLevelUI() {
-    const cleared = getBossClearedLevel('classic_cutman');
+function updateSingleBossLevelUI(bossKey = 'classic_cutman') {
+    const prefix = getBossUiPrefix(bossKey);
+    const cleared = getBossClearedLevel(bossKey);
     const nextLevel = cleared + 1;
-    const label = document.getElementById('cutman-boss-level-label');
+    const nextBossData = getBossData(bossKey, nextLevel);
+    const entryCost = Math.max(1, Math.floor(nextBossData.entryCost || 1));
+
+    const label = document.getElementById(`${prefix}-boss-level-label`);
     if (label) label.innerText = `Lv. ${nextLevel}`;
 
-    const clearedText = document.getElementById('cutman-cleared-level-text');
+    const clearedText = document.getElementById(`${prefix}-cleared-level-text`);
     if (clearedText) clearedText.innerText = `Lv. ${cleared}`;
 
-    const nextText = document.getElementById('cutman-next-level-text');
+    const nextText = document.getElementById(`${prefix}-next-level-text`);
     if (nextText) nextText.innerText = `Lv. ${nextLevel}`;
 
-    const challengeBtn = document.getElementById('cutman-challenge-btn');
-    setButtonActive(challengeBtn, (gameData.materials.bossReplayCard || 0) >= 1);
-    if (challengeBtn) challengeBtn.disabled = (gameData.materials.bossReplayCard || 0) < 1;
+    const challengeBtn = document.getElementById(`${prefix}-challenge-btn`);
+    const canChallenge = (gameData.materials.bossReplayCard || 0) >= entryCost;
+    setButtonActive(challengeBtn, canChallenge);
+    if (challengeBtn) challengeBtn.disabled = !canChallenge;
 
-    const sweep1 = document.getElementById('cutman-sweep-1-btn');
-    const sweep10 = document.getElementById('cutman-sweep-10-btn');
-    const canSweep = cleared > 0 && (gameData.materials.bossReplayCard || 0) >= 1;
+    const sweep1 = document.getElementById(`${prefix}-sweep-1-btn`);
+    const sweep10 = document.getElementById(`${prefix}-sweep-10-btn`);
+    const sweepEntryCost = Math.max(1, Math.floor(getBossData(bossKey, Math.max(1, cleared)).entryCost || 1));
+    const canSweep = cleared > 0 && (gameData.materials.bossReplayCard || 0) >= sweepEntryCost;
     setButtonActive(sweep1, canSweep);
     if (sweep1) sweep1.disabled = !canSweep;
-    setButtonActive(sweep10, cleared > 0 && (gameData.materials.bossReplayCard || 0) >= 10);
-    if (sweep10) sweep10.disabled = !(cleared > 0 && (gameData.materials.bossReplayCard || 0) >= 10);
+    setButtonActive(sweep10, cleared > 0 && (gameData.materials.bossReplayCard || 0) >= sweepEntryCost * 10);
+    if (sweep10) sweep10.disabled = !(cleared > 0 && (gameData.materials.bossReplayCard || 0) >= sweepEntryCost * 10);
+}
+
+function updateBossLevelUI() {
+    updateSingleBossLevelUI('classic_cutman');
+    updateSingleBossLevelUI('classic_airman');
 }
 
 function closeBossActionPanels() {
@@ -5650,7 +6222,8 @@ function closeBossActionPanels() {
 }
 
 function openBossActionPanel(bossKey = 'classic_cutman') {
-    const panel = document.getElementById('cutman-boss-action-panel');
+    const prefix = getBossUiPrefix(bossKey);
+    const panel = document.getElementById(`${prefix}-boss-action-panel`);
     if (!panel) {
         startBossLevelChallenge(bossKey);
         return;
@@ -5668,7 +6241,7 @@ function startBossLevelChallenge(bossKey = 'classic_cutman') {
 
     const entryCost = Math.max(1, Math.floor(bossData.entryCost || 1));
     if ((gameData.materials.bossReplayCard || 0) < entryCost) {
-        showBossCardMessage('보스재생카드 부족');
+        showBossCardMessage('보스재생카드 부족', bossKey);
         return;
     }
 
@@ -5678,6 +6251,7 @@ function startBossLevelChallenge(bossKey = 'classic_cutman') {
     updateBossBattleTabLockState();
 
     const card =
+        document.getElementById(`boss-card-${getBossUiPrefix(bossKey)}`) ||
         document.getElementById('boss-card-cutman') ||
         document.getElementById(`${bossKey}-card`) ||
         document.querySelector(`[data-boss-key="${bossKey}"]`) ||
@@ -5698,7 +6272,7 @@ function startBossLevelChallenge(bossKey = 'classic_cutman') {
 function sweepBossLevel(bossKey = 'classic_cutman', requestedCount = 1) {
     const clearedLevel = getBossClearedLevel(bossKey);
     if (clearedLevel <= 0) {
-        showBossCardMessage('소탕할 레벨이 없습니다');
+        showBossCardMessage('소탕할 레벨이 없습니다', bossKey);
         return;
     }
 
@@ -5706,17 +6280,17 @@ function sweepBossLevel(bossKey = 'classic_cutman', requestedCount = 1) {
     const available = Math.floor((gameData.materials.bossReplayCard || 0) / entryCost);
     const count = Math.max(0, Math.min(Math.floor(requestedCount || 1), available));
     if (count <= 0) {
-        showBossCardMessage('보스재생카드 부족');
+        showBossCardMessage('보스재생카드 부족', bossKey);
         return;
     }
 
     gameData.materials.bossReplayCard -= count * entryCost;
-    const totalReward = { screws: 0, cardChip: 0, superRockChip: 0 };
+    const totalReward = { screws: 0, cardChip: 0, superRockChip: 0, bluesBusterChip: 0 };
     for (let i = 0; i < count; i++) {
         mergeBossRewardTotals(totalReward, rollBossBattleReward(bossKey, clearedLevel));
     }
 
-    showBossCardMessage(`Lv.${clearedLevel} 소탕 x${count}`);
+    showBossCardMessage(`Lv.${clearedLevel} 소탕 x${count}`, bossKey);
     showBossSweepRewardPopup(bossKey, clearedLevel, count, totalReward);
     updateUI();
     saveData();
@@ -5732,6 +6306,7 @@ function formatBossSweepRewardRows(reward = {}) {
     const screws = Math.floor(reward.screws || 0);
     const cardChip = Math.floor(reward.cardChip || 0);
     const superRockChip = Math.floor(reward.superRockChip || 0);
+    const bluesBusterChip = Math.floor(reward.bluesBusterChip || 0);
 
     if (screws > 0) {
         rows.push({ icon: 'sprites/item/screw.png', name: '나사', amount: screws });
@@ -5741,6 +6316,9 @@ function formatBossSweepRewardRows(reward = {}) {
     }
     if (superRockChip > 0) {
         rows.push({ icon: 'sprites/boss/reward/superrockchip.png', name: '슈퍼록맨 데이터칩', amount: superRockChip });
+    }
+    if (bluesBusterChip > 0) {
+        rows.push({ icon: 'sprites/boss/reward/bluesbusterchip.png', name: '브루스버스터 데이터칩', amount: bluesBusterChip });
     }
 
     return rows;
@@ -5826,7 +6404,7 @@ function showBossWarning(callback) {
 
 function clearBattleProjectilesAndTransientEffects() {
   document.querySelectorAll(
-    '.enemy-bullet, .sniperjoe-bullet, .cutman-boss-cutter, .cutman-cutter-erase-pop, ' +
+    '.enemy-bullet, .sniperjoe-bullet, .cutman-boss-cutter, .cutman-cutter-erase-pop, .airman-boss-tornado, .airman-boss-wind, ' +
     '.projectile-explosion, .projectile-explosion-particle, .death-particle, ' +
     '.rockman-death-particle, .cutman-death-particle, .damage-text'
   ).forEach(el => el.remove());
@@ -5847,7 +6425,9 @@ function resetBattleStateForBossEntry() {
   sniperJoeJumping = false;
   sniperJoeAttacking = false;
   cutmanBossAttacking = false;
+  airmanBossAttacking = false;
   playerDead = false;
+  playerHitInvulnerableUntil = 0;
 
   gameData.playerMaxHp = Math.floor(100 + (gameData.lv.hp - 1) * 20);
   gameData.playerHp = gameData.playerMaxHp;
@@ -5858,9 +6438,12 @@ function resetBattleStateForBossEntry() {
     rockman.src = getRockStandSprite();
   }
 
-  ['rush-img', 'beat-img', 'blues-img', 'forte-img', 'x-img', 'rockexe-img', 'zero-img'].forEach(id => {
+  ['rush-img', 'beat-img', 'blues-img', 'forte-img', 'x-img', 'rockexe-img', 'zero-img', 'blues-area', 'forte-area', 'x-area', 'rockexe-area', 'zero-area'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.classList.remove('ally-hit-flash');
+    if (el) {
+      el.classList.remove('ally-hit-flash', 'airman-wind-pushed', 'airman-wind-returning');
+      el.dataset.airmanWindLocked = '0';
+    }
   });
 
   const enemyImg = document.getElementById('enemy-img');
@@ -5888,7 +6471,7 @@ function enterBossBattle(bossKey = 'classic_cutman', bossLevel = 1, bossMode = '
     bossBattleEntryPending = false;
     setBossEntryWarningPause(false);
     updateBossBattleTabLockState();
-    showBossCardMessage('보스재생카드 부족');
+    showBossCardMessage('보스재생카드 부족', bossKey);
     updateUI();
     return;
   }
@@ -5918,7 +6501,7 @@ function enterBossBattle(bossKey = 'classic_cutman', bossLevel = 1, bossMode = '
     }
 
     const bg = document.getElementById('scroll-bg');
-    if (bg) bg.classList.toggle('paused', bossKey === 'classic_cutman');
+    if (bg) bg.classList.toggle('paused', bossKey === 'classic_cutman' || bossKey === 'classic_airman');
 
     const enemyImg = document.getElementById('enemy-img');
     if (enemyImg) {
@@ -5946,7 +6529,7 @@ function enterBossBattle(bossKey = 'classic_cutman', bossLevel = 1, bossMode = '
     enemyMaxHp = bossData.hp || 5000;
     enemyHp = enemyMaxHp;
     enemyAtk = bossData.atk || 20;
-    enemySpeed = bossKey === 'classic_cutman' ? 0 : Math.min(ENEMY_MOVE_SPEED_MAX, (bossData.speed || 0.18));
+    enemySpeed = (bossKey === 'classic_cutman' || bossKey === 'classic_airman') ? 0 : Math.min(ENEMY_MOVE_SPEED_MAX, (bossData.speed || 0.18));
     enemyX = bossData.startX ?? BOSS_START_X;
 
     enemyDead = false;
@@ -5969,6 +6552,8 @@ function enterBossBattle(bossKey = 'classic_cutman', bossLevel = 1, bossMode = '
 
     if (bossKey === 'classic_cutman') {
       startCutmanBossActions();
+    } else if (bossKey === 'classic_airman') {
+      startAirmanBossActions();
     }
 
   });
@@ -6108,10 +6693,14 @@ function fireCutmanBossCutter() {
         erasePlayerProjectilesAtCutter(cutter, screen);
     }, 24);
 
+    // 컷맨 커터는 이동하면서 회전해야 실제 커터 느낌이 납니다.
+    // Web Animations transform에 translate와 rotate를 같이 넣어,
+    // 기존 이동 판정/삭제 판정은 유지하면서 시각적으로만 회전시킵니다.
+    const cutterSpin = travel < 0 ? -1080 : 1080;
     cutter.animate(
         [
             { transform: 'translateX(0px) rotate(0deg)', opacity: 1 },
-            { transform: `translateX(${travel}px) rotate(-920deg)`, opacity: 1 }
+            { transform: `translateX(${travel}px) rotate(${cutterSpin}deg)`, opacity: 1 }
         ],
         { duration, easing: 'linear', fill: 'forwards' }
     );
@@ -6129,8 +6718,443 @@ function fireCutmanBossCutter() {
             enemyImg.src = bossData.sprite || 'sprites/boss/super-rboss/cutman/cutman_at_01.png';
         }
 
+
         cutmanBossAttacking = false;
     }, duration);
+}
+
+function stopAirmanBossActions() {
+    if (airmanBossActionTimer) {
+        clearInterval(airmanBossActionTimer);
+        airmanBossActionTimer = null;
+    }
+    if (airmanFanFrameTimer) {
+        clearInterval(airmanFanFrameTimer);
+        airmanFanFrameTimer = null;
+    }
+
+    airmanBossAttacking = false;
+    document.querySelectorAll('.airman-boss-tornado, .airman-boss-wind').forEach(el => el.remove());
+    document.querySelectorAll('.airman-wind-pushed, .airman-wind-returning').forEach(el => {
+        el.classList.remove('airman-wind-pushed', 'airman-wind-returning');
+        el.dataset.airmanWindLocked = '0';
+    });
+
+    const bossData = getBossData(currentBossType);
+    const enemyImg = document.getElementById('enemy-img');
+    if (enemyImg && bossData && currentBossType === 'classic_airman' && !enemyDead && !playerDead) {
+        enemyImg.src = bossData.sprite || 'sprites/boss/super-rboss/airman/airman_st.png';
+    }
+}
+
+function startAirmanBossActions() {
+    stopAirmanBossActions();
+
+    if (!isBossBattle || currentBossType !== 'classic_airman' || enemyDead || playerDead) return;
+
+    const bossData = getBossData(currentBossType);
+    const interval = bossData.attackInterval || 4700;
+
+    airmanBossActionTimer = setInterval(() => {
+        if (superRockUnlockPaused) return;
+        if (!isBossBattle || currentBossType !== 'classic_airman' || enemyDead || playerDead || enemyStunned || airmanBossAttacking) return;
+        if (Math.random() < 0.56) fireAirmanTornadoBurst();
+        else fireAirmanFanWind();
+    }, interval);
+
+    setTimeout(() => {
+        if (isBossBattle && currentBossType === 'classic_airman' && !enemyDead && !playerDead && !enemyStunned) {
+            fireAirmanTornadoBurst();
+        }
+    }, 1600);
+}
+
+function getPlayerProjectileSelector() {
+    return [
+        '.rock-bullet',
+        '.partner-bullet',
+        '.forte-bullet',
+        '.forte-charge-bullet',
+        '.x-bullet',
+        '.x-charge-bullet',
+        '.rockexe-bullet',
+        '.rockexe-charge-bullet'
+    ].join(',');
+}
+
+function erasePlayerProjectilesByMovingHazard(hazard, screen) {
+    if (!hazard || !screen) return;
+
+    const hazardRect = hazard.getBoundingClientRect();
+    const hazardCenterX = hazardRect.left + hazardRect.width / 2;
+    const hazardCenterY = hazardRect.top + hazardRect.height / 2;
+    const toleranceX = Math.max(12, hazardRect.width * 0.42);
+    const toleranceY = Math.max(10, hazardRect.height * 0.42);
+
+    document.querySelectorAll(getPlayerProjectileSelector()).forEach(projectile => {
+        if (!projectile || !projectile.isConnected) return;
+        if (projectile.classList.contains('enemy-bullet') || projectile.classList.contains('cutman-boss-cutter') || projectile.classList.contains('airman-boss-tornado') || projectile.classList.contains('airman-boss-wind')) return;
+
+        const rect = projectile.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        const projectileCenterX = rect.left + rect.width / 2;
+        const projectileCenterY = rect.top + rect.height / 2;
+        if (Math.abs(projectileCenterX - hazardCenterX) <= toleranceX && Math.abs(projectileCenterY - hazardCenterY) <= toleranceY) {
+            const screenRect = screen.getBoundingClientRect();
+            const centerX = rect.left - screenRect.left + rect.width / 2;
+            const centerY = rect.top - screenRect.top + rect.height / 2;
+            createCutmanCutterErasePop(screen, centerX, centerY);
+            projectile.dataset.cutmanErased = '1';
+            projectile.getAnimations?.().forEach(animation => animation.cancel());
+            projectile.remove();
+        }
+    });
+}
+
+function damagePlayerOnHazardCollision(hazard) {
+    if (!hazard || hazard.dataset.playerHit === '1' || playerDead || enemyDead || !isAirmanBossBattle()) return;
+
+    const rockman = document.getElementById('rockman-img') || document.getElementById('rockman-area');
+    if (!rockman) return;
+
+    const hazardRect = hazard.getBoundingClientRect();
+    const rockRect = rockman.getBoundingClientRect();
+    const hit = hazardRect.left < rockRect.right && hazardRect.right > rockRect.left && hazardRect.top < rockRect.bottom && hazardRect.bottom > rockRect.top;
+    if (!hit) return;
+
+    hazard.dataset.playerHit = '1';
+    enemyHitsPlayerByBullet();
+}
+
+function getAirmanStartPoint(screen, enemyImg, offsetY = 0) {
+    const screenRect = screen.getBoundingClientRect();
+    const enemyRect = enemyImg.getBoundingClientRect();
+    return {
+        x: enemyRect.left - screenRect.left + Math.max(0, enemyRect.width * 0.10),
+        y: enemyRect.top - screenRect.top + enemyRect.height * 0.22 + offsetY
+    };
+}
+
+function fireAirmanTornadoBurst() {
+    if (superRockUnlockPaused) return;
+    if (!isBossBattle || currentBossType !== 'classic_airman' || enemyDead || playerDead || enemyStunned || airmanBossAttacking) return;
+
+    const screen = document.querySelector('.game-screen');
+    const enemyImg = document.getElementById('enemy-img');
+    if (!screen || !enemyImg) return;
+
+    const bossData = getBossData(currentBossType);
+    const frames = bossData.bulletFrames || ['sprites/boss/super-rboss/airman/airman_bullet_01.png'];
+    const screenRect = screen.getBoundingClientRect();
+
+    airmanBossAttacking = true;
+    enemyImg.src = bossData.attackSprite || 'sprites/boss/super-rboss/airman/airman_at.png';
+
+    const count = Math.random() < 0.50 ? 3 : 4;
+    const offsets = count === 3 ? [-18, 0, 18] : [-24, -8, 8, 24];
+    const hazards = [];
+
+    offsets.forEach((offsetY, index) => {
+        setTimeout(() => {
+            if (!isAirmanBossBattle() || enemyDead || playerDead) return;
+
+            const point = getAirmanStartPoint(screen, enemyImg, offsetY);
+            const tornado = document.createElement('img');
+            tornado.className = 'enemy-bullet airman-boss-tornado';
+            tornado.src = frames[index % frames.length];
+            tornado.style.left = point.x + 'px';
+            tornado.style.top = point.y + 'px';
+            screen.appendChild(tornado);
+            hazards.push(tornado);
+
+            let frameIndex = index % frames.length;
+            const frameTimer = setInterval(() => {
+                if (!tornado.isConnected) {
+                    clearInterval(frameTimer);
+                    return;
+                }
+                frameIndex = (frameIndex + 1) % frames.length;
+                tornado.src = frames[frameIndex];
+            }, 70);
+
+            const travel = -Math.max(420, point.x + 90);
+            const duration = getProjectileDurationBySpeed(travel, bossData.tornadoSpeed || 0.30, 700);
+            const checkTimer = setInterval(() => {
+                if (!isAirmanBossBattle() || enemyDead || playerDead || !tornado.isConnected) {
+                    clearInterval(checkTimer);
+                    return;
+                }
+                erasePlayerProjectilesByMovingHazard(tornado, screen);
+                damagePlayerOnHazardCollision(tornado);
+            }, 24);
+
+            tornado.animate(
+                [
+                    { transform: 'translateX(0px)', opacity: 1 },
+                    { transform: `translateX(${travel}px)`, opacity: 1 }
+                ],
+                { duration, easing: 'linear', fill: 'forwards' }
+            );
+
+            setTimeout(() => {
+                clearInterval(frameTimer);
+                clearInterval(checkTimer);
+                tornado.remove();
+            }, duration);
+        }, index * 115);
+    });
+
+    setTimeout(() => {
+        if (!enemyDead && !playerDead && isAirmanBossBattle()) {
+            enemyImg.src = bossData.sprite || 'sprites/boss/super-rboss/airman/airman_st.png';
+        }
+        airmanBossAttacking = false;
+    }, 900 + count * 115);
+}
+
+function getAirmanPushTargets() {
+    // v170: 실제 에어맨 보스전에서는 록맨은 바람에 날아가는 랜덤 대상에서 제외합니다.
+    // 플레이어 본체가 복귀 걷기 프레임을 타면서 전투 애니메이션과 섞이는 문제도 함께 방지합니다.
+    const candidates = [
+        { id: 'blues-area', active: !!gameData.bluesOwned },
+        { id: 'forte-area', active: !!gameData.forteOwned },
+        { id: 'x-area', active: !!gameData.xOwned },
+        { id: 'rockexe-area', active: !!gameData.exeRockmanOwned },
+        { id: 'zero-area', active: !!gameData.zeroOwned }
+    ].filter(item => item.active).map(item => item.id);
+
+    for (let i = candidates.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+
+    return candidates.slice(0, Math.min(candidates.length, Math.random() < 0.50 ? 2 : 3));
+}
+
+
+let airmanWindReturnWalkTimers = [];
+let airmanWindReturnTimeouts = [];
+
+const AIRMAN_WIND_HOLD_BEFORE_RETURN_MS = 2050;
+const AIRMAN_WIND_RETURN_WALK_MS = 2750;
+const AIRMAN_WIND_ATTACK_LOCK_BUFFER_MS = 450;
+
+function scheduleAirmanWindReturnTimeout(callback, delay) {
+    const timer = setTimeout(() => {
+        airmanWindReturnTimeouts = airmanWindReturnTimeouts.filter(item => item !== timer);
+        callback();
+    }, delay);
+    airmanWindReturnTimeouts.push(timer);
+    return timer;
+}
+
+function clearAirmanWindReturnWalkTimers() {
+    airmanWindReturnWalkTimers.forEach(timer => clearInterval(timer));
+    airmanWindReturnWalkTimers = [];
+    airmanWindReturnTimeouts.forEach(timer => clearTimeout(timer));
+    airmanWindReturnTimeouts = [];
+}
+
+function getAirmanPushedAllyImg(id) {
+    if (id === 'rockman-img') return document.getElementById('rockman-img');
+    const area = document.getElementById(id);
+    if (!area) return null;
+    if (id === 'blues-area') return document.getElementById('blues-img');
+    if (id === 'forte-area') return document.getElementById('forte-img');
+    if (id === 'x-area') return document.getElementById('x-img');
+    if (id === 'rockexe-area') return document.getElementById('rockexe-img');
+    if (id === 'zero-area') return document.getElementById('zero-img');
+    return area.querySelector('img');
+}
+
+function setAirmanReturnWalkFrame(id, img, frameIndex) {
+    if (!img) return;
+    if (id === 'rockman-img') {
+        img.src = getRockWalkSprite((frameIndex % 3) + 1);
+        return;
+    }
+    if (id === 'blues-area') {
+        const pattern = BLUES_40_CANVAS_CONFIG.walkPattern;
+        img.src = `sprites/partner/blues/blues_0${pattern[frameIndex % pattern.length]}.png`;
+        return;
+    }
+    if (id === 'forte-area') {
+        const pattern = forteFramePattern;
+        img.src = `sprites/partner/forte/forte_0${pattern[frameIndex % pattern.length]}.png`;
+        return;
+    }
+    if (id === 'x-area') {
+        const pattern = xFramePattern;
+        img.src = `sprites/partner/x/x_0${pattern[frameIndex % pattern.length]}.png`;
+        return;
+    }
+    if (id === 'rockexe-area') {
+        const pattern = rockexeFramePattern;
+        img.src = `sprites/partner/rockexe/rockexe_0${pattern[frameIndex % pattern.length]}.png`;
+        return;
+    }
+    if (id === 'zero-area') {
+        const pattern = zeroFramePattern;
+        img.src = `sprites/partner/zero/zero_0${pattern[frameIndex % pattern.length]}.png`;
+    }
+}
+
+function setAirmanPushedAllyStandFrame(id, img) {
+    if (!img) return;
+    if (id === 'blues-area') { img.src = BLUES_BUSTER_SPRITES?.stand || 'sprites/partner/blues/blues_st_01.png'; return; }
+    if (id === 'forte-area') { img.src = 'sprites/partner/forte/forte_st.png'; return; }
+    if (id === 'x-area') { img.src = 'sprites/partner/x/x_st.png'; return; }
+    if (id === 'rockexe-area') { img.src = 'sprites/partner/rockexe/rockexe_st.png'; return; }
+    if (id === 'zero-area') { img.src = 'sprites/partner/zero/zero_st.png'; return; }
+}
+
+function cancelPartnerAttackForAirmanWind(id) {
+    if (id === 'blues-area') bluesAttacking = false;
+    if (id === 'forte-area') forteAttacking = false;
+    if (id === 'x-area') xAttacking = false;
+    if (id === 'rockexe-area') rockexeAttacking = false;
+    if (id === 'zero-area') zeroAttacking = false;
+}
+
+function startAirmanReturnWalkAnimation(id, targetEl) {
+    if (id === 'rockman-img') return;
+    const img = getAirmanPushedAllyImg(id);
+    if (!img || !targetEl) return;
+
+    targetEl.classList.add('airman-wind-returning');
+    img.classList.add('airman-wind-returning');
+
+    let frameIndex = 0;
+    setAirmanReturnWalkFrame(id, img, frameIndex);
+    const timer = setInterval(() => {
+        frameIndex += 1;
+        setAirmanReturnWalkFrame(id, img, frameIndex);
+    }, 150);
+    airmanWindReturnWalkTimers.push(timer);
+
+    scheduleAirmanWindReturnTimeout(() => {
+        clearInterval(timer);
+        airmanWindReturnWalkTimers = airmanWindReturnWalkTimers.filter(item => item !== timer);
+        targetEl.classList.remove('airman-wind-pushed', 'airman-wind-returning');
+        img.classList.remove('airman-wind-returning');
+        setAirmanPushedAllyStandFrame(id, img);
+
+        scheduleAirmanWindReturnTimeout(() => {
+            targetEl.dataset.airmanWindLocked = '0';
+            img.dataset.airmanWindLocked = '0';
+        }, AIRMAN_WIND_ATTACK_LOCK_BUFFER_MS);
+    }, AIRMAN_WIND_RETURN_WALK_MS);
+}
+
+function pushRandomAlliesByAirmanWind() {
+    getAirmanPushTargets().forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const img = getAirmanPushedAllyImg(id);
+
+        cancelPartnerAttackForAirmanWind(id);
+        el.classList.remove('airman-wind-pushed', 'airman-wind-returning');
+        el.dataset.airmanWindLocked = '1';
+        if (img) {
+            img.classList.remove('airman-wind-returning');
+            img.dataset.airmanWindLocked = '1';
+            setAirmanPushedAllyStandFrame(id, img);
+        }
+
+        void el.offsetWidth;
+        el.classList.add('airman-wind-pushed');
+
+        scheduleAirmanWindReturnTimeout(() => {
+            if (el.classList.contains('airman-wind-pushed')) startAirmanReturnWalkAnimation(id, el);
+        }, AIRMAN_WIND_HOLD_BEFORE_RETURN_MS);
+    });
+}
+
+function fireAirmanFanWind() {
+    if (superRockUnlockPaused) return;
+    if (!isBossBattle || currentBossType !== 'classic_airman' || enemyDead || playerDead || enemyStunned || airmanBossAttacking) return;
+
+    const screen = document.querySelector('.game-screen');
+    const enemyImg = document.getElementById('enemy-img');
+    if (!screen || !enemyImg) return;
+
+    const bossData = getBossData(currentBossType);
+    const frames = bossData.fanFrames || ['sprites/boss/super-rboss/airman/airman_w_01.png', 'sprites/boss/super-rboss/airman/airman_w_02.png'];
+    const screenRect = screen.getBoundingClientRect();
+    const enemyRect = enemyImg.getBoundingClientRect();
+
+    airmanBossAttacking = true;
+    let bossFrameIndex = 0;
+    enemyImg.src = frames[0];
+    airmanFanFrameTimer = setInterval(() => {
+        if (!enemyImg || !isAirmanBossBattle() || enemyDead || playerDead) return;
+        bossFrameIndex = (bossFrameIndex + 1) % frames.length;
+        enemyImg.src = frames[bossFrameIndex];
+    }, 95);
+
+    pushRandomAlliesByAirmanWind();
+
+    const windRows = [enemyRect.top - screenRect.top + 12, enemyRect.top - screenRect.top + 29, enemyRect.top - screenRect.top + 46];
+    windRows.forEach((top, index) => {
+        setTimeout(() => {
+            if (!isAirmanBossBattle() || enemyDead || playerDead) return;
+
+            const wind = document.createElement('img');
+            wind.className = 'enemy-bullet airman-boss-wind';
+            wind.src = frames[index % frames.length];
+            wind.style.left = (enemyRect.left - screenRect.left + 3) + 'px';
+            wind.style.top = top + 'px';
+            screen.appendChild(wind);
+
+            let frameIndex = index % frames.length;
+            const frameTimer = setInterval(() => {
+                if (!wind.isConnected) {
+                    clearInterval(frameTimer);
+                    return;
+                }
+                frameIndex = (frameIndex + 1) % frames.length;
+                wind.src = frames[frameIndex];
+            }, 80);
+
+            const startX = enemyRect.left - screenRect.left + 3;
+            const travel = -Math.max(500, startX + 120);
+            const duration = getProjectileDurationBySpeed(travel, bossData.fanSpeed || 0.22, 1100);
+            const checkTimer = setInterval(() => {
+                if (!isAirmanBossBattle() || enemyDead || playerDead || !wind.isConnected) {
+                    clearInterval(checkTimer);
+                    return;
+                }
+                erasePlayerProjectilesByMovingHazard(wind, screen);
+                damagePlayerOnHazardCollision(wind);
+            }, 24);
+
+            wind.animate(
+                [
+                    { transform: 'translateX(0px)', opacity: 0.92 },
+                    { transform: `translateX(${travel}px)`, opacity: 0.92 }
+                ],
+                { duration, easing: 'linear', fill: 'forwards' }
+            );
+
+            setTimeout(() => {
+                clearInterval(frameTimer);
+                clearInterval(checkTimer);
+                wind.remove();
+            }, duration);
+        }, index * 150);
+    });
+
+    setTimeout(() => {
+        if (airmanFanFrameTimer) {
+            clearInterval(airmanFanFrameTimer);
+            airmanFanFrameTimer = null;
+        }
+        if (!enemyDead && !playerDead && isAirmanBossBattle()) {
+            enemyImg.src = bossData.sprite || 'sprites/boss/super-rboss/airman/airman_st.png';
+        }
+        airmanBossAttacking = false;
+    }, 2100);
 }
 
 
@@ -7675,63 +8699,94 @@ function normalizeCutmanBossCardUI() {
         }
     });
 
-    const cutmanCard =
-        document.getElementById('boss-card-cutman') ||
-        document.getElementById('cutman-boss-card') ||
-        root.querySelector('.cutman-card') ||
-        root.querySelector('.cutman-boss-card') ||
-        root.querySelector('[data-boss-key="classic_cutman"]') ||
-        root.querySelector('[onclick*="classic_cutman"]');
+    const bossCardConfigs = [
+        {
+            key: 'classic_cutman',
+            prefix: 'cutman',
+            cardSelectors: [
+                '#boss-card-cutman',
+                '#cutman-boss-card',
+                '.cutman-card',
+                '.cutman-boss-card',
+                '[data-boss-key="classic_cutman"]',
+                '[onclick*="classic_cutman"]'
+            ],
+            rewardLineClass: 'cutman-reward-line boss-card-reward-line',
+            rewardHtml: `
+                <span class="reward-text-label">획득 가능 :</span>
+                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
+                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+                <span class="boss-reward-item">슈퍼록맨 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
+            `
+        },
+        {
+            key: 'classic_airman',
+            prefix: 'airman',
+            cardSelectors: [
+                '#boss-card-airman',
+                '.airman-card',
+                '[data-boss-key="classic_airman"]',
+                '[onclick*="classic_airman"]'
+            ],
+            rewardLineClass: 'airman-reward-line boss-card-reward-line',
+            rewardHtml: `
+                <span class="reward-text-label">획득 가능 :</span>
+                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
+                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+                <span class="boss-reward-item">브루스버스터 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/bluesbusterchip.png" alt="브루스버스터 데이터칩"></span>
+            `
+        }
+    ];
 
-    if (!cutmanCard) return;
+    bossCardConfigs.forEach(config => {
+        const card = config.cardSelectors
+            .map(selector => root.querySelector(selector))
+            .find(Boolean);
+        if (!card) return;
 
-    cutmanCard.querySelectorAll('img').forEach(img => {
-        const src = img.getAttribute('src') || '';
-        if (src.includes('cutman_at_')) img.classList.add('cutman-preview-attack');
-        if (src.includes('screw') || src.includes('stone') || src.includes('나사')) img.remove();
+        card.classList.add('classic-boss-card-template');
+        card.dataset.bossKey = config.key;
+
+        card.querySelectorAll('img').forEach(img => {
+            const src = img.getAttribute('src') || '';
+            if (src.includes('cutman_at_')) img.classList.add('cutman-preview-attack');
+            // 옛날 보정 코드에서 나사/돌 아이콘을 제거하던 문제 방지: 보상 라인은 아래에서 항상 재생성합니다.
+        });
+
+        card.querySelectorAll('.boss-card-reward-text, .boss-card-rewards').forEach(el => el.remove());
+
+        let line = card.querySelector('.boss-card-reward-line');
+        if (!line) {
+            line = document.createElement('div');
+        }
+        line.className = config.rewardLineClass;
+        line.innerHTML = config.rewardHtml;
+
+        const preview = card.querySelector('.boss-demo-stage') || card.querySelector('.boss-card-preview');
+        if (preview && preview.parentNode && line.previousElementSibling !== preview) {
+            preview.insertAdjacentElement('afterend', line);
+        } else if (!line.parentNode) {
+            card.appendChild(line);
+        }
+
+        const nameEl = card.querySelector('.boss-card-name');
+        if (nameEl && !nameEl.querySelector('.boss-level-label')) {
+            nameEl.insertAdjacentHTML('beforeend', ` <span id="${config.prefix}-boss-level-label" class="boss-level-label">Lv. 1</span>`);
+        }
+
+        const entryCost = card.querySelector('.boss-entry-cost');
+        if (entryCost) {
+            entryCost.innerHTML = '<img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1';
+        }
+
+        if (!card.querySelector('.boss-card-message')) {
+            const msg = document.createElement('div');
+            msg.id = `${config.prefix}-card-message`;
+            msg.className = 'boss-card-message';
+            card.appendChild(msg);
+        }
     });
-
-    cutmanCard.querySelectorAll('.boss-card-reward-text, .boss-card-rewards').forEach(el => el.remove());
-
-    let line = cutmanCard.querySelector('.cutman-reward-line, .boss-card-reward-line');
-    if (!line) {
-        line = document.createElement('div');
-        line.className = 'cutman-reward-line boss-card-reward-line';
-    }
-
-    line.innerHTML = `
-        <span class="reward-text-label">획득 가능 :</span>
-        <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
-        <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
-        <span class="boss-reward-item">슈퍼록맨 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
-    `;
-
-    const preview = cutmanCard.querySelector('.boss-demo-stage') || cutmanCard.querySelector('.boss-card-preview');
-    if (preview && preview.parentNode && line.previousElementSibling !== preview) {
-        preview.insertAdjacentElement('afterend', line);
-    } else if (!line.parentNode) {
-        cutmanCard.appendChild(line);
-    }
-
-    const nameEl = cutmanCard.querySelector('.boss-card-name');
-    if (nameEl && !nameEl.querySelector('.boss-level-label')) {
-        nameEl.insertAdjacentHTML('beforeend', ' <span id="cutman-boss-level-label" class="boss-level-label">Lv. 1</span>');
-    }
-
-    const entryCost = cutmanCard.querySelector('.boss-entry-cost');
-    if (entryCost) {
-        entryCost.innerHTML = '<img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1';
-    }
-
-    if (!cutmanCard.querySelector('.boss-card-message')) {
-        const msg = document.createElement('div');
-        msg.id = 'cutman-card-message';
-        msg.className = 'boss-card-message';
-        cutmanCard.appendChild(msg);
-    }
 }
-
-document.addEventListener('DOMContentLoaded', () => { setTimeout(normalizeCutmanBossCardUI, 0); setTimeout(normalizeCutmanBossCardUI, 200); });
 
 
 function normalizeBossTabLayoutV5() {
@@ -7744,11 +8799,6 @@ function normalizeBossTabLayoutV5() {
         btn.textContent = (btn.textContent || '').replace(/[▲▼△▽▴▾⌃⌄↕↑↓]/g, '').trim();
     });
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(normalizeBossTabLayoutV5, 0);
-    setTimeout(normalizeBossTabLayoutV5, 200);
-});
 
 
 let cutmanPreviewTimer = null;
@@ -7883,7 +8933,1311 @@ function startCutmanPreviewV14() {
     cutmanPreviewV14Interval = setInterval(playCutmanPreviewV14Once, 2200);
 }
 
+// v152: 에어맨 보스카드 미리보기는 컷맨 카드와 같은 레이아웃 안에서
+// 에어맨 팬 01~02 반복 + 소용돌이 불릿 01~03 한 개 반복만 사용합니다.
+let airmanPreviewFrameLoopTimer = null;
+function startAirmanPreviewFrameLoopV152() {
+    const bulletFrames = [
+        'sprites/boss/super-rboss/airman/airman_bullet_01.png',
+        'sprites/boss/super-rboss/airman/airman_bullet_02.png',
+        'sprites/boss/super-rboss/airman/airman_bullet_03.png'
+    ];
+    const fanFrames = [
+        'sprites/boss/super-rboss/airman/airman_w_01.png',
+        'sprites/boss/super-rboss/airman/airman_w_02.png'
+    ];
+    const tornado = document.querySelector('#boss-card-airman .airman-preview-tornado');
+    const fan = document.querySelector('#boss-card-airman .airman-preview-fan');
+    if (!tornado && !fan) return;
+    if (airmanPreviewFrameLoopTimer) clearInterval(airmanPreviewFrameLoopTimer);
+    let bulletFrameIndex = 0;
+    let fanFrameIndex = 0;
+    airmanPreviewFrameLoopTimer = setInterval(() => {
+        bulletFrameIndex = (bulletFrameIndex + 1) % bulletFrames.length;
+        fanFrameIndex = (fanFrameIndex + 1) % fanFrames.length;
+        if (tornado) tornado.src = bulletFrames[bulletFrameIndex];
+        if (fan) fan.src = fanFrames[fanFrameIndex];
+    }, 95);
+}
+
+
+// v156: 보스카드 DOM 정리
+// 문제 원인: 컷맨/에어맨 카드 보정 CSS/JS가 여러 버전 누적되면서
+// 보상 문구가 .boss-card-preview 안에서 잘리거나, 미리보기 영역과 겹치는 상태가 됐습니다.
+// 보스카드 공통 골격은 .boss-card-main 직속으로 정리하고,
+// 보스별 미리보기는 .boss-demo-stage 내부에서만 개별 처리합니다.
+function normalizeBossCardsV156() {
+    const root = document.getElementById('boss-tab');
+    if (!root) return;
+
+    const configs = [
+        {
+            key: 'classic_cutman',
+            cardId: 'boss-card-cutman',
+            className: 'cutman-card',
+            levelId: 'cutman-boss-level-label',
+            rewardClass: 'cutman-reward-line boss-card-reward-line',
+            rewardHtml: `
+                <span class="reward-text-label">획득 가능 :</span>
+                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
+                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+                <span class="boss-reward-item">슈퍼록맨 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
+            `
+        },
+        {
+            key: 'classic_airman',
+            cardId: 'boss-card-airman',
+            className: 'airman-card',
+            levelId: 'airman-boss-level-label',
+            rewardClass: 'airman-reward-line boss-card-reward-line',
+            rewardHtml: `
+                <span class="reward-text-label">획득 가능 :</span>
+                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
+                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+                <span class="boss-reward-item">브루스버스터 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/bluesbusterchip.png" alt="브루스버스터 데이터칩"></span>
+            `
+        }
+    ];
+
+    configs.forEach(config => {
+        const card = document.getElementById(config.cardId) || root.querySelector(`[data-boss-key="${config.key}"]`);
+        if (!card) return;
+        const main = card.querySelector('.boss-card-main');
+        const preview = card.querySelector('.boss-card-preview');
+        if (!main || !preview) return;
+
+        card.classList.add('classic-boss-card-template', config.className);
+        card.dataset.bossKey = config.key;
+
+        let line = card.querySelector('.boss-card-reward-line');
+        if (!line) line = document.createElement('div');
+        line.className = config.rewardClass;
+        line.innerHTML = config.rewardHtml;
+        // 보상줄은 반드시 main 직속으로 둡니다. preview 내부에 있으면 보스별 애니메이션/overflow와 충돌합니다.
+        if (line.parentNode !== main) main.appendChild(line);
+
+        const nameEl = card.querySelector('.boss-card-name');
+        if (nameEl && !document.getElementById(config.levelId)) {
+            nameEl.insertAdjacentHTML('beforeend', ` <span id="${config.levelId}" class="boss-level-label">Lv. 1</span>`);
+        }
+
+        const entryCost = card.querySelector('.boss-entry-cost');
+        if (entryCost) {
+            entryCost.innerHTML = '<img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1';
+        }
+
+        let message = card.querySelector('.boss-card-message');
+        if (!message) {
+            message = document.createElement('div');
+            message.className = 'boss-card-message';
+            message.id = config.key === 'classic_cutman' ? 'cutman-card-message' : 'airman-card-message';
+        }
+        if (message.parentNode !== main) main.appendChild(message);
+
+        const actionPanel = card.querySelector('.boss-action-panel');
+        if (actionPanel && actionPanel.parentNode !== main) main.appendChild(actionPanel);
+    });
+}
+
+// v159: 보스카드 최종 DOM/애니메이션 보정
+// - 보상줄은 컷맨/에어맨 모두 boss-card-main 직속 하단에 고정합니다.
+// - 에어맨 미리보기는 CSS 충돌에 영향받지 않도록 Web Animations API로 이동을 강제합니다.
+let bossCardV159AnimationStarted = false;
+let bossCardV159FrameTimer = null;
+function normalizeBossCardsV159() {
+    const root = document.getElementById('boss-tab');
+    if (!root) return;
+
+    const rewards = {
+        'boss-card-cutman': {
+            cls: 'cutman-reward-line boss-card-reward-line',
+            html: `
+                <span class="reward-text-label">획득 가능 :</span>
+                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
+                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+                <span class="boss-reward-item">슈퍼록맨 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
+            `
+        },
+        'boss-card-airman': {
+            cls: 'airman-reward-line boss-card-reward-line',
+            html: `
+                <span class="reward-text-label">획득 가능 :</span>
+                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
+                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+                <span class="boss-reward-item">브루스버스터 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/bluesbusterchip.png" alt="브루스버스터 데이터칩"></span>
+            `
+        }
+    };
+
+    Object.entries(rewards).forEach(([cardId, config]) => {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        const main = card.querySelector('.boss-card-main');
+        if (!main) return;
+        card.classList.add('classic-boss-card-template');
+        let line = card.querySelector('.boss-card-reward-line');
+        if (!line) line = document.createElement('div');
+        line.className = config.cls;
+        line.innerHTML = config.html;
+        if (line.parentNode !== main) main.appendChild(line);
+        main.appendChild(line); // 항상 마지막 하단 공통 영역으로 재배치
+    });
+
+    const classic = document.getElementById('boss-group-classic');
+    if (classic) {
+        classic.style.display = 'flex';
+        classic.style.flexDirection = 'column';
+        classic.style.gap = '12px';
+    }
+}
+
+function startAirmanPreviewAnimationV159() {
+    const card = document.getElementById('boss-card-airman');
+    if (!card) return;
+    const fan = card.querySelector('.airman-preview-fan');
+    const tornado = card.querySelector('.airman-preview-tornado');
+    const rockman = card.querySelector('.airman-preview-rockman');
+    if (!fan || !tornado || !rockman) return;
+
+    const fanFrames = [
+        'sprites/boss/super-rboss/airman/airman_w_01.png',
+        'sprites/boss/super-rboss/airman/airman_w_02.png'
+    ];
+    const bulletFrames = [
+        'sprites/boss/super-rboss/airman/airman_bullet_01.png',
+        'sprites/boss/super-rboss/airman/airman_bullet_02.png',
+        'sprites/boss/super-rboss/airman/airman_bullet_03.png'
+    ];
+
+    if (bossCardV159FrameTimer) clearInterval(bossCardV159FrameTimer);
+    let fanIndex = 0;
+    let bulletIndex = 0;
+    fan.style.backgroundImage = `url("${fanFrames[0]}")`;
+    tornado.style.backgroundImage = `url("${bulletFrames[0]}")`;
+    rockman.style.backgroundImage = 'url("sprites/rock/rock_st.png")';
+
+    bossCardV159FrameTimer = setInterval(() => {
+        fanIndex = (fanIndex + 1) % fanFrames.length;
+        bulletIndex = (bulletIndex + 1) % bulletFrames.length;
+        fan.style.backgroundImage = `url("${fanFrames[fanIndex]}")`;
+        tornado.style.backgroundImage = `url("${bulletFrames[bulletIndex]}")`;
+    }, 110);
+
+    if (bossCardV159AnimationStarted) return;
+    bossCardV159AnimationStarted = true;
+
+    tornado.animate([
+        { transform: 'translateX(0px)', opacity: 0, offset: 0 },
+        { transform: 'translateX(0px)', opacity: 1, offset: 0.08 },
+        { transform: 'translateX(72px)', opacity: 1, offset: 0.53 },
+        { transform: 'translateX(118px)', opacity: 1, offset: 0.86 },
+        { transform: 'translateX(142px)', opacity: 0, offset: 1 }
+    ], {
+        duration: 1550,
+        iterations: Infinity,
+        easing: 'linear'
+    });
+
+    rockman.animate([
+        { transform: 'translateX(0px) scaleX(-1)', opacity: 1, offset: 0 },
+        { transform: 'translateX(0px) scaleX(-1)', opacity: 1, offset: 0.52 },
+        { transform: 'translateX(50px) scaleX(-1)', opacity: 1, offset: 0.86 },
+        { transform: 'translateX(72px) scaleX(-1)', opacity: 0.74, offset: 1 }
+    ], {
+        duration: 1550,
+        iterations: Infinity,
+        easing: 'linear'
+    });
+}
+
+function applyBossCardFinalFixV159() {
+    normalizeBossCardsV159();
+    startAirmanPreviewAnimationV159();
+}
+
+
+// v160: 보스카드 최종 보정
+// 기존 v149~v159 누적 CSS/JS의 transform !important 충돌 때문에
+// 에어맨 미리보기 애니메이션이 멈춰 보였습니다.
+// 이 버전은 보상줄을 main 직속 최하단으로 고정하고,
+// 에어맨 팬/불릿/록맨 미리보기는 inline-important 값으로 직접 구동합니다.
+let bossCardV160RafId = null;
+let bossCardV160FrameTimer = null;
+
+function normalizeBossCardsV160() {
+    const root = document.getElementById('boss-tab');
+    if (!root) return;
+
+    const classic = document.getElementById('boss-group-classic');
+    if (classic) {
+        classic.classList.add('open');
+        classic.style.setProperty('display', 'flex', 'important');
+        classic.style.setProperty('flex-direction', 'column', 'important');
+        classic.style.setProperty('gap', '12px', 'important');
+    }
+
+    const configs = {
+        'boss-card-cutman': {
+            cls: 'cutman-reward-line boss-card-reward-line',
+            html: `
+                <span class="reward-text-label">획득 가능 :</span>
+                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
+                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+                <span class="boss-reward-item">슈퍼록맨 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
+            `
+        },
+        'boss-card-airman': {
+            cls: 'airman-reward-line boss-card-reward-line',
+            html: `
+                <span class="reward-text-label">획득 가능 :</span>
+                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
+                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+                <span class="boss-reward-item">브루스버스터 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/bluesbusterchip.png" alt="브루스버스터 데이터칩"></span>
+            `
+        }
+    };
+
+    Object.entries(configs).forEach(([cardId, cfg]) => {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        const main = card.querySelector('.boss-card-main');
+        if (!main) return;
+        card.classList.add('classic-boss-card-template');
+        card.style.setProperty('height', '148px', 'important');
+        card.style.setProperty('min-height', '148px', 'important');
+        card.style.setProperty('max-height', '148px', 'important');
+
+        let line = card.querySelector('.boss-card-reward-line');
+        if (!line) line = document.createElement('div');
+        line.className = cfg.cls;
+        line.innerHTML = cfg.html;
+        if (line.parentNode !== main) main.appendChild(line);
+        main.appendChild(line);
+        line.style.setProperty('bottom', '8px', 'important');
+        line.style.setProperty('top', 'auto', 'important');
+        line.style.setProperty('height', '26px', 'important');
+        line.style.setProperty('z-index', '120', 'important');
+    });
+}
+
+function setImportantStyle(el, prop, value) {
+    if (el) el.style.setProperty(prop, value, 'important');
+}
+
+function startAirmanPreviewAnimationV160() {
+    const card = document.getElementById('boss-card-airman');
+    if (!card) return;
+    const fan = card.querySelector('.airman-preview-fan');
+    const tornado = card.querySelector('.airman-preview-tornado');
+    const rockman = card.querySelector('.airman-preview-rockman');
+    if (!fan || !tornado || !rockman) return;
+
+    if (bossCardV159FrameTimer) {
+        clearInterval(bossCardV159FrameTimer);
+        bossCardV159FrameTimer = null;
+    }
+    if (typeof bossCardV159AnimationStarted !== 'undefined') {
+        bossCardV159AnimationStarted = false;
+    }
+    [tornado, rockman].forEach(el => {
+        if (el && typeof el.getAnimations === 'function') {
+            el.getAnimations().forEach(anim => anim.cancel());
+        }
+    });
+
+    const fanFrames = [
+        'sprites/boss/super-rboss/airman/airman_w_01.png',
+        'sprites/boss/super-rboss/airman/airman_w_02.png'
+    ];
+    const bulletFrames = [
+        'sprites/boss/super-rboss/airman/airman_bullet_01.png',
+        'sprites/boss/super-rboss/airman/airman_bullet_02.png',
+        'sprites/boss/super-rboss/airman/airman_bullet_03.png'
+    ];
+
+    setImportantStyle(fan, 'background-image', `url("${fanFrames[0]}")`);
+    setImportantStyle(tornado, 'background-image', `url("${bulletFrames[0]}")`);
+    setImportantStyle(rockman, 'background-image', 'url("sprites/rock/rock_st.png")');
+    setImportantStyle(tornado, 'opacity', '1');
+    setImportantStyle(rockman, 'opacity', '1');
+
+    if (bossCardV160FrameTimer) clearInterval(bossCardV160FrameTimer);
+    let fanIndex = 0;
+    let bulletIndex = 0;
+    bossCardV160FrameTimer = setInterval(() => {
+        fanIndex = (fanIndex + 1) % fanFrames.length;
+        bulletIndex = (bulletIndex + 1) % bulletFrames.length;
+        setImportantStyle(fan, 'background-image', `url("${fanFrames[fanIndex]}")`);
+        setImportantStyle(tornado, 'background-image', `url("${bulletFrames[bulletIndex]}")`);
+    }, 120);
+
+    if (bossCardV160RafId) cancelAnimationFrame(bossCardV160RafId);
+    const cycle = 1550;
+    const start = performance.now();
+    const tick = (now) => {
+        const t = ((now - start) % cycle) / cycle;
+        let tornadoX = 0;
+        let tornadoOpacity = 1;
+        if (t < 0.08) {
+            tornadoX = 0;
+            tornadoOpacity = t / 0.08;
+        } else if (t < 0.86) {
+            tornadoX = ((t - 0.08) / 0.78) * 118;
+            tornadoOpacity = 1;
+        } else {
+            tornadoX = 118 + ((t - 0.86) / 0.14) * 24;
+            tornadoOpacity = Math.max(0, 1 - ((t - 0.86) / 0.14));
+        }
+
+        let rockX = 0;
+        let rockOpacity = 1;
+        if (t < 0.52) {
+            rockX = 0;
+            rockOpacity = 1;
+        } else if (t < 0.86) {
+            rockX = ((t - 0.52) / 0.34) * 50;
+            rockOpacity = 1;
+        } else {
+            rockX = 50 + ((t - 0.86) / 0.14) * 22;
+            rockOpacity = 1 - ((t - 0.86) / 0.14) * 0.26;
+        }
+
+        setImportantStyle(tornado, 'transform', `translateX(${tornadoX.toFixed(1)}px)`);
+        setImportantStyle(tornado, 'opacity', tornadoOpacity.toFixed(2));
+        setImportantStyle(rockman, 'transform', `translateX(${rockX.toFixed(1)}px) scaleX(-1)`);
+        setImportantStyle(rockman, 'opacity', rockOpacity.toFixed(2));
+        bossCardV160RafId = requestAnimationFrame(tick);
+    };
+    bossCardV160RafId = requestAnimationFrame(tick);
+}
+
+function applyBossCardFinalFixV160() {
+    normalizeBossCardsV160();
+    startAirmanPreviewAnimationV160();
+}
+
+
+// v163: 보스카드 보상줄 아이콘 전용 정리
+// - "획득 가능" 문구와 보상 이름 텍스트를 모두 제거합니다.
+// - 컷맨/에어맨 및 이후 클래식 보스 카드도 같은 아이콘 전용 보상줄 규칙을 사용합니다.
+// - 기존 v149~v160 보정 함수들이 먼저 실행되어 텍스트를 다시 넣어도, 마지막에 이 함수가 아이콘만 남기도록 덮어씁니다.
+function getBossCardRewardIconOnlyHtmlV163(cardId) {
+    const thirdIcon = cardId === 'boss-card-airman'
+        ? { src: 'sprites/boss/reward/bluesbusterchip.png', alt: '브루스버스터 데이터칩' }
+        : { src: 'sprites/boss/reward/superrockchip.png', alt: '슈퍼록맨 데이터칩' };
+
+    const icons = [
+        { src: 'sprites/item/screw.png', alt: '나사' },
+        { src: 'sprites/boss/reward/cardchip.png', alt: '카드칩' },
+        thirdIcon
+    ];
+
+    return icons.map(icon => `
+        <span class="boss-reward-item icon-only" title="${icon.alt}">
+            <img class="boss-reward-icon boss-reward-only-icon" src="${icon.src}" alt="${icon.alt}">
+        </span>
+    `).join('');
+}
+
+function normalizeBossRewardIconsOnlyV163() {
+    const root = document.getElementById('boss-tab');
+    if (!root) return;
+
+    const classic = document.getElementById('boss-group-classic');
+    if (classic) {
+        classic.classList.add('open');
+        classic.style.setProperty('display', 'flex', 'important');
+        classic.style.setProperty('flex-direction', 'column', 'important');
+        classic.style.setProperty('gap', '10px', 'important');
+    }
+
+    ['boss-card-cutman', 'boss-card-airman'].forEach(cardId => {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        const main = card.querySelector('.boss-card-main');
+        if (!main) return;
+
+        card.classList.add('classic-boss-card-template');
+        card.style.setProperty('height', '128px', 'important');
+        card.style.setProperty('min-height', '128px', 'important');
+        card.style.setProperty('max-height', '128px', 'important');
+
+        const rewardClass = cardId === 'boss-card-airman'
+            ? 'airman-reward-line boss-card-reward-line boss-reward-icons-only-line'
+            : 'cutman-reward-line boss-card-reward-line boss-reward-icons-only-line';
+
+        let line = card.querySelector('.boss-card-reward-line');
+        if (!line) line = document.createElement('div');
+        line.className = rewardClass;
+        line.innerHTML = getBossCardRewardIconOnlyHtmlV163(cardId);
+        if (line.parentNode !== main) main.appendChild(line);
+        main.appendChild(line);
+
+        line.style.setProperty('bottom', '6px', 'important');
+        line.style.setProperty('top', 'auto', 'important');
+        line.style.setProperty('height', '28px', 'important');
+        line.style.setProperty('min-height', '28px', 'important');
+        line.style.setProperty('max-height', '28px', 'important');
+        line.style.setProperty('display', 'flex', 'important');
+        line.style.setProperty('align-items', 'center', 'important');
+        line.style.setProperty('justify-content', 'center', 'important');
+        line.style.setProperty('gap', '13px', 'important');
+        line.style.setProperty('padding', '0 6px', 'important');
+        line.style.setProperty('z-index', '140', 'important');
+    });
+}
+
+function applyBossCardV163() {
+    normalizeBossRewardIconsOnlyV163();
+    if (typeof startAirmanPreviewAnimationV160 === 'function') startAirmanPreviewAnimationV160();
+}
+
+
+// v164: 보스카드/탭 레이아웃 최종 정리
+// - 예전 v149~v160 보정 함수들이 다시 '획득 가능' 텍스트를 넣어도, 마지막에 항상 아이콘 전용 보상줄로 되돌립니다.
+// - showTab 이동 후에도 같은 보정이 재적용되게 합니다.
+function getBossCardRewardIconOnlyHtmlV164(cardId) {
+    const thirdIcon = cardId === 'boss-card-airman'
+        ? { src: 'sprites/boss/reward/bluesbusterchip.png', alt: '브루스버스터 데이터칩' }
+        : { src: 'sprites/boss/reward/superrockchip.png', alt: '슈퍼록맨 데이터칩' };
+
+    return [
+        { src: 'sprites/item/screw.png', alt: '나사' },
+        { src: 'sprites/boss/reward/cardchip.png', alt: '카드칩' },
+        thirdIcon
+    ].map(icon => `
+        <span class="boss-reward-item icon-only" title="${icon.alt}">
+            <img class="boss-reward-icon boss-reward-only-icon" src="${icon.src}" alt="${icon.alt}">
+        </span>
+    `).join('');
+}
+
+function normalizeCutmanBossCardUI() {
+    applyBossCardV164();
+}
+
+function applyBossCardV164() {
+    const root = document.getElementById('boss-tab');
+    if (!root) return;
+
+    root.querySelectorAll('.boss-group-title, .classic-title, .classic-boss-section-title, .boss-section-title, .boss-category-title, .boss-list-title, .cutman-card-title-strip').forEach(el => {
+        if ((el.textContent || '').includes('클래식 보스전') || el.classList.contains('classic-title') || el.classList.contains('boss-group-title')) {
+            el.remove();
+        }
+    });
+
+    const classic = document.getElementById('boss-group-classic');
+    if (classic) {
+        classic.classList.add('open');
+        classic.style.setProperty('display', 'flex', 'important');
+        classic.style.setProperty('flex-direction', 'column', 'important');
+        classic.style.setProperty('gap', '10px', 'important');
+    }
+
+    ['boss-card-cutman', 'boss-card-airman'].forEach(cardId => {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        const main = card.querySelector('.boss-card-main');
+        if (!main) return;
+
+        card.classList.add('classic-boss-card-template');
+        card.dataset.bossKey = cardId === 'boss-card-airman' ? 'classic_airman' : 'classic_cutman';
+        card.style.setProperty('height', '128px', 'important');
+        card.style.setProperty('min-height', '128px', 'important');
+        card.style.setProperty('max-height', '128px', 'important');
+
+        const entryCost = card.querySelector('.boss-entry-cost');
+        if (entryCost) {
+            entryCost.innerHTML = '<img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1';
+        }
+
+        // 옛 보상 텍스트/다른 보상 컨테이너 제거
+        card.querySelectorAll('.boss-card-reward-text, .boss-card-rewards').forEach(el => el.remove());
+
+        const rewardClass = cardId === 'boss-card-airman'
+            ? 'airman-reward-line boss-card-reward-line boss-reward-icons-only-line'
+            : 'cutman-reward-line boss-card-reward-line boss-reward-icons-only-line';
+
+        let line = card.querySelector('.boss-card-reward-line');
+        if (!line) line = document.createElement('div');
+        line.className = rewardClass;
+        line.setAttribute('aria-label', '획득 보상');
+        line.innerHTML = getBossCardRewardIconOnlyHtmlV164(cardId);
+        if (line.parentNode !== main) main.appendChild(line);
+        main.appendChild(line);
+
+        line.style.setProperty('bottom', '6px', 'important');
+        line.style.setProperty('top', 'auto', 'important');
+        line.style.setProperty('height', '28px', 'important');
+        line.style.setProperty('min-height', '28px', 'important');
+        line.style.setProperty('max-height', '28px', 'important');
+        line.style.setProperty('display', 'flex', 'important');
+        line.style.setProperty('align-items', 'center', 'important');
+        line.style.setProperty('justify-content', 'center', 'important');
+        line.style.setProperty('gap', '13px', 'important');
+        line.style.setProperty('padding', '0 6px', 'important');
+        line.style.setProperty('z-index', '180', 'important');
+    });
+
+    if (typeof startAirmanPreviewAnimationV160 === 'function') startAirmanPreviewAnimationV160();
+    if (typeof startCutmanPreviewV14 === 'function') startCutmanPreviewV14();
+}
+
+function fixMainTabContainmentV164() {
+    // index.html 구조가 깨져 있던 빌드에서 탭이 container 밖으로 밀려났던 문제 방지용 안전망.
+    const container = document.querySelector('.container');
+    if (!container) return;
+    ['mine-tab', 'sync-tab', 'status-tab', 'transcend-tab'].forEach(id => {
+        const tab = document.getElementById(id);
+        const footer = document.querySelector('.footer-row');
+        if (tab && tab.parentElement !== container) {
+            if (footer && footer.parentElement === container) container.insertBefore(tab, footer);
+            else container.appendChild(tab);
+        }
+    });
+    const footer = document.querySelector('.footer-row');
+    if (footer && footer.parentElement !== container) container.appendChild(footer);
+}
+
+const originalShowTabV164 = typeof showTab === 'function' ? showTab : null;
+if (originalShowTabV164 && !window.__showTabWrappedV164) {
+    window.__showTabWrappedV164 = true;
+    showTab = function(tabName) {
+        originalShowTabV164(tabName);
+        fixMainTabContainmentV164();
+        // v167: 보스카드 레이아웃은 HTML/CSS 기준으로 고정합니다.
+        // 탭 진입 후 setTimeout으로 보스카드를 다시 만지는 코드가
+        // 카드가 넓게 보였다가 급히 줄어드는 잔상을 만들었으므로 제거합니다.
+    };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(startCutmanPreviewV14, 0);
-    setTimeout(startCutmanPreviewV14, 250);
+    fixMainTabContainmentV164();
+    applyBossCardV164();
 });
+
+
+// v165: rock_hit 피격 스프라이트 + 에어맨 카드 피격 미리보기 + 개발실 칩 아이콘 보정
+function getBossCardRewardIconOnlyHtmlV165(cardId) {
+    const thirdIcon = cardId === 'boss-card-airman'
+        ? { src: 'sprites/boss/reward/bluesbusterchip.png', alt: '브루스버스터 데이터칩' }
+        : { src: 'sprites/boss/reward/superrockchip.png', alt: '슈퍼록맨 데이터칩' };
+
+    return [
+        { src: 'sprites/item/screw.png', alt: '나사', cls: 'reward-screw-icon' },
+        { src: 'sprites/boss/reward/cardchip.png', alt: '카드칩', cls: 'reward-cardchip-icon' },
+        { ...thirdIcon, cls: 'reward-datachip-icon' }
+    ].map(icon => `
+        <span class="boss-reward-item icon-only" title="${icon.alt}">
+            <img class="boss-reward-icon boss-reward-only-icon ${icon.cls}" src="${icon.src}" alt="${icon.alt}">
+        </span>
+    `).join('');
+}
+
+function normalizeBossRewardIconsV165() {
+    ['boss-card-cutman', 'boss-card-airman'].forEach(cardId => {
+        const card = document.getElementById(cardId);
+        const main = card?.querySelector('.boss-card-main');
+        if (!card || !main) return;
+        let line = card.querySelector('.boss-card-reward-line');
+        if (!line) line = document.createElement('div');
+        line.className = `${cardId === 'boss-card-airman' ? 'airman' : 'cutman'}-reward-line boss-card-reward-line boss-reward-icons-only-line`;
+        line.setAttribute('aria-label', '획득 보상');
+        line.innerHTML = getBossCardRewardIconOnlyHtmlV165(cardId);
+        if (line.parentNode !== main) main.appendChild(line);
+        main.appendChild(line);
+    });
+}
+
+function startAirmanPreviewAnimationV165() {
+    const fan = document.querySelector('#boss-card-airman .airman-preview-fan');
+    const tornado = document.querySelector('#boss-card-airman .airman-preview-tornado');
+    const rockman = document.querySelector('#boss-card-airman .airman-preview-rockman');
+    if (!fan || !tornado || !rockman) return;
+
+    if (typeof bossCardV160RafId !== 'undefined' && bossCardV160RafId) {
+        cancelAnimationFrame(bossCardV160RafId);
+        bossCardV160RafId = null;
+    }
+    if (typeof bossCardV160FrameTimer !== 'undefined' && bossCardV160FrameTimer) {
+        clearInterval(bossCardV160FrameTimer);
+        bossCardV160FrameTimer = null;
+    }
+
+    const setStyle = (el, prop, value) => el.style.setProperty(prop, value, 'important');
+    const fanFrames = ['sprites/boss/super-rboss/airman/airman_w_01.png', 'sprites/boss/super-rboss/airman/airman_w_02.png'];
+    const tornadoFrames = [
+        'sprites/boss/super-rboss/airman/airman_bullet_01.png',
+        'sprites/boss/super-rboss/airman/airman_bullet_02.png',
+        'sprites/boss/super-rboss/airman/airman_bullet_03.png'
+    ];
+    let frame = 0;
+    bossCardV160FrameTimer = setInterval(() => {
+        frame += 1;
+        setStyle(fan, 'background-image', `url("${fanFrames[frame % fanFrames.length]}")`);
+        setStyle(tornado, 'background-image', `url("${tornadoFrames[frame % tornadoFrames.length]}")`);
+    }, 130);
+
+    setStyle(fan, 'background-image', `url("${fanFrames[0]}")`);
+    setStyle(tornado, 'background-image', `url("${tornadoFrames[0]}")`);
+    setStyle(rockman, 'background-image', 'url("sprites/rock/rock_st.png")');
+
+    const cycleMs = 1550;
+    const tick = (now) => {
+        const t = (now % cycleMs) / cycleMs;
+        let tornadoX;
+        let tornadoOpacity = 1;
+        if (t < 0.12) {
+            tornadoX = 0;
+            tornadoOpacity = t / 0.12;
+        } else if (t < 0.88) {
+            tornadoX = ((t - 0.12) / 0.76) * 118;
+            tornadoOpacity = 1;
+        } else {
+            tornadoX = 118 + ((t - 0.88) / 0.12) * 26;
+            tornadoOpacity = Math.max(0, 1 - ((t - 0.88) / 0.12));
+        }
+
+        let rockX = 0;
+        let rockOpacity = 1;
+        const hitNow = t >= 0.48 && t < 0.88;
+        if (t < 0.48) {
+            rockX = 0;
+        } else if (t < 0.88) {
+            rockX = ((t - 0.48) / 0.40) * 58;
+            rockOpacity = (Math.floor(t * 42) % 2 === 0) ? 1 : 0.42;
+        } else {
+            rockX = 58 + ((t - 0.88) / 0.12) * 18;
+            rockOpacity = 0.74;
+        }
+
+        setStyle(tornado, 'transform', `translateX(${tornadoX.toFixed(1)}px)`);
+        setStyle(tornado, 'opacity', tornadoOpacity.toFixed(2));
+        setStyle(rockman, 'background-image', hitNow ? 'url("sprites/rock/rock_hit.png")' : 'url("sprites/rock/rock_st.png")');
+        setStyle(rockman, 'transform', `translateX(${rockX.toFixed(1)}px) scaleX(-1)`);
+        setStyle(rockman, 'opacity', rockOpacity.toFixed(2));
+        bossCardV160RafId = requestAnimationFrame(tick);
+    };
+    bossCardV160RafId = requestAnimationFrame(tick);
+}
+
+// 기존 v160 호출부가 이 이름을 호출하므로 새 구현으로 연결합니다.
+startAirmanPreviewAnimationV160 = startAirmanPreviewAnimationV165;
+
+function applyV165FinalFixes() {
+    normalizeBossRewardIconsV165();
+    startAirmanPreviewAnimationV165();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // v167: 보스카드 보상줄/미리보기 보정은 한 번만 실행합니다.
+    // 반복 setTimeout 보정은 탭 전환 시 레이아웃 재수축처럼 보이는 원인이었습니다.
+    applyV165FinalFixes();
+});
+
+
+// v166: 에어맨 보스전 패턴 재구성 + 보스 액션 패널 z-index 보정
+// - AT 자세에서 소용돌이를 사출해 화면 안 여러 위치에 정지시킵니다.
+// - 2초 대기 후 팬(w_01~02) 반복 자세로 바뀌며 정지한 소용돌이를 아군 방향으로 밀어냅니다.
+// - 에어맨 소용돌이는 아군 공격 8회 피격 시 제거됩니다.
+let airmanAttackSequenceTimersV166 = [];
+let airmanSequenceFrameTimersV166 = [];
+let airmanSequenceCheckTimersV166 = [];
+
+function clearAirmanSequenceTimersV166() {
+    airmanAttackSequenceTimersV166.forEach(timer => clearTimeout(timer));
+    airmanSequenceFrameTimersV166.forEach(timer => clearInterval(timer));
+    airmanSequenceCheckTimersV166.forEach(timer => clearInterval(timer));
+    airmanAttackSequenceTimersV166 = [];
+    airmanSequenceFrameTimersV166 = [];
+    airmanSequenceCheckTimersV166 = [];
+}
+
+function scheduleAirmanTimerV166(callback, delay) {
+    const timer = setTimeout(() => {
+        airmanAttackSequenceTimersV166 = airmanAttackSequenceTimersV166.filter(item => item !== timer);
+        callback();
+    }, delay);
+    airmanAttackSequenceTimersV166.push(timer);
+    return timer;
+}
+
+function addAirmanFrameTimerV166(timer) {
+    airmanSequenceFrameTimersV166.push(timer);
+    return timer;
+}
+
+function addAirmanCheckTimerV166(timer) {
+    airmanSequenceCheckTimersV166.push(timer);
+    return timer;
+}
+
+function clearOneAirmanTimerV166(listName, timer) {
+    if (listName === 'frame') {
+        clearInterval(timer);
+        airmanSequenceFrameTimersV166 = airmanSequenceFrameTimersV166.filter(item => item !== timer);
+    } else if (listName === 'check') {
+        clearInterval(timer);
+        airmanSequenceCheckTimersV166 = airmanSequenceCheckTimersV166.filter(item => item !== timer);
+    }
+}
+
+function createAirmanTornadoBreakEffectV166(screen, tornado) {
+    if (!screen || !tornado) return;
+    const screenRect = screen.getBoundingClientRect();
+    const rect = tornado.getBoundingClientRect();
+    const pop = document.createElement('div');
+    pop.className = 'airman-tornado-break-pop cutman-cutter-erase-pop';
+    pop.style.left = (rect.left - screenRect.left + rect.width / 2) + 'px';
+    pop.style.top = (rect.top - screenRect.top + rect.height / 2) + 'px';
+    screen.appendChild(pop);
+    setTimeout(() => pop.remove(), 260);
+}
+
+function getAirmanTornadoHpV166(tornado) {
+    return Math.max(0, Math.floor(Number(tornado?.dataset?.airmanHp || 8)));
+}
+
+function damageAirmanTornadoByPlayerProjectilesV166(tornado, screen) {
+    if (!tornado || !tornado.isConnected || !screen || !isAirmanBossBattle()) return false;
+    if (tornado.dataset.destroying === '1') return false;
+
+    const tornadoRect = tornado.getBoundingClientRect();
+    if (!tornadoRect.width || !tornadoRect.height) return false;
+
+    let destroyed = false;
+    document.querySelectorAll(getPlayerProjectileSelector()).forEach(projectile => {
+        if (destroyed || !projectile || !projectile.isConnected) return;
+        if (projectile.classList.contains('enemy-bullet') || projectile.classList.contains('cutman-boss-cutter') || projectile.classList.contains('airman-boss-tornado') || projectile.classList.contains('airman-boss-wind')) return;
+
+        const rect = projectile.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        const hit = rect.left < tornadoRect.right && rect.right > tornadoRect.left && rect.top < tornadoRect.bottom && rect.bottom > tornadoRect.top;
+        if (!hit) return;
+
+        projectile.dataset.cutmanErased = '1';
+        projectile.getAnimations?.().forEach(animation => animation.cancel());
+        projectile.remove();
+
+        let hp = getAirmanTornadoHpV166(tornado) - 1;
+        tornado.dataset.airmanHp = String(hp);
+        tornado.classList.remove('airman-tornado-damaged');
+        void tornado.offsetWidth;
+        tornado.classList.add('airman-tornado-damaged');
+
+        const screenRect = screen.getBoundingClientRect();
+        const centerX = rect.left - screenRect.left + rect.width / 2;
+        const centerY = rect.top - screenRect.top + rect.height / 2;
+        createCutmanCutterErasePop(screen, centerX, centerY);
+
+        if (hp <= 0) {
+            destroyed = true;
+            tornado.dataset.destroying = '1';
+            createAirmanTornadoBreakEffectV166(screen, tornado);
+            tornado.getAnimations?.().forEach(animation => animation.cancel());
+            tornado.remove();
+        }
+    });
+
+    return destroyed;
+}
+
+function updateAirmanTornadoThreatV166(tornado, screen) {
+    if (!tornado || !tornado.isConnected || !screen || !isAirmanBossBattle() || enemyDead || playerDead) return;
+    damageAirmanTornadoByPlayerProjectilesV166(tornado, screen);
+    if (tornado.isConnected) damagePlayerOnHazardCollision(tornado);
+}
+
+function createAirmanTornadoV166(screen, enemyImg, target, index = 0) {
+    const bossData = getBossData(currentBossType);
+    const frames = bossData.bulletFrames || [
+        'sprites/boss/super-rboss/airman/airman_bullet_01.png',
+        'sprites/boss/super-rboss/airman/airman_bullet_02.png',
+        'sprites/boss/super-rboss/airman/airman_bullet_03.png'
+    ];
+    const start = getAirmanStartPoint(screen, enemyImg, target.offsetY || 0);
+    const tornado = document.createElement('img');
+    tornado.className = 'enemy-bullet airman-boss-tornado airman-boss-tornado-v166';
+    tornado.src = frames[index % frames.length];
+    tornado.dataset.airmanHp = '8';
+    tornado.dataset.playerHit = '0';
+    tornado.style.left = start.x + 'px';
+    tornado.style.top = start.y + 'px';
+    tornado.style.opacity = '1';
+    screen.appendChild(tornado);
+
+    let frameIndex = index % frames.length;
+    const frameTimer = addAirmanFrameTimerV166(setInterval(() => {
+        if (!tornado.isConnected) {
+            clearOneAirmanTimerV166('frame', frameTimer);
+            return;
+        }
+        frameIndex = (frameIndex + 1) % frames.length;
+        tornado.src = frames[frameIndex];
+    }, 70));
+
+    const checkTimer = addAirmanCheckTimerV166(setInterval(() => {
+        if (!tornado.isConnected || !isAirmanBossBattle() || enemyDead || playerDead) {
+            clearOneAirmanTimerV166('check', checkTimer);
+            return;
+        }
+        updateAirmanTornadoThreatV166(tornado, screen);
+    }, 24));
+
+    const targetX = target.x;
+    const targetY = target.y;
+    const travelX = targetX - start.x;
+    const travelY = targetY - start.y;
+    const launchDuration = target.launchDuration || 640;
+
+    const launchAnim = tornado.animate([
+        { transform: 'translate(0px, 0px)', opacity: 0.95 },
+        { transform: `translate(${travelX}px, ${travelY}px)`, opacity: 1 }
+    ], { duration: launchDuration, easing: 'cubic-bezier(.18,.82,.28,1)', fill: 'forwards' });
+
+    launchAnim.onfinish = () => {
+        if (!tornado.isConnected) return;
+        tornado.style.left = targetX + 'px';
+        tornado.style.top = targetY + 'px';
+        tornado.style.transform = 'translate(0px, 0px)';
+        tornado.classList.add('airman-tornado-stationary');
+        tornado.getAnimations?.().forEach(animation => {
+            if (animation !== launchAnim) return;
+            animation.cancel();
+        });
+    };
+
+    return tornado;
+}
+
+function pushAirmanTornadoV166(tornado, screen, index = 0) {
+    if (!tornado || !tornado.isConnected || !screen) return 0;
+    tornado.classList.remove('airman-tornado-stationary');
+    tornado.classList.add('airman-tornado-pushed');
+
+    const rect = tornado.getBoundingClientRect();
+    const screenRect = screen.getBoundingClientRect();
+    const currentLeft = rect.left - screenRect.left;
+    const travel = -Math.max(420, currentLeft + 110);
+    const duration = Math.max(1100, Math.round(Math.abs(travel) / (getBossData(currentBossType).fanSpeed || 0.22)));
+
+    const animation = tornado.animate([
+        { transform: 'translateX(0px)', opacity: 1 },
+        { transform: `translateX(${travel}px)`, opacity: 1 }
+    ], { duration, easing: 'linear', fill: 'forwards' });
+
+    scheduleAirmanTimerV166(() => {
+        if (tornado && tornado.isConnected) tornado.remove();
+    }, duration + 80 + index * 10);
+
+    return duration;
+}
+
+function runAirmanFanFrameV166(enemyImg, frames) {
+    if (!enemyImg) return null;
+    let bossFrameIndex = 0;
+    enemyImg.src = frames[0];
+    const timer = setInterval(() => {
+        if (!enemyImg || !isAirmanBossBattle() || enemyDead || playerDead) return;
+        bossFrameIndex = (bossFrameIndex + 1) % frames.length;
+        enemyImg.src = frames[bossFrameIndex];
+    }, 95);
+    airmanFanFrameTimer = timer;
+    addAirmanFrameTimerV166(timer);
+    return timer;
+}
+
+function fireAirmanTornadoBurstV166() {
+    if (superRockUnlockPaused) return;
+    if (!isBossBattle || currentBossType !== 'classic_airman' || enemyDead || playerDead || enemyStunned || airmanBossAttacking) return;
+
+    const screen = document.querySelector('.game-screen');
+    const enemyImg = document.getElementById('enemy-img');
+    if (!screen || !enemyImg) return;
+
+    clearAirmanSequenceTimersV166();
+    const bossData = getBossData(currentBossType);
+    const screenRect = screen.getBoundingClientRect();
+    const enemyRect = enemyImg.getBoundingClientRect();
+
+    airmanBossAttacking = true;
+    enemyImg.src = bossData.attackSprite || 'sprites/boss/super-rboss/airman/airman_at.png';
+
+    const count = Math.random() < 0.50 ? 3 : 4;
+    // v169: 에어맨 소용돌이는 에어맨 본체보다 살짝 높은 위치에 먼저 배치됩니다.
+    const airmanTornadoBaseY = enemyRect.top - screenRect.top - 18;
+    const targetRows = count === 3
+        ? [
+            { x: Math.max(150, screenRect.width - 230), y: Math.max(8, airmanTornadoBaseY + 0), offsetY: -36 },
+            { x: Math.max(190, screenRect.width - 185), y: Math.max(24, airmanTornadoBaseY + 18), offsetY: -20 },
+            { x: Math.max(125, screenRect.width - 270), y: Math.max(42, airmanTornadoBaseY + 36), offsetY: -4 }
+        ]
+        : [
+            { x: Math.max(145, screenRect.width - 235), y: Math.max(6, airmanTornadoBaseY - 3), offsetY: -42 },
+            { x: Math.max(205, screenRect.width - 180), y: Math.max(20, airmanTornadoBaseY + 13), offsetY: -28 },
+            { x: Math.max(165, screenRect.width - 255), y: Math.max(36, airmanTornadoBaseY + 29), offsetY: -12 },
+            { x: Math.max(235, screenRect.width - 150), y: Math.max(52, airmanTornadoBaseY + 45), offsetY: 2 }
+        ];
+
+    const tornadoes = [];
+    const launchDuration = 640;
+    const launchGap = 130;
+
+    targetRows.forEach((target, index) => {
+        scheduleAirmanTimerV166(() => {
+            if (!isAirmanBossBattle() || enemyDead || playerDead) return;
+            tornadoes.push(createAirmanTornadoV166(screen, enemyImg, { ...target, launchDuration }, index));
+        }, index * launchGap);
+    });
+
+    const fanStartDelay = (count - 1) * launchGap + launchDuration + 2000;
+    scheduleAirmanTimerV166(() => {
+        if (!isAirmanBossBattle() || enemyDead || playerDead) return;
+        const fanFrames = bossData.fanFrames || [
+            'sprites/boss/super-rboss/airman/airman_w_01.png',
+            'sprites/boss/super-rboss/airman/airman_w_02.png'
+        ];
+        runAirmanFanFrameV166(enemyImg, fanFrames);
+        pushRandomAlliesByAirmanWind();
+
+        let maxDuration = 0;
+        tornadoes.forEach((tornado, index) => {
+            if (tornado && tornado.isConnected) {
+                maxDuration = Math.max(maxDuration, pushAirmanTornadoV166(tornado, screen, index));
+            }
+        });
+
+        scheduleAirmanTimerV166(() => {
+            if (airmanFanFrameTimer) {
+                clearInterval(airmanFanFrameTimer);
+                airmanFanFrameTimer = null;
+            }
+            if (!enemyDead && !playerDead && isAirmanBossBattle()) {
+                enemyImg.src = bossData.sprite || 'sprites/boss/super-rboss/airman/airman_st.png';
+            }
+            airmanBossAttacking = false;
+        }, Math.max(1200, maxDuration) + 80);
+    }, fanStartDelay);
+
+    // 안전 복구: 중간에 소용돌이가 전부 제거되어도 보스가 공격 상태에 갇히지 않게 합니다.
+    scheduleAirmanTimerV166(() => {
+        if (!isAirmanBossBattle() || enemyDead || playerDead) return;
+        if (airmanBossAttacking) {
+            if (airmanFanFrameTimer) {
+                clearInterval(airmanFanFrameTimer);
+                airmanFanFrameTimer = null;
+            }
+            enemyImg.src = bossData.sprite || 'sprites/boss/super-rboss/airman/airman_st.png';
+            airmanBossAttacking = false;
+        }
+    }, fanStartDelay + 4200);
+}
+
+function stopAirmanBossActionsV166() {
+    if (airmanBossActionTimer) {
+        clearInterval(airmanBossActionTimer);
+        airmanBossActionTimer = null;
+    }
+    if (airmanFanFrameTimer) {
+        clearInterval(airmanFanFrameTimer);
+        airmanFanFrameTimer = null;
+    }
+    clearAirmanSequenceTimersV166();
+    if (typeof clearAirmanWindReturnWalkTimers === 'function') clearAirmanWindReturnWalkTimers();
+
+    airmanBossAttacking = false;
+    document.querySelectorAll('.airman-boss-tornado, .airman-boss-wind').forEach(el => el.remove());
+    document.querySelectorAll('.airman-wind-pushed, .airman-wind-returning').forEach(el => {
+        el.classList.remove('airman-wind-pushed', 'airman-wind-returning');
+        el.dataset.airmanWindLocked = '0';
+    });
+
+    const bossData = getBossData(currentBossType);
+    const enemyImg = document.getElementById('enemy-img');
+    if (enemyImg && bossData && currentBossType === 'classic_airman' && !enemyDead && !playerDead) {
+        enemyImg.src = bossData.sprite || 'sprites/boss/super-rboss/airman/airman_st.png';
+    }
+}
+
+function startAirmanBossActionsV166() {
+    stopAirmanBossActionsV166();
+    if (!isBossBattle || currentBossType !== 'classic_airman' || enemyDead || playerDead) return;
+
+    const bossData = getBossData(currentBossType);
+    const interval = Math.max(5200, (bossData.attackInterval || 4700) + 1500);
+
+    airmanBossActionTimer = setInterval(() => {
+        if (superRockUnlockPaused) return;
+        if (!isBossBattle || currentBossType !== 'classic_airman' || enemyDead || playerDead || enemyStunned || airmanBossAttacking) return;
+        fireAirmanTornadoBurstV166();
+    }, interval);
+
+    scheduleAirmanTimerV166(() => {
+        if (isBossBattle && currentBossType === 'classic_airman' && !enemyDead && !playerDead && !enemyStunned) {
+            fireAirmanTornadoBurstV166();
+        }
+    }, 1600);
+}
+
+// 기존 진입/정리 루틴이 호출하는 이름을 v166 구현으로 연결합니다.
+fireAirmanTornadoBurst = fireAirmanTornadoBurstV166;
+fireAirmanFanWind = fireAirmanTornadoBurstV166;
+stopAirmanBossActions = stopAirmanBossActionsV166;
+startAirmanBossActions = startAirmanBossActionsV166;
+
+function applyBossPopupZIndexV166() {
+    document.querySelectorAll('#boss-card-cutman .boss-action-panel, #boss-card-airman .boss-action-panel').forEach(panel => {
+        panel.style.setProperty('z-index', '600', 'important');
+    });
+    document.querySelectorAll('#boss-card-cutman .boss-card-reward-line, #boss-card-airman .boss-card-reward-line').forEach(line => {
+        line.style.setProperty('z-index', '120', 'important');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    applyBossPopupZIndexV166();
+});
+
+
+// v168: 보스카드 최초 진입 튐 방지 최종 정리
+// - 이전 빌드의 지연 setTimeout 보정은 위에서 제거했습니다.
+// - 여기서는 카드 골격을 즉시 확정하고, 보상줄은 아이콘 전용 상태만 유지합니다.
+function getBossCardRewardIconOnlyHtmlV168(cardId) {
+    const thirdIcon = cardId === 'boss-card-airman'
+        ? { src: 'sprites/boss/reward/bluesbusterchip.png', alt: '브루스버스터 데이터칩', cls: 'reward-datachip-icon' }
+        : { src: 'sprites/boss/reward/superrockchip.png', alt: '슈퍼록맨 데이터칩', cls: 'reward-datachip-icon' };
+
+    return [
+        { src: 'sprites/item/screw.png', alt: '나사', cls: 'reward-screw-icon' },
+        { src: 'sprites/boss/reward/cardchip.png', alt: '카드칩', cls: 'reward-cardchip-icon' },
+        thirdIcon
+    ].map(icon => `
+        <span class="boss-reward-item icon-only" title="${icon.alt}">
+            <img class="boss-reward-icon boss-reward-only-icon ${icon.cls}" src="${icon.src}" alt="${icon.alt}">
+        </span>
+    `).join('');
+}
+
+function stabilizeBossCardsV168() {
+    const root = document.getElementById('boss-tab');
+    if (!root) return;
+
+    const classic = document.getElementById('boss-group-classic');
+    if (classic) {
+        classic.classList.add('open');
+        classic.style.setProperty('display', 'flex', 'important');
+        classic.style.setProperty('flex-direction', 'column', 'important');
+        classic.style.setProperty('gap', '10px', 'important');
+    }
+
+    ['boss-card-cutman', 'boss-card-airman'].forEach(cardId => {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        const main = card.querySelector('.boss-card-main');
+        if (!main) return;
+
+        card.classList.add('classic-boss-card-template');
+        card.dataset.bossKey = cardId === 'boss-card-airman' ? 'classic_airman' : 'classic_cutman';
+        card.style.setProperty('height', '128px', 'important');
+        card.style.setProperty('min-height', '128px', 'important');
+        card.style.setProperty('max-height', '128px', 'important');
+        card.style.setProperty('width', '100%', 'important');
+        card.style.setProperty('max-width', '100%', 'important');
+        card.style.setProperty('transform', 'none', 'important');
+        card.style.setProperty('transition', 'filter 0.12s ease-out, box-shadow 0.12s ease-out', 'important');
+
+        card.querySelectorAll('.boss-card-reward-text, .boss-card-rewards').forEach(el => el.remove());
+        let line = card.querySelector('.boss-card-reward-line');
+        if (!line) line = document.createElement('div');
+        line.className = `${cardId === 'boss-card-airman' ? 'airman' : 'cutman'}-reward-line boss-card-reward-line boss-reward-icons-only-line`;
+        line.setAttribute('aria-label', '획득 보상');
+        line.innerHTML = getBossCardRewardIconOnlyHtmlV168(cardId);
+        if (line.parentElement !== main) main.appendChild(line);
+        main.appendChild(line);
+
+        const entryCost = card.querySelector('.boss-entry-cost');
+        if (entryCost) entryCost.innerHTML = '<img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1';
+    });
+
+    if (typeof startCutmanPreviewV14 === 'function') startCutmanPreviewV14();
+    if (typeof startAirmanPreviewAnimationV165 === 'function') startAirmanPreviewAnimationV165();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof fixMainTabContainmentV164 === 'function') fixMainTabContainmentV164();
+    stabilizeBossCardsV168();
+});
+
+/* v180: 에어맨 보스전 종료 시 바람 복귀/잠금 상태가 일반 전투까지 남지 않도록 완전 정리 */
+function clearAirmanWindStateForAlliesV180() {
+    const pairs = [
+        ['blues-area', 'blues-img'],
+        ['forte-area', 'forte-img'],
+        ['x-area', 'x-img'],
+        ['rockexe-area', 'rockexe-img'],
+        ['zero-area', 'zero-img']
+    ];
+
+    pairs.forEach(([areaId, imgId]) => {
+        const area = document.getElementById(areaId);
+        const img = document.getElementById(imgId);
+
+        [area, img].forEach(el => {
+            if (!el) return;
+            el.classList.remove('airman-wind-pushed', 'airman-wind-returning');
+            el.dataset.airmanWindLocked = '0';
+            el.style.removeProperty('animation');
+            el.style.removeProperty('transform');
+        });
+
+        if (img && typeof setAirmanPushedAllyStandFrame === 'function') {
+            setAirmanPushedAllyStandFrame(areaId, img);
+        }
+    });
+
+    if (typeof cancelPartnerAttackForAirmanWind === 'function') {
+        ['blues-area', 'forte-area', 'x-area', 'rockexe-area', 'zero-area'].forEach(id => cancelPartnerAttackForAirmanWind(id));
+    }
+}
+
+const stopAirmanBossActionsBeforeV180 = stopAirmanBossActions;
+function stopAirmanBossActionsV180() {
+    if (typeof stopAirmanBossActionsBeforeV180 === 'function') {
+        stopAirmanBossActionsBeforeV180();
+    }
+    clearAirmanWindStateForAlliesV180();
+}
+stopAirmanBossActions = stopAirmanBossActionsV180;
+
+const setupStageBeforeAirmanWindV180 = setupStage;
+function setupStageV180() {
+    setupStageBeforeAirmanWindV180();
+    clearAirmanWindStateForAlliesV180();
+}
+setupStage = setupStageV180;
+
+/* v182: PC/모바일 공통 보스카드/개발실 레이아웃 최종 기준
+   기존 누적 보정 함수가 있더라도 마지막에는 이 함수 하나로 아이콘 전용 보상줄과 공통 DOM을 맞춥니다. */
+function getBossRewardIconHtmlV182(cardId) {
+    const third = cardId === 'boss-card-airman'
+        ? { src: 'sprites/boss/reward/bluesbusterchip.png', alt: '브루스버스터 데이터칩' }
+        : { src: 'sprites/boss/reward/superrockchip.png', alt: '슈퍼록맨 데이터칩' };
+
+    return [
+        { src: 'sprites/item/screw.png', alt: '나사', cls: 'boss-reward-icon boss-reward-only-icon boss-reward-screw-icon' },
+        { src: 'sprites/boss/reward/cardchip.png', alt: '카드칩', cls: 'boss-reward-icon boss-reward-only-icon boss-reward-chip-icon' },
+        { src: third.src, alt: third.alt, cls: 'boss-reward-icon boss-reward-only-icon boss-reward-chip-icon' }
+    ].map(item => `<span class="boss-reward-item icon-only" title="${item.alt}"><img class="${item.cls}" src="${item.src}" alt="${item.alt}"></span>`).join('');
+}
+
+function applyUnifiedBossCardsV182() {
+    const root = document.getElementById('boss-tab');
+    if (!root) return;
+
+    const classic = document.getElementById('boss-group-classic');
+    if (classic) {
+        classic.classList.add('open');
+        classic.style.removeProperty('height');
+        classic.style.removeProperty('max-height');
+    }
+
+    ['boss-card-cutman', 'boss-card-airman'].forEach(cardId => {
+        const card = document.getElementById(cardId);
+        if (!card) return;
+        const main = card.querySelector('.boss-card-main');
+        const preview = card.querySelector('.boss-card-preview');
+        if (!main || !preview) return;
+
+        card.classList.add('classic-boss-card-template');
+        card.dataset.bossKey = cardId === 'boss-card-airman' ? 'classic_airman' : 'classic_cutman';
+
+        // 예전 보상 문구/컨테이너 완전 제거
+        card.querySelectorAll('.reward-text-label, .boss-card-reward-text, .boss-card-rewards').forEach(el => el.remove());
+
+        let line = card.querySelector('.boss-card-reward-line');
+        if (!line) line = document.createElement('div');
+        line.className = `${cardId === 'boss-card-airman' ? 'airman' : 'cutman'}-reward-line boss-card-reward-line boss-reward-icons-only-line`;
+        line.setAttribute('aria-label', '획득 보상');
+        line.innerHTML = getBossRewardIconHtmlV182(cardId);
+        if (line.parentElement !== main) main.appendChild(line);
+        main.appendChild(line);
+
+        let msg = card.querySelector('.boss-card-message');
+        if (!msg) {
+            msg = document.createElement('div');
+            msg.className = 'boss-card-message';
+            msg.id = cardId === 'boss-card-airman' ? 'airman-card-message' : 'cutman-card-message';
+        }
+        if (msg.parentElement !== main) main.appendChild(msg);
+
+        const entryCost = card.querySelector('.boss-entry-cost');
+        if (entryCost) entryCost.innerHTML = '<img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1';
+    });
+}
+
+function applyUnifiedDevelopmentChipCardsV182() {
+    const row = document.getElementById('development-chip-status-row');
+    if (!row) return;
+
+    const chips = [
+        { name: '슈퍼록맨 데이터칩', src: 'sprites/boss/reward/superrockchip.png', id: 'dev-superrock-chip-owned', value: gameData.materials?.superRockChip || 0 },
+        { name: '브루스버스터 데이터칩', src: 'sprites/boss/reward/bluesbusterchip.png', id: 'dev-bluesbuster-chip-owned', value: gameData.materials?.bluesBusterChip || 0 },
+        { name: '슈퍼포르테 데이터칩', src: 'sprites/boss/reward/superfortechip.png', id: 'dev-superforte-chip-owned', value: gameData.materials?.superForteChip || 0 }
+    ];
+
+    // 구버전 텍스트형 구조가 남아 있거나 모바일에서 복원되는 경우도 같은 구조로 교체합니다.
+    if (!row.querySelector('.development-chip-count-line') && !row.querySelector('.development-chip-status-count-line')) {
+        row.innerHTML = chips.map(chip => `
+            <div class="development-chip-status-item">
+                <span class="development-chip-label">${chip.name}</span>
+                <div class="development-chip-count-line">
+                    <img class="development-chip-icon" src="${chip.src}" alt="${chip.name}">
+                    <b id="${chip.id}">0</b>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    chips.forEach(chip => {
+        const el = document.getElementById(chip.id);
+        if (el) el.innerText = Math.floor(chip.value || 0).toLocaleString();
+    });
+
+    const bluesDesc = document.querySelector('#development-blues-buster-card .development-upgrade-desc');
+    if (bluesDesc) bluesDesc.innerText = '원거리 버스터 연구';
+}
+
+function applyUnifiedPcMobileLayoutV182() {
+    applyUnifiedBossCardsV182();
+    applyUnifiedDevelopmentChipCardsV182();
+    if (typeof startAirmanPreviewAnimationV165 === 'function') startAirmanPreviewAnimationV165();
+    if (typeof startCutmanPreviewV14 === 'function') startCutmanPreviewV14();
+}
+
+// 기존 보정 함수 이름을 호출하는 부분도 모두 같은 최종 기준으로 연결합니다.
+normalizeCutmanBossCardUI = applyUnifiedBossCardsV182;
+stabilizeBossCardsV168 = applyUnifiedBossCardsV182;
+applyBossCardV164 = applyUnifiedBossCardsV182;
+applyBossCardV163 = applyUnifiedBossCardsV182;
+
+const showTabBeforeUnifiedV182 = typeof showTab === 'function' ? showTab : null;
+if (showTabBeforeUnifiedV182 && !window.__showTabUnifiedV182) {
+    window.__showTabUnifiedV182 = true;
+    showTab = function(tabName) {
+        showTabBeforeUnifiedV182(tabName);
+        applyUnifiedPcMobileLayoutV182();
+    };
+}
+
+const updateDevelopmentLabUIBeforeUnifiedV182 = typeof updateDevelopmentLabUI === 'function' ? updateDevelopmentLabUI : null;
+if (updateDevelopmentLabUIBeforeUnifiedV182 && !window.__updateDevelopmentUnifiedV182) {
+    window.__updateDevelopmentUnifiedV182 = true;
+    updateDevelopmentLabUI = function() {
+        updateDevelopmentLabUIBeforeUnifiedV182();
+        applyUnifiedDevelopmentChipCardsV182();
+    };
+}
+
+document.addEventListener('DOMContentLoaded', applyUnifiedPcMobileLayoutV182);
+applyUnifiedPcMobileLayoutV182();
