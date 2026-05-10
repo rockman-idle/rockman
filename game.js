@@ -6706,53 +6706,15 @@ function closeTranscendOverlay() {
     if (overlay) overlay.classList.remove('active');
 }
 
-function distributeStatusBonusPoints(totalBonus, sources) {
-    const safeTotal = Math.max(0, Math.floor(totalBonus || 0));
-    const activeSources = sources
-        .map(source => ({ ...source, rate: Math.max(0, Number(source.rate || 0)) }))
-        .filter(source => source.rate > 0);
-
-    const result = {};
-    sources.forEach(source => { result[source.key] = 0; });
-    if (safeTotal <= 0 || !activeSources.length) return result;
-
-    const totalRate = activeSources.reduce((sum, source) => sum + source.rate, 0);
-    let used = 0;
-    const fractional = activeSources.map(source => {
-        const exact = safeTotal * (source.rate / totalRate);
-        const value = Math.floor(exact);
-        result[source.key] = value;
-        used += value;
-        return { key: source.key, fraction: exact - value };
-    }).sort((a, b) => b.fraction - a.fraction);
-
-    let remain = safeTotal - used;
-    let index = 0;
-    while (remain > 0 && fractional.length) {
-        result[fractional[index % fractional.length].key] += 1;
-        remain -= 1;
-        index += 1;
-    }
-
-    return result;
-}
-
 function getStatusAttackBreakdown() {
     const bonuses = getEquippedCardBonuses();
     const base = Math.max(1, Math.floor(gameData.atk || 0));
     const withCard = Math.max(1, Math.floor((base + bonuses.atkFlat) * (1 + bonuses.atkPercent / 100)));
     const total = getCardAdjustedAtk(gameData.atk);
-    const distributed = distributeStatusBonusPoints(Math.max(0, total - withCard), [
-        { key: 'ecan', rate: getEcanBonus('atk') },
-        { key: 'soul', rate: getSoulBonus('atk') },
-        { key: 'transcend', rate: getTranscendBonus('atk') }
-    ]);
     return {
         base,
         card: Math.max(0, withCard - base),
-        ecan: distributed.ecan || 0,
-        soul: distributed.soul || 0,
-        transcend: distributed.transcend || 0,
+        transcend: Math.max(0, total - withCard),
         total
     };
 }
@@ -6760,27 +6722,18 @@ function getStatusAttackBreakdown() {
 function getStatusHpBreakdown() {
     const base = Math.max(1, Math.floor(100 + (Math.max(1, Math.floor(gameData.lv?.hp || 1)) - 1) * 35));
     const total = getEffectivePlayerMaxHp();
-    const distributed = distributeStatusBonusPoints(Math.max(0, total - base), [
-        { key: 'ecan', rate: getEcanBonus('hp') },
-        { key: 'soul', rate: getSoulBonus('hp') },
-        { key: 'transcend', rate: getTranscendBonus('hp') }
-    ]);
     return {
         base,
         card: 0,
-        ecan: distributed.ecan || 0,
-        soul: distributed.soul || 0,
-        transcend: distributed.transcend || 0,
+        transcend: Math.max(0, total - base),
         total
     };
 }
 
 function formatStatusBreakdown(parts) {
     const cardPart = parts.card > 0 ? ` <span class="status-card-bonus">(+${parts.card.toLocaleString()})</span>` : '';
-    const ecanPart = parts.ecan > 0 ? ` <span class="status-ecan-bonus">(+${parts.ecan.toLocaleString()})</span>` : '';
-    const soulPart = parts.soul > 0 ? ` <span class="status-soul-bonus">(+${parts.soul.toLocaleString()})</span>` : '';
     const transcendPart = parts.transcend > 0 ? ` <span class="status-transcend-bonus">(+${parts.transcend.toLocaleString()})</span>` : '';
-    return `${parts.total.toLocaleString()} <small>= ${parts.base.toLocaleString()}${cardPart}${ecanPart}${soulPart}${transcendPart}</small>`;
+    return `${parts.total.toLocaleString()} <small>= ${parts.base.toLocaleString()}${cardPart}${transcendPart}</small>`;
 }
 
 function updateStatusUI() {

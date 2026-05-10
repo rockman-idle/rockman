@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=status_bonus_breakdown_v147">
+<link rel="stylesheet" href="style.css?v=zero_afterimage_magenta_v181">
 </head>
 
 <body>
@@ -152,8 +152,17 @@
     <img src="sprites/boss/super-rboss/cutman/cutman_at_02.png">
     <img src="sprites/boss/super-rboss/cutman/cutman_bullet_01.png">
     <img src="sprites/boss/super-rboss/cutman/cutman_dead.png">
+    <img src="sprites/boss/super-rboss/airman/airman_portrait.png">
+    <img src="sprites/boss/super-rboss/airman/airman_st.png">
+    <img src="sprites/boss/super-rboss/airman/airman_at.png">
+    <img src="sprites/boss/super-rboss/airman/airman_bullet_01.png">
+    <img src="sprites/boss/super-rboss/airman/airman_bullet_02.png">
+    <img src="sprites/boss/super-rboss/airman/airman_bullet_03.png">
+    <img src="sprites/boss/super-rboss/airman/airman_w_01.png">
+    <img src="sprites/boss/super-rboss/airman/airman_w_02.png">
     <img src="sprites/boss/reward/cardchip.png">
     <img src="sprites/boss/reward/superrockchip.png">
+    <img src="sprites/boss/reward/bluesbusterchip.png">
     <img src="sprites/mine/pickelman_01.png">
     <img src="sprites/mine/pickelman_02.png">
     <img src="sprites/mine/pickelman_03.png">
@@ -816,7 +825,7 @@
     </div>
 
     <div id="boss-group-classic" class="boss-group-panel open">
-      <div id="boss-card-cutman" class="boss-select-card cutman-card" role="button" tabindex="0" onclick="openBossActionPanel('classic_cutman')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); openBossActionPanel('classic_cutman');}">
+      <div id="boss-card-cutman" class="boss-select-card classic-boss-card-template cutman-card" role="button" tabindex="0" onclick="openBossActionPanel('classic_cutman')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); openBossActionPanel('classic_cutman');}">
         <div class="boss-portrait-box">
           <img class="boss-portrait-img" src="sprites/boss/super-rboss/cutman/cutman_portrait.png" alt="컷맨">
         </div>
@@ -852,6 +861,49 @@
                 <button id="cutman-challenge-btn" class="boss-action-btn boss-action-challenge" onclick="event.preventDefault(); event.stopPropagation(); startBossLevelChallenge('classic_cutman'); return false;">다음 레벨 도전</button>
                 <button id="cutman-sweep-1-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_cutman', 1); return false;">1회 소탕</button>
                 <button id="cutman-sweep-10-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_cutman', 10); return false;">10회 소탕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="boss-card-airman" class="boss-select-card classic-boss-card-template airman-card" role="button" tabindex="0" data-boss-key="classic_airman" onclick="openBossActionPanel('classic_airman')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); openBossActionPanel('classic_airman');}">
+        <div class="boss-portrait-box">
+          <img class="boss-portrait-img" src="sprites/boss/super-rboss/airman/airman_portrait.png" alt="에어맨">
+        </div>
+
+        <div class="boss-card-main">
+          <div class="boss-card-topline">
+            <div class="boss-card-name">에어맨 <span id="airman-boss-level-label" class="boss-level-label">Lv. 1</span></div>
+            <div class="boss-entry-cost"><img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1</div>
+          </div>
+
+          <div class="boss-card-preview">
+            <div class="boss-demo-stage airman-preview-stage">
+              <img class="airman-preview-img" src="sprites/boss/super-rboss/airman/airman_st.png" alt="에어맨">
+              <img class="airman-preview-fan" src="sprites/boss/super-rboss/airman/airman_w_01.png" alt="에어맨 팬">
+              <img class="airman-preview-tornado tornado-a" src="sprites/boss/super-rboss/airman/airman_bullet_01.png" alt="에어맨 소용돌이">
+              <img class="airman-preview-tornado tornado-b" src="sprites/boss/super-rboss/airman/airman_bullet_02.png" alt="에어맨 소용돌이">
+              <img class="airman-preview-tornado tornado-c" src="sprites/boss/super-rboss/airman/airman_bullet_03.png" alt="에어맨 소용돌이">
+            </div>
+
+            <div class="airman-reward-line boss-card-reward-line">
+              <span class="reward-text-label">획득 가능 :</span>
+              <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
+              <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+              <span class="boss-reward-item">브루스버스터 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/bluesbusterchip.png" alt="브루스버스터 데이터칩"></span>
+            </div>
+
+            <div id="airman-card-message" class="boss-card-message"></div>
+
+            <div id="airman-boss-action-panel" class="boss-action-panel" onclick="event.preventDefault(); event.stopPropagation(); return false;">
+              <div class="boss-action-panel-info">
+                최고 클리어 <b id="airman-cleared-level-text">Lv. 0</b> / 다음 도전 <b id="airman-next-level-text">Lv. 1</b>
+              </div>
+              <div class="boss-action-buttons">
+                <button id="airman-challenge-btn" class="boss-action-btn boss-action-challenge" onclick="event.preventDefault(); event.stopPropagation(); startBossLevelChallenge('classic_airman'); return false;">다음 레벨 도전</button>
+                <button id="airman-sweep-1-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_airman', 1); return false;">1회 소탕</button>
+                <button id="airman-sweep-10-btn" class="boss-action-btn" onclick="event.preventDefault(); event.stopPropagation(); sweepBossLevel('classic_airman', 10); return false;">10회 소탕</button>
               </div>
             </div>
           </div>
@@ -944,7 +996,7 @@
     <h2 class="section-heading-pixel status-heading">STATUS</h2>
 
     <div class="status-section">
-      <div class="status-legend"><span class="status-card-bonus">보라색: 카드</span><span class="status-ecan-bonus">하늘색: E캔</span><span class="status-soul-bonus">초록색: 라이트코어</span><span class="status-transcend-bonus">노란색: 리부트</span></div>
+      <div class="status-legend"><span class="status-card-bonus">보라색: 카드</span><span class="status-transcend-bonus">노란색: 리부트</span></div>
       <div id="status-stat-rows" class="status-stat-rows"></div>
     </div>
   </div>
@@ -1012,7 +1064,7 @@
   </div>
 </div>
 
-<script src="game.js?v=status_bonus_breakdown_v147"></script>
+<script src="game.js?v=zero_afterimage_magenta_v181"></script>
 
 
 </body>
