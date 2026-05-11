@@ -15763,3 +15763,19 @@ html.mobile-mode body .development-chip-status-row {
 }
 
 .mine-manual-enhance-btn { background: #221607 !important; color: #ffd36a !important; border-color: #ffaa22 !important; box-shadow: 0 0 7px rgba(255, 170, 34, 0.35) !important; }
+
+
+/* v190: 광산 자동강화 분할 버튼 우측 테두리 보정 */
+.mine-enhance-split .mine-auto-enhance-btn,
+.mine-actions .mine-enhance-split .mine-auto-enhance-btn,
+#mine-auto-enhance-btn {
+  border-right-width: 1px !important;
+  border-right-style: solid !important;
+}
+
+.mine-enhance-split .mine-manual-enhance-btn,
+.mine-actions .mine-enhance-split .mine-manual-enhance-btn,
+#mine-enhance-btn {
+  border-left-width: 1px !important;
+  border-left-style: solid !important;
+}
