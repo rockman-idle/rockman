@@ -16155,3 +16155,39 @@ body.mobile-mode.sleep-mode-active .tab-bookmark-left .tab-btn {
 .status-transcend-bonus { color: #ffd700 !important; }
 .status-ecan-bonus { color: #00d4ff !important; }
 .status-soul-bonus { color: #64ffb6 !important; }
+
+
+/* v194: 모바일 하단 탭 칸 간격 제거 - 5칸을 화면 폭에 딱 붙여 배치 */
+html.mobile-mode body .tab-bookmark-left .tab-btn,
+html.mobile-mode body .tab-bookmark .tab-btn,
+body.mobile-mode .tab-bookmark-left .tab-btn,
+body.mobile-mode .tab-bookmark .tab-btn {
+  width: 20vw !important;
+  min-width: 20vw !important;
+  max-width: 20vw !important;
+  border-radius: 0 !important;
+}
+
+/* 상단 1줄: 전투 / 광산 / 보스재생실 / 개발실 / 절전 */
+html.mobile-mode body #battle-tab-btn,
+body.mobile-mode #battle-tab-btn { left: 0 !important; bottom: calc(47px + env(safe-area-inset-bottom, 0px)) !important; }
+html.mobile-mode body #mine-tab-btn,
+body.mobile-mode #mine-tab-btn { left: 20vw !important; bottom: calc(47px + env(safe-area-inset-bottom, 0px)) !important; }
+html.mobile-mode body #boss-tab-btn,
+body.mobile-mode #boss-tab-btn { left: 40vw !important; bottom: calc(47px + env(safe-area-inset-bottom, 0px)) !important; }
+html.mobile-mode body #armor-tab-btn,
+body.mobile-mode #armor-tab-btn { left: 60vw !important; bottom: calc(47px + env(safe-area-inset-bottom, 0px)) !important; }
+html.mobile-mode body #sleep-mode-btn,
+body.mobile-mode #sleep-mode-btn { left: 80vw !important; bottom: calc(47px + env(safe-area-inset-bottom, 0px)) !important; display: flex !important; }
+
+/* 하단 1줄: 상태 / 동료 / 동료싱크로율 / 카드 / 리부트 */
+html.mobile-mode body #status-tab-btn,
+body.mobile-mode #status-tab-btn { left: 0 !important; bottom: env(safe-area-inset-bottom, 0px) !important; }
+html.mobile-mode body #partner-tab-btn,
+body.mobile-mode #partner-tab-btn { left: 20vw !important; bottom: env(safe-area-inset-bottom, 0px) !important; }
+html.mobile-mode body #sync-tab-btn,
+body.mobile-mode #sync-tab-btn { left: 40vw !important; bottom: env(safe-area-inset-bottom, 0px) !important; display: flex !important; }
+html.mobile-mode body #card-tab-btn,
+body.mobile-mode #card-tab-btn { left: 60vw !important; bottom: env(safe-area-inset-bottom, 0px) !important; }
+html.mobile-mode body #transcend-tab-btn,
+body.mobile-mode #transcend-tab-btn { left: 80vw !important; bottom: env(safe-area-inset-bottom, 0px) !important; display: flex !important; }
