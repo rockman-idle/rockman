@@ -16155,3 +16155,50 @@ body.mobile-mode.sleep-mode-active .tab-bookmark-left .tab-btn {
 .status-transcend-bonus { color: #ffd700 !important; }
 .status-ecan-bonus { color: #00d4ff !important; }
 .status-soul-bonus { color: #64ffb6 !important; }
+
+
+/* v199: 모바일 하단 탭 간격 최종 고정
+   - 가로: 5칸을 20vw씩 붙임
+   - 세로: 39px 버튼 높이에 맞춰 윗줄/아랫줄을 맞닿게 배치
+   - v193 잔여 offset 규칙보다 아래에서 최종 override */
+html.mobile-mode body .tab-bookmark-left .tab-btn,
+html.mobile-mode body .tab-bookmark .tab-btn,
+body.mobile-mode .tab-bookmark-left .tab-btn,
+body.mobile-mode .tab-bookmark .tab-btn {
+  width: 20vw !important;
+  height: 39px !important;
+  min-height: 39px !important;
+  max-height: 39px !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-sizing: border-box !important;
+}
+
+html.mobile-mode body #battle-tab-btn,
+body.mobile-mode #battle-tab-btn { left: 0 !important; bottom: calc(39px + env(safe-area-inset-bottom, 0px)) !important; }
+html.mobile-mode body #mine-tab-btn,
+body.mobile-mode #mine-tab-btn { left: 20vw !important; bottom: calc(39px + env(safe-area-inset-bottom, 0px)) !important; }
+html.mobile-mode body #boss-tab-btn,
+body.mobile-mode #boss-tab-btn { left: 40vw !important; bottom: calc(39px + env(safe-area-inset-bottom, 0px)) !important; }
+html.mobile-mode body #armor-tab-btn,
+body.mobile-mode #armor-tab-btn { left: 60vw !important; bottom: calc(39px + env(safe-area-inset-bottom, 0px)) !important; }
+html.mobile-mode body #sleep-mode-btn,
+body.mobile-mode #sleep-mode-btn { left: 80vw !important; bottom: calc(39px + env(safe-area-inset-bottom, 0px)) !important; display: flex !important; }
+
+html.mobile-mode body #status-tab-btn,
+body.mobile-mode #status-tab-btn { left: 0 !important; bottom: env(safe-area-inset-bottom, 0px) !important; color: #b58cff !important; border-color: #4d2ac0 !important; }
+html.mobile-mode body #partner-tab-btn,
+body.mobile-mode #partner-tab-btn { left: 20vw !important; bottom: env(safe-area-inset-bottom, 0px) !important; }
+html.mobile-mode body #sync-tab-btn,
+body.mobile-mode #sync-tab-btn { left: 40vw !important; bottom: env(safe-area-inset-bottom, 0px) !important; display: flex !important; }
+html.mobile-mode body #card-tab-btn,
+body.mobile-mode #card-tab-btn { left: 60vw !important; bottom: env(safe-area-inset-bottom, 0px) !important; }
+html.mobile-mode body #transcend-tab-btn,
+body.mobile-mode #transcend-tab-btn { left: 80vw !important; bottom: env(safe-area-inset-bottom, 0px) !important; display: flex !important; color: #d7a500 !important; border-color: #5d4600 !important; z-index: 30010 !important; }
+
+html.mobile-mode body .container,
+body.mobile-mode .container,
+html.mobile-mode body .footer-row,
+body.mobile-mode .footer-row {
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+}
