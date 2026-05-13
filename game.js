@@ -56,7 +56,8 @@ const defaultData = {
         partnerLv: 0,
         bossLv: 0,
         atkSpeedLv: 0,
-        critLv: 0
+        critLv: 0,
+        busterPierceLv: 0
     },
 
     partnerBlueprints: {
@@ -309,8 +310,15 @@ const SNIPERJOE_START_X = 335;
 const SNIPERJOE_BOTTOM = 20;
 const MET_BOTTOM = 19;
 const BOSS_BOTTOM = 24;
-const SNIPERJOE_BUSTER_DAMAGE_RATE = 0.5;
-const SNIPERJOE_DODGE_CHANCE = 0.10;
+const SNIPERJOE_BASE_BUSTER_DAMAGE_RATE = 0.5;
+const SNIPERJOE_BUSTER_PIERCE_GAIN_PER_LEVEL = 0.01;
+const SNIPERJOE_BUSTER_DAMAGE_RATE_MAX = 0.7;
+const SNIPERJOE_DODGE_CHANCE = 0.06;
+const SNIPERJOE_ACTION_INTERVAL_MS = 1800;
+const SNIPERJOE_ATTACK_CHANCE = 0.72;
+const SNIPERJOE_JUMP_ACTION_CHANCE = 0.06;
+const MET_ECAN_REWARD_MIN = 1;
+const MET_ECAN_REWARD_MAX = 5;
 
 // 투사체 속도 보정 핵심값입니다.
 // 모든 원거리 투사체가 같은 체감 속도로 이동하도록 공통 탄속(px/ms)을 사용합니다.
@@ -361,7 +369,8 @@ const ECAN_UPGRADE_CONFIG = {
     partner: { key: 'partnerLv', name: '동료 공격력', baseCost: 180, growth: 1.17, linear: 30, effectPerLevel: 0.003, max: Infinity, suffix: '%' },
     boss: { key: 'bossLv', name: '보스 데미지', baseCost: 200, growth: 1.17, linear: 35, effectPerLevel: 0.004, max: Infinity, suffix: '%' },
     atkSpeed: { key: 'atkSpeedLv', name: '공격속도', baseCost: 220, growth: 1.18, linear: 35, effectPerLevel: 0.0025, max: 40, suffix: '%' },
-    crit: { key: 'critLv', name: '차지확률', baseCost: 220, growth: 1.18, linear: 35, effectPerLevel: 0.25, max: 40, suffix: '%' }
+    crit: { key: 'critLv', name: '차지확률', baseCost: 220, growth: 1.18, linear: 35, effectPerLevel: 0.25, max: 40, suffix: '%' },
+    busterPierce: { key: 'busterPierceLv', name: '버스터 반감 관통', baseCost: 120, growth: 1.16, linear: 18, effectPerLevel: SNIPERJOE_BUSTER_PIERCE_GAIN_PER_LEVEL, max: 20, suffix: '%' }
 };
 
 
@@ -579,6 +588,18 @@ function getEcanBonus(type) {
     return Math.max(0, lv * config.effectPerLevel);
 }
 
+function getSniperJoeBusterDamageRate() {
+    const pierceLv = getEcanUpgradeLevel('busterPierce');
+    return Math.min(
+        SNIPERJOE_BUSTER_DAMAGE_RATE_MAX,
+        SNIPERJOE_BASE_BUSTER_DAMAGE_RATE + pierceLv * SNIPERJOE_BUSTER_PIERCE_GAIN_PER_LEVEL
+    );
+}
+
+function getSniperJoeBusterReductionPercent() {
+    return Math.max(0, Math.round((1 - getSniperJoeBusterDamageRate()) * 100));
+}
+
 function getEcanUpgradeCost(type) {
     const config = ECAN_UPGRADE_CONFIG[type];
     if (!config) return 0;
@@ -588,6 +609,7 @@ function getEcanUpgradeCost(type) {
 }
 
 function getEcanUpgradeEffectText(type) {
+    if (type === 'busterPierce') return `반감 ${getSniperJoeBusterReductionPercent()}%`;
     if (type === 'crit') return `+${getEcanBonus(type).toFixed(2).replace(/\.00$/, '')}%`;
     return `+${Math.round(getEcanBonus(type) * 10000) / 100}%`;
 }
@@ -2083,9 +2105,10 @@ function startSniperJoeActions() {
         if (superRockUnlockPaused) return;
         if (!isSniperJoeBattle() || enemyDead || playerDead || enemyStunned || sniperJoeJumping || sniperJoeAttacking) return;
 
-        if (Math.random() < 0.90) fireSniperJoeBullet();
-        else playSniperJoeJump();
-    }, 1650);
+        const roll = Math.random();
+        if (roll < SNIPERJOE_ATTACK_CHANCE) fireSniperJoeBullet();
+        else if (roll < SNIPERJOE_ATTACK_CHANCE + SNIPERJOE_JUMP_ACTION_CHANCE) playSniperJoeJump();
+    }, SNIPERJOE_ACTION_INTERVAL_MS);
 }
 
 function playSniperJoeJump() {
@@ -4048,7 +4071,7 @@ function applyEnemyDamage(rawDamage, isChargeShot = false, isBusterAttack = true
         }
 
         if (isBusterAttack) {
-            damage = Math.max(1, Math.floor(damage * SNIPERJOE_BUSTER_DAMAGE_RATE));
+            damage = Math.max(1, Math.floor(damage * getSniperJoeBusterDamageRate()));
         }
     }
 
@@ -4261,6 +4284,12 @@ function killEnemy() {
     gameData.screws += reward;
 
     const rewardTextData = { screws: reward };
+
+    if (!isSniperJoeBattle() && currentEnemyType === 'met') {
+        const ecanReward = rollInt(MET_ECAN_REWARD_MIN, MET_ECAN_REWARD_MAX);
+        gameData.crystals += ecanReward;
+        rewardTextData.crystals = ecanReward;
+    }
 
     if (isSniperJoeBattle()) {
         const currentStage = Math.max(1, Math.floor(gameData.stage || 1));
@@ -7264,6 +7293,20 @@ const PICKAXE_MAX_TIER = PICKAXE_NAMES.length - 1;
 const REGISTERED_PICKAXE_SLOT_COUNT = 3;
 const REGISTERED_PICKAXE_DAMAGE_RATE = 0.10;
 const MINE_REWARD_NERF_RATE = 0.75;
+
+// v200: 광산은 돌 HP를 쓰지 않고 곡괭이질 1회마다 즉시 보상을 지급합니다.
+// 확률은 1회 채광 기준입니다. 1.2초 자동 채광 기준 6~7시간 방치 시 라이트코어 약 6~10개를 목표로 합니다.
+const MINE_LIGHT_CORE_VEIN_CHANCE = 0.0004;      // 0.04%
+const MINE_BOSS_CARD_VEIN_CHANCE = 0.00025;      // 0.025%
+const MINE_BLOCKMAN_WAS_CHANCE = 0.025;          // 2.5%
+const MINE_RARE_VEIN_SPRITES = {
+    normal: 'sprites/mine/stone.png',
+    lightCore: 'sprites/mine/light_core_vein.png',
+    bossCard: 'sprites/mine/boss_card_vein.png',
+    blockmanWas: 'sprites/mine/blockman_was.png'
+};
+const BOSS_REPLAY_CARD_ICON_HTML = '<img src="sprites/item/boss_ticket.png" class="result-resource-icon boss-ticket-resource-icon" alt="보스재생카드">';
+let mineRockSpriteResetTimer = null;
 let pendingPickaxeRegisterSlot = null;
 let rebootConfirmPauseActive = false;
 let rebootConfirmPreviousBattlePause = false;
@@ -7422,7 +7465,8 @@ function confirmPickaxeRegister() {
 }
 
 function getMineRockMaxHp() {
-    return Math.floor(80 + gameData.minePickaxeTier * 80 + gameData.minePickaxeEnhance * 18);
+    // v200: 돌 HP 시스템은 제거되었습니다. 기존 세이브/표시 호환용으로 1만 유지합니다.
+    return 1;
 }
 
 function getMineEnhanceCost() {
@@ -7560,6 +7604,75 @@ function upgradePickaxeTier() {
     saveData();
 }
 
+function getMineBaseRewardsPerSwing() {
+    const miningPower = Math.max(0, getMiningDamage());
+    if (!gameData.minePickaxeOwned || miningPower <= 0) return { screws: 0, stones: 0 };
+
+    const tier = Math.max(0, Math.min(PICKAXE_MAX_TIER, Math.floor(gameData.minePickaxeTier || 0)));
+    const enhance = Math.max(0, Math.min(10, Math.floor(gameData.minePickaxeEnhance || 0)));
+
+    // 돌 HP 제거 후에도 초반 수급이 과하게 폭증하지 않도록 1회 보상은 낮은 계수로 관리합니다.
+    const screwBase = miningPower * 0.055 + tier * 0.35 + enhance * 0.08;
+    const stoneBase = miningPower * 0.018 + tier * 0.18 + enhance * 0.035;
+
+    return {
+        screws: Math.max(1, Math.floor(screwBase * (1 + getSoulBonus('screw')))),
+        stones: Math.max(1, Math.floor(stoneBase))
+    };
+}
+
+function getMineLightCoreReward() {
+    const tier = Math.max(0, Math.min(PICKAXE_MAX_TIER, Math.floor(gameData.minePickaxeTier || 0)));
+    let amount = 1;
+    if (tier >= 8) {
+        if (Math.random() < 0.35) amount += 1;
+    } else if (tier >= 5) {
+        if (Math.random() < 0.20) amount += 1;
+    }
+    return amount;
+}
+
+function getMineBossCardReward() {
+    const tier = Math.max(0, Math.min(PICKAXE_MAX_TIER, Math.floor(gameData.minePickaxeTier || 0)));
+    let amount = 1;
+    if (tier >= PICKAXE_MAX_TIER && Math.random() < 0.10) amount += 1;
+    return amount;
+}
+
+function rollMineVeinEvent() {
+    const roll = Math.random();
+    if (roll < MINE_BOSS_CARD_VEIN_CHANCE) return 'bossCard';
+    if (roll < MINE_BOSS_CARD_VEIN_CHANCE + MINE_LIGHT_CORE_VEIN_CHANCE) return 'lightCore';
+    if (roll < MINE_BOSS_CARD_VEIN_CHANCE + MINE_LIGHT_CORE_VEIN_CHANCE + MINE_BLOCKMAN_WAS_CHANCE) return 'blockmanWas';
+    return 'normal';
+}
+
+function setMineRockSpriteForVein(type = 'normal') {
+    const rock = document.getElementById('mine-rock-img');
+    if (!rock) return;
+    const src = MINE_RARE_VEIN_SPRITES[type] || MINE_RARE_VEIN_SPRITES.normal;
+    rock.onerror = () => {
+        if (!String(rock.src || '').endsWith('/stone.png')) {
+            rock.onerror = null;
+            rock.src = MINE_RARE_VEIN_SPRITES.normal;
+        }
+    };
+    rock.src = src;
+    rock.classList.toggle('rare-vein', type !== 'normal');
+    rock.classList.toggle('light-core-vein', type === 'lightCore');
+    rock.classList.toggle('boss-card-vein', type === 'bossCard');
+    rock.classList.toggle('blockman-was-vein', type === 'blockmanWas');
+
+    if (mineRockSpriteResetTimer) clearTimeout(mineRockSpriteResetTimer);
+    mineRockSpriteResetTimer = setTimeout(() => {
+        const currentRock = document.getElementById('mine-rock-img');
+        if (!currentRock) return;
+        currentRock.src = MINE_RARE_VEIN_SPRITES.normal;
+        currentRock.classList.remove('rare-vein', 'light-core-vein', 'boss-card-vein', 'blockman-was-vein');
+        mineRockSpriteResetTimer = null;
+    }, type === 'normal' ? 260 : 900);
+}
+
 function mineAttack() {
     if (rebootConfirmPauseActive) return;
     if (!gameData.minePickaxeOwned) return;
@@ -7578,17 +7691,35 @@ function mineAttack() {
         setTimeout(() => {
             miner.src = 'sprites/mine/pickelman_03.png';
 
-            const damage = getMiningDamage();
-            gameData.mineRockHp -= damage;
-            showMineDamageText(damage);
+            const miningPower = getMiningDamage();
+            const baseReward = getMineBaseRewardsPerSwing();
+            const veinType = rollMineVeinEvent();
+            const reward = {
+                screws: baseReward.screws,
+                stones: baseReward.stones,
+                soulStones: 0,
+                bossReplayCard: 0,
+                veinType
+            };
+
+            if (veinType === 'blockmanWas') {
+                const screwMultiplier = rollInt(1, 2);
+                const stoneMultiplier = rollInt(3, 6);
+                reward.screws += baseReward.screws * screwMultiplier;
+                reward.stones += baseReward.stones * stoneMultiplier;
+            } else if (veinType === 'lightCore') {
+                reward.soulStones = getMineLightCoreReward();
+            } else if (veinType === 'bossCard') {
+                reward.bossReplayCard = getMineBossCardReward();
+            }
+
+            applyMineSwingReward(reward);
+            showMineDamageText(miningPower, reward);
 
             rock.classList.remove('mine-rock-hit');
             void rock.offsetWidth;
             rock.classList.add('mine-rock-hit');
-
-            if (gameData.mineRockHp <= 0) {
-                clearMineRock();
-            }
+            setMineRockSpriteForVein(veinType);
 
             updateUI();
             saveData();
@@ -7601,30 +7732,63 @@ function mineAttack() {
     }, 30);
 }
 
-function clearMineRock() {
-    const screwReward = Math.max(1, Math.floor((8 + gameData.minePickaxeTier * 5 + gameData.minePickaxeEnhance * 1.5) * MINE_REWARD_NERF_RATE * (1 + getSoulBonus('screw'))));
-    const stoneReward = Math.max(1, Math.floor((3 + gameData.minePickaxeTier * 3 + Math.max(1, Math.floor(gameData.minePickaxeEnhance / 2))) * MINE_REWARD_NERF_RATE));
+function applyMineSwingReward(reward) {
+    const screwReward = Math.max(0, Math.floor(reward.screws || 0));
+    const stoneReward = Math.max(0, Math.floor(reward.stones || 0));
+    const soulReward = Math.max(0, Math.floor(reward.soulStones || 0));
+    const bossCardReward = Math.max(0, Math.floor(reward.bossReplayCard || 0));
 
     gameData.screws += screwReward;
     gameData.stones += stoneReward;
+    gameData.soulStones += soulReward;
+    gameData.materials.bossReplayCard += bossCardReward;
     gameData.mineRockMaxHp = getMineRockMaxHp();
     gameData.mineRockHp = gameData.mineRockMaxHp;
 
-    showMineResult(`+${screwReward}${SCREW_ICON_HTML} / +${stoneReward}${STONE_ICON_HTML}`);
+    const parts = [`+${screwReward}${SCREW_ICON_HTML}`, `+${stoneReward}${STONE_ICON_HTML}`];
+    if (soulReward > 0) parts.push(`+${soulReward}${SOUL_STONE_ICON_HTML}`);
+    if (bossCardReward > 0) parts.push(`+${bossCardReward}${BOSS_REPLAY_CARD_ICON_HTML}`);
+
+    const prefix = reward.veinType === 'lightCore'
+        ? '라이트코어 광맥! '
+        : reward.veinType === 'bossCard'
+            ? '보스재생카드 광맥! '
+            : reward.veinType === 'blockmanWas'
+                ? '블록맨(이었던 것)! '
+                : '';
+    showMineResult(`${prefix}${parts.join(' / ')}`);
 }
 
-function showMineDamageText(damage) {
+function clearMineRock() {
+    // v200: 돌 HP 제거. 이전 함수 호출이 남아 있어도 1회 채광 보상으로 처리합니다.
+    const baseReward = getMineBaseRewardsPerSwing();
+    applyMineSwingReward({ ...baseReward, soulStones: 0, bossReplayCard: 0, veinType: 'normal' });
+}
+
+function showMineDamageText(miningPower, reward = null) {
     const screen = document.querySelector('.mine-screen');
     if (!screen) return;
 
     const text = document.createElement('div');
     text.className = 'mine-damage-text';
-    text.innerText = damage;
-    text.style.left = '250px';
+    if (reward?.veinType === 'lightCore') text.classList.add('rare', 'light-core');
+    if (reward?.veinType === 'bossCard') text.classList.add('rare', 'boss-card');
+    if (reward?.veinType === 'blockmanWas') text.classList.add('rare', 'blockman-was');
+
+    if (reward?.veinType === 'lightCore') {
+        text.innerText = `라이트코어 +${Math.floor(reward.soulStones || 0)}`;
+    } else if (reward?.veinType === 'bossCard') {
+        text.innerText = `보스카드 +${Math.floor(reward.bossReplayCard || 0)}`;
+    } else if (reward?.veinType === 'blockmanWas') {
+        text.innerText = '블록맨(이었던 것)!';
+    } else {
+        text.innerText = `채광력 ${Math.floor(miningPower || 0)}`;
+    }
+    text.style.left = '236px';
     text.style.bottom = '62px';
     screen.appendChild(text);
 
-    setTimeout(() => text.remove(), 700);
+    setTimeout(() => text.remove(), reward?.veinType && reward.veinType !== 'normal' ? 980 : 700);
 }
 
 function showMineResult(message) {
@@ -8411,10 +8575,10 @@ const mineCost = document.getElementById('mine-enhance-cost');
 if (mineCost) mineCost.innerText = getMineEnhanceCost().toLocaleString();
 
 const mineHpText = document.getElementById('mine-rock-hp-text');
-if (mineHpText) mineHpText.innerText = `${Math.max(0, Math.floor(gameData.mineRockHp)).toLocaleString()} / ${Math.floor(gameData.mineRockMaxHp).toLocaleString()}`;
+if (mineHpText) mineHpText.innerText = '곡괭이질 1회 보상';
 
 const mineHpFill = document.getElementById('mine-rock-hp-fill');
-if (mineHpFill) mineHpFill.style.width = Math.max(0, (gameData.mineRockHp / gameData.mineRockMaxHp) * 100) + '%';
+if (mineHpFill) mineHpFill.style.width = '100%';
 
 setButtonActive(document.getElementById('craft-pickaxe-btn'), !gameData.minePickaxeOwned && gameData.screws >= 100);
 setButtonActive(document.getElementById('mine-enhance-btn'), !mineEnhancing && gameData.minePickaxeOwned && gameData.minePickaxeEnhance < 10 && gameData.stones >= getMineEnhanceCost());
@@ -8771,8 +8935,113 @@ startZeroAttack();
 startMining();
 startBattleTips();
 
-// v195 정리: 구버전 normalizeCutmanBossCardUI 중복 선언 제거.
-// 실제 보스카드 최종 보정은 아래 v164 정의 후 v183 최종 함수로 연결됩니다.
+
+function normalizeCutmanBossCardUI() {
+    const root = document.getElementById('boss-tab');
+    if (!root) return;
+
+    root.querySelectorAll('.boss-group-title, .classic-title, .classic-boss-section-title, .boss-section-title, .boss-category-title, .boss-list-title, .cutman-card-title-strip').forEach(el => {
+        if ((el.textContent || '').includes('클래식 보스전') || el.classList.contains('classic-title') || el.classList.contains('boss-group-title')) {
+            el.remove();
+        }
+    });
+
+    const wrongBossPath = 'sprites/' + 'bosss' + '/reward/cardchip.png';
+    root.querySelectorAll('img').forEach(img => {
+        const src = img.getAttribute('src') || '';
+        if (src.includes(wrongBossPath)) {
+            img.setAttribute('src', 'sprites/boss/reward/cardchip.png');
+        }
+    });
+
+    const bossCardConfigs = [
+        {
+            key: 'classic_cutman',
+            prefix: 'cutman',
+            cardSelectors: [
+                '#boss-card-cutman',
+                '#cutman-boss-card',
+                '.cutman-card',
+                '.cutman-boss-card',
+                '[data-boss-key="classic_cutman"]',
+                '[onclick*="classic_cutman"]'
+            ],
+            rewardLineClass: 'cutman-reward-line boss-card-reward-line',
+            rewardHtml: `
+                <span class="reward-text-label">획득 가능 :</span>
+                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
+                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+                <span class="boss-reward-item">슈퍼록맨 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
+            `
+        },
+        {
+            key: 'classic_airman',
+            prefix: 'airman',
+            cardSelectors: [
+                '#boss-card-airman',
+                '.airman-card',
+                '[data-boss-key="classic_airman"]',
+                '[onclick*="classic_airman"]'
+            ],
+            rewardLineClass: 'airman-reward-line boss-card-reward-line',
+            rewardHtml: `
+                <span class="reward-text-label">획득 가능 :</span>
+                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
+                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+                <span class="boss-reward-item">브루스버스터 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/bluesbusterchip.png" alt="브루스버스터 데이터칩"></span>
+            `
+        }
+    ];
+
+    bossCardConfigs.forEach(config => {
+        const card = config.cardSelectors
+            .map(selector => root.querySelector(selector))
+            .find(Boolean);
+        if (!card) return;
+
+        card.classList.add('classic-boss-card-template');
+        card.dataset.bossKey = config.key;
+
+        card.querySelectorAll('img').forEach(img => {
+            const src = img.getAttribute('src') || '';
+            if (src.includes('cutman_at_')) img.classList.add('cutman-preview-attack');
+            // 옛날 보정 코드에서 나사/돌 아이콘을 제거하던 문제 방지: 보상 라인은 아래에서 항상 재생성합니다.
+        });
+
+        card.querySelectorAll('.boss-card-reward-text, .boss-card-rewards').forEach(el => el.remove());
+
+        let line = card.querySelector('.boss-card-reward-line');
+        if (!line) {
+            line = document.createElement('div');
+        }
+        line.className = config.rewardLineClass;
+        line.innerHTML = config.rewardHtml;
+
+        const preview = card.querySelector('.boss-demo-stage') || card.querySelector('.boss-card-preview');
+        if (preview && preview.parentNode && line.previousElementSibling !== preview) {
+            preview.insertAdjacentElement('afterend', line);
+        } else if (!line.parentNode) {
+            card.appendChild(line);
+        }
+
+        const nameEl = card.querySelector('.boss-card-name');
+        if (nameEl && !nameEl.querySelector('.boss-level-label')) {
+            nameEl.insertAdjacentHTML('beforeend', ` <span id="${config.prefix}-boss-level-label" class="boss-level-label">Lv. 1</span>`);
+        }
+
+        const entryCost = card.querySelector('.boss-entry-cost');
+        if (entryCost) {
+            entryCost.innerHTML = '<img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1';
+        }
+
+        if (!card.querySelector('.boss-card-message')) {
+            const msg = document.createElement('div');
+            msg.id = `${config.prefix}-card-message`;
+            msg.className = 'boss-card-message';
+            card.appendChild(msg);
+        }
+    });
+}
 
 
 function normalizeBossTabLayoutV5() {

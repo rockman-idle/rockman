@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=bottom_tabs_touch_v196">
+<link rel="stylesheet" href="style.css?v=mine_rare_vein_v200">
 </head>
 
 <body>
@@ -529,6 +529,7 @@
                 <div class="ecan-upgrade-row"><span>보스 데미지</span><b id="ecan-boss-lv">LV.0</b><em id="ecan-boss-effect">+0%</em><button id="ecan-boss-btn" onclick="upgradeEcanStat('boss')">강화</button></div>
                 <div class="ecan-upgrade-row"><span>공격속도</span><b id="ecan-atkSpeed-lv">LV.0 / 40</b><em id="ecan-atkSpeed-effect">+0%</em><button id="ecan-atkSpeed-btn" onclick="upgradeEcanStat('atkSpeed')">강화</button></div>
                 <div class="ecan-upgrade-row"><span>차지확률</span><b id="ecan-crit-lv">LV.0 / 40</b><em id="ecan-crit-effect">+0%</em><button id="ecan-crit-btn" onclick="upgradeEcanStat('crit')">강화</button></div>
+                <div class="ecan-upgrade-row"><span>버스터 반감 관통</span><b id="ecan-busterPierce-lv">LV.0 / 20</b><em id="ecan-busterPierce-effect">반감 50%</em><button id="ecan-busterPierce-btn" onclick="upgradeEcanStat('busterPierce')">강화</button></div>
             </div>
         </div>
 
@@ -968,8 +969,6 @@
         <img id="mine-rock-img" src="sprites/mine/stone.png" class="mine-rock-img" alt="돌">
       </div>
 
-      <div class="mine-rock-hp-bg"><div id="mine-rock-hp-fill"></div></div>
-
     </div>
 
     <div id="mine-result-text" class="mine-result-text"></div>
@@ -983,7 +982,7 @@
           <img id="mine-pickaxe-img" src="sprites/mine/pickaxe/pickaxe_01.png" class="mine-pickaxe-img" alt="곡괭이">
           <span id="mine-pickaxe-enhance-badge" class="mine-pickaxe-enhance-badge">+0</span>
         </div>
-        <div class="mine-pickaxe-damage">광질 데미지 <b id="mine-damage">0</b> <span id="mine-registered-bonus-inline" class="mine-registered-bonus-inline">+0</span></div>
+        <div class="mine-pickaxe-damage">채광력 <b id="mine-damage">0</b> <span id="mine-registered-bonus-inline" class="mine-registered-bonus-inline">+0</span></div>
       </div>
 
       <div class="mine-enhance-side">
@@ -1004,10 +1003,13 @@
     </div>
 
     <div class="mine-help-box">
-      <div>- 강화 실패 시 강화가 1단계 하락합니다.</div>
-      <div>- 5강 단위는 보호선이라 5강 아래로 떨어지지 않습니다.</div>
+      <div>- 곡괭이질 1회마다 나사와 돌을 즉시 획득합니다.</div>
+      <div>- 곡괭이 단계, 강화 수치, 등록 보너스가 높을수록 채광 보상이 증가합니다.</div>
+      <div>- 라이트코어 광맥: 0.04% / 1~5단계 1개, 6~8단계 1개+20% 추가, 9~10단계 1개+35% 추가</div>
+      <div>- 보스재생카드 광맥: 0.025% / 기본 1개, 10단계 10% 확률로 추가 1개</div>
+      <div>- 블록맨(이었던 것): 2.5% / 나사와 돌 추가 획득</div>
+      <div>- 강화 실패 시 강화가 1단계 하락합니다. 5강 단위는 보호선입니다.</div>
       <div>- +7강부터 실패 시 5% 확률로 곡괭이가 파괴됩니다.</div>
-      <div>- 등록 슬롯을 누르면 확인창이 뜨고, 예를 누르면 현재 곡괭이가 해당 슬롯에 덮어쓰기 등록됩니다.</div>
       <div>- 등록한 곡괭이 데미지의 10%가 현재 곡괭이에 추가됩니다.</div>
       <div>- 등록한 곡괭이는 보관되지만, 현재 들고 있던 곡괭이는 사라집니다.</div>
       <div>- 리부트 시 현재 강화 중인 곡괭이는 초기화되지만, 등록 곡괭이는 유지됩니다.</div>
@@ -1092,7 +1094,7 @@
   </div>
 </div>
 
-<script src="game.js?v=mobile_tabs_fix_v193"></script>
+<script src="game.js?v=mine_rare_vein_v200"></script>
 
 
 </body>
