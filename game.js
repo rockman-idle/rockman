@@ -56,7 +56,8 @@ const defaultData = {
         partnerLv: 0,
         bossLv: 0,
         atkSpeedLv: 0,
-        critLv: 0
+        critLv: 0,
+        busterPierceLv: 0
     },
 
     partnerBlueprints: {
@@ -309,8 +310,15 @@ const SNIPERJOE_START_X = 335;
 const SNIPERJOE_BOTTOM = 20;
 const MET_BOTTOM = 19;
 const BOSS_BOTTOM = 24;
-const SNIPERJOE_BUSTER_DAMAGE_RATE = 0.5;
-const SNIPERJOE_DODGE_CHANCE = 0.10;
+const SNIPERJOE_BASE_BUSTER_DAMAGE_RATE = 0.5;
+const SNIPERJOE_BUSTER_PIERCE_GAIN_PER_LEVEL = 0.01;
+const SNIPERJOE_BUSTER_DAMAGE_RATE_MAX = 0.7;
+const SNIPERJOE_DODGE_CHANCE = 0.06;
+const SNIPERJOE_ACTION_INTERVAL_MS = 1800;
+const SNIPERJOE_ATTACK_CHANCE = 0.72;
+const SNIPERJOE_JUMP_ACTION_CHANCE = 0.06;
+const MET_ECAN_REWARD_MIN = 1;
+const MET_ECAN_REWARD_MAX = 5;
 
 // 투사체 속도 보정 핵심값입니다.
 // 모든 원거리 투사체가 같은 체감 속도로 이동하도록 공통 탄속(px/ms)을 사용합니다.
@@ -361,7 +369,8 @@ const ECAN_UPGRADE_CONFIG = {
     partner: { key: 'partnerLv', name: '동료 공격력', baseCost: 180, growth: 1.17, linear: 30, effectPerLevel: 0.003, max: Infinity, suffix: '%' },
     boss: { key: 'bossLv', name: '보스 데미지', baseCost: 200, growth: 1.17, linear: 35, effectPerLevel: 0.004, max: Infinity, suffix: '%' },
     atkSpeed: { key: 'atkSpeedLv', name: '공격속도', baseCost: 220, growth: 1.18, linear: 35, effectPerLevel: 0.0025, max: 40, suffix: '%' },
-    crit: { key: 'critLv', name: '차지확률', baseCost: 220, growth: 1.18, linear: 35, effectPerLevel: 0.25, max: 40, suffix: '%' }
+    crit: { key: 'critLv', name: '차지확률', baseCost: 220, growth: 1.18, linear: 35, effectPerLevel: 0.25, max: 40, suffix: '%' },
+    busterPierce: { key: 'busterPierceLv', name: '버스터 반감 관통', baseCost: 120, growth: 1.16, linear: 18, effectPerLevel: SNIPERJOE_BUSTER_PIERCE_GAIN_PER_LEVEL, max: 20, suffix: '%' }
 };
 
 
@@ -579,6 +588,18 @@ function getEcanBonus(type) {
     return Math.max(0, lv * config.effectPerLevel);
 }
 
+function getSniperJoeBusterDamageRate() {
+    const pierceLv = getEcanUpgradeLevel('busterPierce');
+    return Math.min(
+        SNIPERJOE_BUSTER_DAMAGE_RATE_MAX,
+        SNIPERJOE_BASE_BUSTER_DAMAGE_RATE + pierceLv * SNIPERJOE_BUSTER_PIERCE_GAIN_PER_LEVEL
+    );
+}
+
+function getSniperJoeBusterReductionPercent() {
+    return Math.max(0, Math.round((1 - getSniperJoeBusterDamageRate()) * 100));
+}
+
 function getEcanUpgradeCost(type) {
     const config = ECAN_UPGRADE_CONFIG[type];
     if (!config) return 0;
@@ -588,6 +609,7 @@ function getEcanUpgradeCost(type) {
 }
 
 function getEcanUpgradeEffectText(type) {
+    if (type === 'busterPierce') return `반감 ${getSniperJoeBusterReductionPercent()}%`;
     if (type === 'crit') return `+${getEcanBonus(type).toFixed(2).replace(/\.00$/, '')}%`;
     return `+${Math.round(getEcanBonus(type) * 10000) / 100}%`;
 }
@@ -2083,9 +2105,10 @@ function startSniperJoeActions() {
         if (superRockUnlockPaused) return;
         if (!isSniperJoeBattle() || enemyDead || playerDead || enemyStunned || sniperJoeJumping || sniperJoeAttacking) return;
 
-        if (Math.random() < 0.90) fireSniperJoeBullet();
-        else playSniperJoeJump();
-    }, 1650);
+        const roll = Math.random();
+        if (roll < SNIPERJOE_ATTACK_CHANCE) fireSniperJoeBullet();
+        else if (roll < SNIPERJOE_ATTACK_CHANCE + SNIPERJOE_JUMP_ACTION_CHANCE) playSniperJoeJump();
+    }, SNIPERJOE_ACTION_INTERVAL_MS);
 }
 
 function playSniperJoeJump() {
@@ -4048,7 +4071,7 @@ function applyEnemyDamage(rawDamage, isChargeShot = false, isBusterAttack = true
         }
 
         if (isBusterAttack) {
-            damage = Math.max(1, Math.floor(damage * SNIPERJOE_BUSTER_DAMAGE_RATE));
+            damage = Math.max(1, Math.floor(damage * getSniperJoeBusterDamageRate()));
         }
     }
 
@@ -4261,6 +4284,12 @@ function killEnemy() {
     gameData.screws += reward;
 
     const rewardTextData = { screws: reward };
+
+    if (!isSniperJoeBattle() && currentEnemyType === 'met') {
+        const ecanReward = rollInt(MET_ECAN_REWARD_MIN, MET_ECAN_REWARD_MAX);
+        gameData.crystals += ecanReward;
+        rewardTextData.crystals = ecanReward;
+    }
 
     if (isSniperJoeBattle()) {
         const currentStage = Math.max(1, Math.floor(gameData.stage || 1));
@@ -8771,8 +8800,113 @@ startZeroAttack();
 startMining();
 startBattleTips();
 
-// v195 정리: 구버전 normalizeCutmanBossCardUI 중복 선언 제거.
-// 실제 보스카드 최종 보정은 아래 v164 정의 후 v183 최종 함수로 연결됩니다.
+
+function normalizeCutmanBossCardUI() {
+    const root = document.getElementById('boss-tab');
+    if (!root) return;
+
+    root.querySelectorAll('.boss-group-title, .classic-title, .classic-boss-section-title, .boss-section-title, .boss-category-title, .boss-list-title, .cutman-card-title-strip').forEach(el => {
+        if ((el.textContent || '').includes('클래식 보스전') || el.classList.contains('classic-title') || el.classList.contains('boss-group-title')) {
+            el.remove();
+        }
+    });
+
+    const wrongBossPath = 'sprites/' + 'bosss' + '/reward/cardchip.png';
+    root.querySelectorAll('img').forEach(img => {
+        const src = img.getAttribute('src') || '';
+        if (src.includes(wrongBossPath)) {
+            img.setAttribute('src', 'sprites/boss/reward/cardchip.png');
+        }
+    });
+
+    const bossCardConfigs = [
+        {
+            key: 'classic_cutman',
+            prefix: 'cutman',
+            cardSelectors: [
+                '#boss-card-cutman',
+                '#cutman-boss-card',
+                '.cutman-card',
+                '.cutman-boss-card',
+                '[data-boss-key="classic_cutman"]',
+                '[onclick*="classic_cutman"]'
+            ],
+            rewardLineClass: 'cutman-reward-line boss-card-reward-line',
+            rewardHtml: `
+                <span class="reward-text-label">획득 가능 :</span>
+                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
+                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+                <span class="boss-reward-item">슈퍼록맨 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
+            `
+        },
+        {
+            key: 'classic_airman',
+            prefix: 'airman',
+            cardSelectors: [
+                '#boss-card-airman',
+                '.airman-card',
+                '[data-boss-key="classic_airman"]',
+                '[onclick*="classic_airman"]'
+            ],
+            rewardLineClass: 'airman-reward-line boss-card-reward-line',
+            rewardHtml: `
+                <span class="reward-text-label">획득 가능 :</span>
+                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
+                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
+                <span class="boss-reward-item">브루스버스터 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/bluesbusterchip.png" alt="브루스버스터 데이터칩"></span>
+            `
+        }
+    ];
+
+    bossCardConfigs.forEach(config => {
+        const card = config.cardSelectors
+            .map(selector => root.querySelector(selector))
+            .find(Boolean);
+        if (!card) return;
+
+        card.classList.add('classic-boss-card-template');
+        card.dataset.bossKey = config.key;
+
+        card.querySelectorAll('img').forEach(img => {
+            const src = img.getAttribute('src') || '';
+            if (src.includes('cutman_at_')) img.classList.add('cutman-preview-attack');
+            // 옛날 보정 코드에서 나사/돌 아이콘을 제거하던 문제 방지: 보상 라인은 아래에서 항상 재생성합니다.
+        });
+
+        card.querySelectorAll('.boss-card-reward-text, .boss-card-rewards').forEach(el => el.remove());
+
+        let line = card.querySelector('.boss-card-reward-line');
+        if (!line) {
+            line = document.createElement('div');
+        }
+        line.className = config.rewardLineClass;
+        line.innerHTML = config.rewardHtml;
+
+        const preview = card.querySelector('.boss-demo-stage') || card.querySelector('.boss-card-preview');
+        if (preview && preview.parentNode && line.previousElementSibling !== preview) {
+            preview.insertAdjacentElement('afterend', line);
+        } else if (!line.parentNode) {
+            card.appendChild(line);
+        }
+
+        const nameEl = card.querySelector('.boss-card-name');
+        if (nameEl && !nameEl.querySelector('.boss-level-label')) {
+            nameEl.insertAdjacentHTML('beforeend', ` <span id="${config.prefix}-boss-level-label" class="boss-level-label">Lv. 1</span>`);
+        }
+
+        const entryCost = card.querySelector('.boss-entry-cost');
+        if (entryCost) {
+            entryCost.innerHTML = '<img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1';
+        }
+
+        if (!card.querySelector('.boss-card-message')) {
+            const msg = document.createElement('div');
+            msg.id = `${config.prefix}-card-message`;
+            msg.className = 'boss-card-message';
+            card.appendChild(msg);
+        }
+    });
+}
 
 
 function normalizeBossTabLayoutV5() {
