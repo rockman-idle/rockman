@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=mine_rare_vein_v200">
+<link rel="stylesheet" href="style.css?v=mine_reward_float_v204">
 </head>
 
 <body>
@@ -18,6 +18,7 @@
     <img src="sprites/item/e_can.png">
     <img src="sprites/item/light_stone.png">
     <img src="sprites/item/boss_ticket.png">
+    <img src="sprites/item/block_egg.png">
     <img src="sprites/background/lab_classic.png">
     <img src="sprites/background/lab_x.png">
     <img src="sprites/background/lab_exe.png">
@@ -969,6 +970,10 @@
         <img id="mine-rock-img" src="sprites/mine/stone.png" class="mine-rock-img" alt="돌">
       </div>
 
+      <button id="blockman-egg-button" class="blockman-egg-button" onclick="event.preventDefault(); event.stopPropagation(); openBlockmanEggPanel(); return false;" aria-label="블록맨 에그">
+        <img src="sprites/item/block_egg.png" alt="블록맨 에그">
+      </button>
+
     </div>
 
     <div id="mine-result-text" class="mine-result-text"></div>
@@ -1003,16 +1008,13 @@
     </div>
 
     <div class="mine-help-box">
-      <div>- 곡괭이질 1회마다 나사와 돌을 즉시 획득합니다.</div>
       <div>- 곡괭이 단계, 강화 수치, 등록 보너스가 높을수록 채광 보상이 증가합니다.</div>
-      <div>- 라이트코어 광맥: 0.04% / 1~5단계 1개, 6~8단계 1개+20% 추가, 9~10단계 1개+35% 추가</div>
-      <div>- 보스재생카드 광맥: 0.025% / 기본 1개, 10단계 10% 확률로 추가 1개</div>
-      <div>- 블록맨(이었던 것): 2.5% / 나사와 돌 추가 획득</div>
       <div>- 강화 실패 시 강화가 1단계 하락합니다. 5강 단위는 보호선입니다.</div>
       <div>- +7강부터 실패 시 5% 확률로 곡괭이가 파괴됩니다.</div>
       <div>- 등록한 곡괭이 데미지의 10%가 현재 곡괭이에 추가됩니다.</div>
       <div>- 등록한 곡괭이는 보관되지만, 현재 들고 있던 곡괭이는 사라집니다.</div>
       <div>- 리부트 시 현재 강화 중인 곡괭이는 초기화되지만, 등록 곡괭이는 유지됩니다.</div>
+      <div>- 종종 특수 광맥이 등장합니다.</div>
     </div>
   </div>
 </div>
@@ -1094,7 +1096,7 @@
   </div>
 </div>
 
-<script src="game.js?v=mine_rare_vein_v200"></script>
+<script src="game.js?v=mine_reward_float_v204"></script>
 
 
 </body>

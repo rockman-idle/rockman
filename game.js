@@ -79,8 +79,10 @@ const defaultData = {
     minePickaxeFloorTier: 0,
     minePickaxeEnhance: 0,
     registeredPickaxes: [null, null, null],
-    mineRockMaxHp: 80,
-    mineRockHp: 80,
+    blockmanBlocks: 0,
+    blockmanEggOwned: false,
+    mineRockMaxHp: 2,
+    mineRockHp: 2,
 
     stage: 1,
 
@@ -257,8 +259,11 @@ gameData.registeredPickaxes = [0, 1, 2].map(index => {
     const enhance = Math.max(0, Math.min(10, Math.floor(item.enhance || 0)));
     return { tier, enhance };
 });
-gameData.mineRockMaxHp = Math.max(1, Math.floor(gameData.mineRockMaxHp || 80));
-gameData.mineRockHp = Math.max(1, Math.floor(gameData.mineRockHp || gameData.mineRockMaxHp));
+gameData.blockmanBlocks = Math.max(0, Math.min(10, Math.floor(gameData.blockmanBlocks || 0)));
+gameData.blockmanEggOwned = !!gameData.blockmanEggOwned;
+if (gameData.blockmanEggOwned && gameData.blockmanBlocks < 10) gameData.blockmanBlocks = 10;
+gameData.mineRockMaxHp = Math.max(2, Math.floor(gameData.mineRockMaxHp || 2));
+gameData.mineRockHp = Math.max(1, Math.min(gameData.mineRockMaxHp, Math.floor(gameData.mineRockHp || gameData.mineRockMaxHp)));
 gameData.rushFragments = Math.floor(gameData.rushFragments || 0);
 gameData.beatFragments = Math.floor(gameData.beatFragments || 0);
 gameData.rushOwned = gameData.rushOwned || false;
@@ -7293,12 +7298,16 @@ const PICKAXE_MAX_TIER = PICKAXE_NAMES.length - 1;
 const REGISTERED_PICKAXE_SLOT_COUNT = 3;
 const REGISTERED_PICKAXE_DAMAGE_RATE = 0.10;
 const MINE_REWARD_NERF_RATE = 0.75;
+const MINE_ROCK_HITS_PER_REWARD = 2;
 
-// v200: 광산은 돌 HP를 쓰지 않고 곡괭이질 1회마다 즉시 보상을 지급합니다.
-// 확률은 1회 채광 기준입니다. 1.2초 자동 채광 기준 6~7시간 방치 시 라이트코어 약 6~10개를 목표로 합니다.
+// v203: 광산 돌은 2회 타격 후 보상을 지급합니다.
+// 보상은 2회 타격 기준 2배로 지급해 기존 시간당 수급량을 유지합니다.
 const MINE_LIGHT_CORE_VEIN_CHANCE = 0.0004;      // 0.04%
 const MINE_BOSS_CARD_VEIN_CHANCE = 0.00025;      // 0.025%
 const MINE_BLOCKMAN_WAS_CHANCE = 0.025;          // 2.5%
+const MINE_BLOCKMAN_BLOCK_DROP_CHANCE = 0.004;   // 블록맨(이었던 것) 발생 시 0.4%
+const MINE_BLOCKMAN_BLOCKS_REQUIRED = 10;
+const BLOCKMAN_EGG_ICON_HTML = '<img src="sprites/item/block_egg.png" class="result-resource-icon blockman-egg-result-icon" alt="블록맨 에그">';
 const MINE_RARE_VEIN_SPRITES = {
     normal: 'sprites/mine/stone.png',
     lightCore: 'sprites/mine/light_core_vein.png',
@@ -7307,6 +7316,7 @@ const MINE_RARE_VEIN_SPRITES = {
 };
 const BOSS_REPLAY_CARD_ICON_HTML = '<img src="sprites/item/boss_ticket.png" class="result-resource-icon boss-ticket-resource-icon" alt="보스재생카드">';
 let mineRockSpriteResetTimer = null;
+let currentMineVeinType = null;
 let pendingPickaxeRegisterSlot = null;
 let rebootConfirmPauseActive = false;
 let rebootConfirmPreviousBattlePause = false;
@@ -7465,8 +7475,8 @@ function confirmPickaxeRegister() {
 }
 
 function getMineRockMaxHp() {
-    // v200: 돌 HP 시스템은 제거되었습니다. 기존 세이브/표시 호환용으로 1만 유지합니다.
-    return 1;
+    // v203: 돌 스프라이트/특수 광맥이 너무 빨리 지나가지 않도록 2회 타격으로 처리합니다.
+    return 2;
 }
 
 function getMineEnhanceCost() {
@@ -7647,7 +7657,7 @@ function rollMineVeinEvent() {
     return 'normal';
 }
 
-function setMineRockSpriteForVein(type = 'normal') {
+function setMineRockSpriteForVein(type = 'normal', options = {}) {
     const rock = document.getElementById('mine-rock-img');
     if (!rock) return;
     const src = MINE_RARE_VEIN_SPRITES[type] || MINE_RARE_VEIN_SPRITES.normal;
@@ -7658,12 +7668,18 @@ function setMineRockSpriteForVein(type = 'normal') {
         }
     };
     rock.src = src;
-    rock.classList.toggle('rare-vein', type !== 'normal');
+    rock.classList.toggle('rare-vein', type !== 'normal' && type !== 'blockmanWas');
     rock.classList.toggle('light-core-vein', type === 'lightCore');
     rock.classList.toggle('boss-card-vein', type === 'bossCard');
     rock.classList.toggle('blockman-was-vein', type === 'blockmanWas');
 
-    if (mineRockSpriteResetTimer) clearTimeout(mineRockSpriteResetTimer);
+    if (mineRockSpriteResetTimer) {
+        clearTimeout(mineRockSpriteResetTimer);
+        mineRockSpriteResetTimer = null;
+    }
+
+    if (options.hold) return;
+
     mineRockSpriteResetTimer = setTimeout(() => {
         const currentRock = document.getElementById('mine-rock-img');
         if (!currentRock) return;
@@ -7692,34 +7708,55 @@ function mineAttack() {
             miner.src = 'sprites/mine/pickelman_03.png';
 
             const miningPower = getMiningDamage();
-            const baseReward = getMineBaseRewardsPerSwing();
-            const veinType = rollMineVeinEvent();
-            const reward = {
-                screws: baseReward.screws,
-                stones: baseReward.stones,
-                soulStones: 0,
-                bossReplayCard: 0,
-                veinType
-            };
+            const maxHp = getMineRockMaxHp();
+            gameData.mineRockMaxHp = maxHp;
+            gameData.mineRockHp = Math.max(1, Math.min(maxHp, Math.floor(gameData.mineRockHp || maxHp)));
 
-            if (veinType === 'blockmanWas') {
-                const screwMultiplier = rollInt(1, 2);
-                const stoneMultiplier = rollInt(3, 6);
-                reward.screws += baseReward.screws * screwMultiplier;
-                reward.stones += baseReward.stones * stoneMultiplier;
-            } else if (veinType === 'lightCore') {
-                reward.soulStones = getMineLightCoreReward();
-            } else if (veinType === 'bossCard') {
-                reward.bossReplayCard = getMineBossCardReward();
+            if (!currentMineVeinType) currentMineVeinType = rollMineVeinEvent();
+            const veinType = currentMineVeinType;
+
+            gameData.mineRockHp = Math.max(0, gameData.mineRockHp - 1);
+            const isCleared = gameData.mineRockHp <= 0;
+            let reward = null;
+
+            if (isCleared) {
+                const baseReward = getMineBaseRewardsPerSwing();
+                reward = {
+                    screws: baseReward.screws * MINE_ROCK_HITS_PER_REWARD,
+                    stones: baseReward.stones * MINE_ROCK_HITS_PER_REWARD,
+                    soulStones: 0,
+                    bossReplayCard: 0,
+                    blockmanBlocks: 0,
+                    blockmanEggCreated: false,
+                    veinType
+                };
+
+                if (veinType === 'blockmanWas') {
+                    reward.screws = baseReward.screws * MINE_ROCK_HITS_PER_REWARD * 3;
+                    reward.stones = baseReward.stones * MINE_ROCK_HITS_PER_REWARD * 3;
+                    if (!gameData.blockmanEggOwned && gameData.blockmanBlocks < MINE_BLOCKMAN_BLOCKS_REQUIRED && Math.random() < MINE_BLOCKMAN_BLOCK_DROP_CHANCE) {
+                        reward.blockmanBlocks = 1;
+                    }
+                } else if (veinType === 'lightCore') {
+                    reward.soulStones = getMineLightCoreReward() * MINE_ROCK_HITS_PER_REWARD;
+                } else if (veinType === 'bossCard') {
+                    reward.bossReplayCard = getMineBossCardReward() * MINE_ROCK_HITS_PER_REWARD;
+                }
+
+                applyMineSwingReward(reward);
+                showMineDamageText(miningPower, reward);
             }
-
-            applyMineSwingReward(reward);
-            showMineDamageText(miningPower, reward);
 
             rock.classList.remove('mine-rock-hit');
             void rock.offsetWidth;
             rock.classList.add('mine-rock-hit');
-            setMineRockSpriteForVein(veinType);
+
+            if (isCleared) {
+                currentMineVeinType = null;
+                setMineRockSpriteForVein('normal');
+            } else {
+                setMineRockSpriteForVein(veinType, { hold: true });
+            }
 
             updateUI();
             saveData();
@@ -7737,58 +7774,91 @@ function applyMineSwingReward(reward) {
     const stoneReward = Math.max(0, Math.floor(reward.stones || 0));
     const soulReward = Math.max(0, Math.floor(reward.soulStones || 0));
     const bossCardReward = Math.max(0, Math.floor(reward.bossReplayCard || 0));
+    const blockmanBlockReward = Math.max(0, Math.floor(reward.blockmanBlocks || 0));
 
     gameData.screws += screwReward;
     gameData.stones += stoneReward;
     gameData.soulStones += soulReward;
     gameData.materials.bossReplayCard += bossCardReward;
+    if (blockmanBlockReward > 0 && !gameData.blockmanEggOwned) {
+        gameData.blockmanBlocks = Math.min(MINE_BLOCKMAN_BLOCKS_REQUIRED, Math.max(0, Math.floor(gameData.blockmanBlocks || 0)) + blockmanBlockReward);
+        if (gameData.blockmanBlocks >= MINE_BLOCKMAN_BLOCKS_REQUIRED) {
+            gameData.blockmanBlocks = MINE_BLOCKMAN_BLOCKS_REQUIRED;
+            gameData.blockmanEggOwned = true;
+            reward.blockmanEggCreated = true;
+        }
+    }
     gameData.mineRockMaxHp = getMineRockMaxHp();
     gameData.mineRockHp = gameData.mineRockMaxHp;
 
     const parts = [`+${screwReward}${SCREW_ICON_HTML}`, `+${stoneReward}${STONE_ICON_HTML}`];
     if (soulReward > 0) parts.push(`+${soulReward}${SOUL_STONE_ICON_HTML}`);
     if (bossCardReward > 0) parts.push(`+${bossCardReward}${BOSS_REPLAY_CARD_ICON_HTML}`);
+    if (blockmanBlockReward > 0 && !reward.blockmanEggCreated) parts.push(`블록맨 블록 ${Math.floor(gameData.blockmanBlocks || 0)}/${MINE_BLOCKMAN_BLOCKS_REQUIRED}`);
+    if (reward.blockmanEggCreated) parts.push(`블록맨 에그 생성! ${BLOCKMAN_EGG_ICON_HTML}`);
 
-    const prefix = reward.veinType === 'lightCore'
-        ? '라이트코어 광맥! '
-        : reward.veinType === 'bossCard'
-            ? '보스재생카드 광맥! '
-            : reward.veinType === 'blockmanWas'
-                ? '블록맨(이었던 것)! '
-                : '';
-    showMineResult(`${prefix}${parts.join(' / ')}`);
+    // 채광 보상 알림은 하단 결과줄 대신 돌 스프라이트 위 플로팅 문구로 표시합니다.
+    // 강화/제작 결과 문구와 겹치지 않도록 showMineResult는 강화 계열에서만 사용합니다.
 }
 
 function clearMineRock() {
-    // v200: 돌 HP 제거. 이전 함수 호출이 남아 있어도 1회 채광 보상으로 처리합니다.
+    // 이전 함수 호출 호환용: 2회 타격 기준 보상으로 처리합니다.
     const baseReward = getMineBaseRewardsPerSwing();
-    applyMineSwingReward({ ...baseReward, soulStones: 0, bossReplayCard: 0, veinType: 'normal' });
+    applyMineSwingReward({
+        screws: baseReward.screws * MINE_ROCK_HITS_PER_REWARD,
+        stones: baseReward.stones * MINE_ROCK_HITS_PER_REWARD,
+        soulStones: 0,
+        bossReplayCard: 0,
+        veinType: 'normal'
+    });
 }
 
 function showMineDamageText(miningPower, reward = null) {
     const screen = document.querySelector('.mine-screen');
-    if (!screen) return;
+    if (!screen || !reward || reward.pending) return;
 
     const text = document.createElement('div');
-    text.className = 'mine-damage-text';
+    text.className = 'mine-damage-text mine-reward-float-text';
     if (reward?.veinType === 'lightCore') text.classList.add('rare', 'light-core');
     if (reward?.veinType === 'bossCard') text.classList.add('rare', 'boss-card');
     if (reward?.veinType === 'blockmanWas') text.classList.add('rare', 'blockman-was');
 
-    if (reward?.veinType === 'lightCore') {
-        text.innerText = `라이트코어 +${Math.floor(reward.soulStones || 0)}`;
-    } else if (reward?.veinType === 'bossCard') {
-        text.innerText = `보스카드 +${Math.floor(reward.bossReplayCard || 0)}`;
-    } else if (reward?.veinType === 'blockmanWas') {
-        text.innerText = '블록맨(이었던 것)!';
+    const parts = [];
+    const screwReward = Math.max(0, Math.floor(reward.screws || 0));
+    const stoneReward = Math.max(0, Math.floor(reward.stones || 0));
+    const soulReward = Math.max(0, Math.floor(reward.soulStones || 0));
+    const bossCardReward = Math.max(0, Math.floor(reward.bossReplayCard || 0));
+    const blockmanBlockReward = Math.max(0, Math.floor(reward.blockmanBlocks || 0));
+
+    if (reward?.blockmanEggCreated) {
+        parts.push(`블록맨 에그! ${BLOCKMAN_EGG_ICON_HTML}`);
     } else {
-        text.innerText = `채광력 ${Math.floor(miningPower || 0)}`;
+        if (screwReward > 0) parts.push(`+${screwReward}${SCREW_ICON_HTML}`);
+        if (stoneReward > 0) parts.push(`+${stoneReward}${STONE_ICON_HTML}`);
+        if (soulReward > 0) parts.push(`+${soulReward}${SOUL_STONE_ICON_HTML}`);
+        if (bossCardReward > 0) parts.push(`+${bossCardReward}${BOSS_REPLAY_CARD_ICON_HTML}`);
+        if (blockmanBlockReward > 0) parts.push(`블록맨 블록 ${Math.floor(gameData.blockmanBlocks || 0)}/${MINE_BLOCKMAN_BLOCKS_REQUIRED}`);
     }
-    text.style.left = '236px';
-    text.style.bottom = '62px';
+
+    const prefix = reward.veinType === 'lightCore'
+        ? '라이트코어! '
+        : reward.veinType === 'bossCard'
+            ? '보스카드! '
+            : reward.veinType === 'blockmanWas'
+                ? '블록맨! '
+                : '';
+
+    text.innerHTML = `${prefix}${parts.join(' / ')}`;
+    text.style.left = '206px';
+    text.style.bottom = '72px';
     screen.appendChild(text);
 
-    setTimeout(() => text.remove(), reward?.veinType && reward.veinType !== 'normal' ? 980 : 700);
+    setTimeout(() => text.remove(), reward?.veinType && reward.veinType !== 'normal' ? 1200 : 900);
+}
+
+function openBlockmanEggPanel() {
+    if (!gameData.blockmanEggOwned) return;
+    showMineResult(`블록맨 에그 ${BLOCKMAN_EGG_ICON_HTML} / 다음 성장 화면은 준비 중입니다.`);
 }
 
 function showMineResult(message) {
@@ -7934,8 +8004,8 @@ function performTranscend() {
     gameData.minePickaxeTier = 0;
     gameData.minePickaxeFloorTier = 0;
     gameData.minePickaxeEnhance = 0;
-    gameData.mineRockMaxHp = 80;
-    gameData.mineRockHp = 80;
+    gameData.mineRockMaxHp = getMineRockMaxHp();
+    gameData.mineRockHp = gameData.mineRockMaxHp;
     gameData.lv = { ...defaultData.lv };
     gameData.costs = { ...defaultData.costs };
     gameData.partnerSpeedLv = { ...defaultData.partnerSpeedLv };
@@ -8562,6 +8632,12 @@ if (mineRegisteredBonusInline) {
     slot.innerHTML = `<img src="${getRegisteredPickaxeSprite(item)}" alt="등록 곡괭이"><b>+${item.enhance}</b><em>+${getRegisteredPickaxeSingleBonusDamage(item)}</em><small>${getRegisteredPickaxeName(item)}</small>`;
 });
 
+const blockmanEggButton = document.getElementById('blockman-egg-button');
+if (blockmanEggButton) {
+    blockmanEggButton.classList.toggle('active', !!gameData.blockmanEggOwned);
+    blockmanEggButton.style.display = gameData.blockmanEggOwned ? 'flex' : 'none';
+}
+
 const mineChance = document.getElementById('mine-enhance-chance');
 if (mineChance) mineChance.innerText = `${getMineEnhanceChance()}%`;
 
@@ -8575,7 +8651,7 @@ const mineCost = document.getElementById('mine-enhance-cost');
 if (mineCost) mineCost.innerText = getMineEnhanceCost().toLocaleString();
 
 const mineHpText = document.getElementById('mine-rock-hp-text');
-if (mineHpText) mineHpText.innerText = '곡괭이질 1회 보상';
+if (mineHpText) mineHpText.innerText = '돌 내구도 2회';
 
 const mineHpFill = document.getElementById('mine-rock-hp-fill');
 if (mineHpFill) mineHpFill.style.width = '100%';

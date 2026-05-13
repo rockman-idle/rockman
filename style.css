@@ -16223,8 +16223,8 @@ body.mobile-mode .footer-row {
 }
 
 .mine-rock-img.blockman-was-vein {
-  color: #ffd700;
-  filter: brightness(1.35) saturate(1.25) drop-shadow(0 0 10px #ffd700);
+  color: inherit;
+  filter: none;
 }
 
 .mine-damage-text.rare {
@@ -16249,3 +16249,52 @@ body.mobile-mode .footer-row {
   text-shadow: 0 0 6px #000, 0 0 10px #ffd700;
 }
 
+
+/* v201: 블록맨 에그 표시 */
+.blockman-egg-button {
+  position: absolute;
+  right: 8px;
+  bottom: 28px;
+  width: 38px;
+  height: 38px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  background: rgba(5, 5, 5, 0.72);
+  border: 2px solid #ffd700;
+  border-radius: 8px;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.65), inset 0 0 8px rgba(255, 215, 0, 0.18);
+  cursor: pointer;
+  z-index: 35;
+  box-sizing: border-box;
+}
+
+.blockman-egg-button.active {
+  display: flex;
+  animation: blockmanEggIdle 1.8s ease-in-out infinite;
+}
+
+.blockman-egg-button img {
+  width: 30px;
+  height: 30px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.blockman-egg-button:hover {
+  filter: brightness(1.15);
+}
+
+.blockman-egg-result-icon {
+  width: 16px;
+  height: 16px;
+  image-rendering: pixelated;
+  vertical-align: -3px;
+}
+
+@keyframes blockmanEggIdle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
