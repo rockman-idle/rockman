@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=met_ecan_buster_pierce_tabs_fix_v199">
+<link rel="stylesheet" href="style.css?v=mine_reward_balance_v206">
 </head>
 
 <body>
@@ -18,6 +18,7 @@
     <img src="sprites/item/e_can.png">
     <img src="sprites/item/light_stone.png">
     <img src="sprites/item/boss_ticket.png">
+    <img src="sprites/item/block_egg.png">
     <img src="sprites/background/lab_classic.png">
     <img src="sprites/background/lab_x.png">
     <img src="sprites/background/lab_exe.png">
@@ -273,7 +274,7 @@
           <img id="pickaxe-register-current-img" src="sprites/mine/pickaxe/pickaxe_01.png" alt="현재 곡괭이">
           <div>
             <b id="pickaxe-register-current-name">록괭이 +0</b>
-            <span id="pickaxe-register-current-damage">기본 데미지 0 / 등록 보너스 +0</span>
+            <span id="pickaxe-register-current-damage">기본 보상 나사 0 / 돌 0</span>
           </div>
         </div>
       </div>
@@ -969,7 +970,9 @@
         <img id="mine-rock-img" src="sprites/mine/stone.png" class="mine-rock-img" alt="돌">
       </div>
 
-      <div class="mine-rock-hp-bg"><div id="mine-rock-hp-fill"></div></div>
+      <button id="blockman-egg-button" class="blockman-egg-button" onclick="event.preventDefault(); event.stopPropagation(); openBlockmanEggPanel(); return false;" aria-label="블록맨 에그">
+        <img src="sprites/item/block_egg.png" alt="블록맨 에그">
+      </button>
 
     </div>
 
@@ -984,7 +987,7 @@
           <img id="mine-pickaxe-img" src="sprites/mine/pickaxe/pickaxe_01.png" class="mine-pickaxe-img" alt="곡괭이">
           <span id="mine-pickaxe-enhance-badge" class="mine-pickaxe-enhance-badge">+0</span>
         </div>
-        <div class="mine-pickaxe-damage">광질 데미지 <b id="mine-damage">0</b> <span id="mine-registered-bonus-inline" class="mine-registered-bonus-inline">+0</span></div>
+        <div class="mine-pickaxe-damage">채광 보상 <b id="mine-damage">0</b> <span id="mine-registered-bonus-inline" class="mine-registered-bonus-inline"></span></div>
       </div>
 
       <div class="mine-enhance-side">
@@ -1005,13 +1008,9 @@
     </div>
 
     <div class="mine-help-box">
-      <div>- 강화 실패 시 강화가 1단계 하락합니다.</div>
-      <div>- 5강 단위는 보호선이라 5강 아래로 떨어지지 않습니다.</div>
-      <div>- +7강부터 실패 시 5% 확률로 곡괭이가 파괴됩니다.</div>
-      <div>- 등록 슬롯을 누르면 확인창이 뜨고, 예를 누르면 현재 곡괭이가 해당 슬롯에 덮어쓰기 등록됩니다.</div>
-      <div>- 등록한 곡괭이 데미지의 10%가 현재 곡괭이에 추가됩니다.</div>
-      <div>- 등록한 곡괭이는 보관되지만, 현재 들고 있던 곡괭이는 사라집니다.</div>
       <div>- 리부트 시 현재 강화 중인 곡괭이는 초기화되지만, 등록 곡괭이는 유지됩니다.</div>
+      <div>- 종종 특수 광맥이 등장합니다.</div>
+      <div>- 힘내라, 피켈맨!</div>
     </div>
   </div>
 </div>
@@ -1093,7 +1092,7 @@
   </div>
 </div>
 
-<script src="game.js?v=met_ecan_buster_pierce_tabs_fix_v199"></script>
+<script src="game.js?v=mine_reward_table_v205"></script>
 
 
 </body>

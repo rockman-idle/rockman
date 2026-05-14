@@ -7293,21 +7293,23 @@ const PICKAXE_NAMES = ['록괭이', '록괭이X', '록괭이.EXE', '록괭대시
 // 곡괭이 단계별 채광 보상 테이블입니다.
 // 채광력 수치를 없애고, 화면에는 실제 나사/돌 수급량만 보여줍니다.
 const PICKAXE_REWARD_TABLE = [
+    // 다음 단계 +0이 이전 단계 +10보다 항상 좋도록 기본 보상을 계단식으로 크게 벌립니다.
     { screws: 4, stones: 1 },
-    { screws: 7, stones: 2 },
-    { screws: 11, stones: 3 },
-    { screws: 16, stones: 4 },
-    { screws: 22, stones: 6 },
-    { screws: 30, stones: 8 },
-    { screws: 40, stones: 11 },
-    { screws: 52, stones: 14 },
-    { screws: 66, stones: 18 },
-    { screws: 82, stones: 23 }
+    { screws: 16, stones: 5 },
+    { screws: 30, stones: 9 },
+    { screws: 46, stones: 14 },
+    { screws: 64, stones: 20 },
+    { screws: 84, stones: 27 },
+    { screws: 106, stones: 35 },
+    { screws: 130, stones: 44 },
+    { screws: 156, stones: 54 },
+    { screws: 184, stones: 65 }
 ];
-const PICKAXE_ENHANCE_REWARD = { screws: 3, stones: 1 };
+const PICKAXE_ENHANCE_SCREW_PER_LEVEL = 1;
+const PICKAXE_ENHANCE_STONE_STEP = 3;
 const PICKAXE_MAX_TIER = PICKAXE_NAMES.length - 1;
 const REGISTERED_PICKAXE_SLOT_COUNT = 3;
-const REGISTERED_PICKAXE_REWARD_RATE = 0.20;
+const REGISTERED_PICKAXE_REWARD_RATE = 0.10;
 
 // 광산은 돌 스프라이트를 2회 타격하면 보상을 지급합니다.
 // 확률은 보상 지급 1회 기준입니다. 1.2초 자동 채광 기준 6~7시간 방치 시 라이트코어 약 6~10개를 목표로 합니다.
@@ -7361,8 +7363,8 @@ function getPickaxeRewardBase(tier = gameData.minePickaxeTier, enhance = gameDat
     const safeEnhance = Math.max(0, Math.min(10, Math.floor(enhance || 0)));
     const baseReward = PICKAXE_REWARD_TABLE[tierIndex] || PICKAXE_REWARD_TABLE[0];
     return {
-        screws: Math.max(0, Math.floor((baseReward.screws || 0) + safeEnhance * PICKAXE_ENHANCE_REWARD.screws)),
-        stones: Math.max(0, Math.floor((baseReward.stones || 0) + safeEnhance * PICKAXE_ENHANCE_REWARD.stones))
+        screws: Math.max(0, Math.floor((baseReward.screws || 0) + safeEnhance * PICKAXE_ENHANCE_SCREW_PER_LEVEL)),
+        stones: Math.max(0, Math.floor((baseReward.stones || 0) + Math.floor(safeEnhance / PICKAXE_ENHANCE_STONE_STEP)))
     };
 }
 
