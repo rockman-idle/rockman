@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=mine_reward_balance_v206">
+<link rel="stylesheet" href="style.css?v=block_city_v206">
 </head>
 
 <body>
 <div class="preload">
-    <img src="sprites/background/stage_01.png">
+    <img src="sprites/background/stage_01_loop.png">
     <img src="sprites/background/development_lab_bg.png">
     <img src="sprites/card/attack_card.png">
     <img src="sprites/card/crit_card.png">
@@ -144,7 +144,6 @@
     <img src="sprites/partner/forte/forte_portrait.png">
     <img src="sprites/partner/x/x_portrait.png">
     <img src="sprites/partner/zero/zero_portrait.png">
-    <img src="sprites/armor/super-r/super-r.png">
     <img src="sprites/armor/super-r/super_r_01.png">
     <img src="sprites/armor/super-r/super_r_02.png">
     <img src="sprites/armor/super-r/super_r_03.png">
@@ -157,7 +156,6 @@
     <img src="sprites/armor/super-r/super_r_walk_03.png">
     <img src="sprites/armor/super-r/super_r_st.png">
     <img src="sprites/armor/super-r/super_r_c_bullet_01.png">
-    <img src="sprites/boss/super-rboss/super-rboss.png">
     <img src="sprites/boss/super-rboss/cutman/cutman_portrait.png">
     <img src="sprites/boss/super-rboss/cutman/cutman_at_01.png">
     <img src="sprites/boss/super-rboss/cutman/cutman_at_02.png">
@@ -303,21 +301,20 @@
 
 <div class="container">
 <div class="tab-bookmark-left">
-    <button id="battle-tab-btn" class="tab-btn left-tab-btn active" onclick="showTab('battle')">전투</button>
-    <button id="mine-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('mine')">광산</button>
-    <button id="boss-tab-btn" class="tab-btn left-tab-btn boss-replay-tab-btn" onclick="showTab('boss')">보스<br>재생실</button>
-    <button id="armor-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('armor')">개발실</button>
-    <button id="transcend-tab-btn" class="tab-btn left-tab-btn transcend-tab-btn" onclick="showTab('transcend')">리부트</button>
+    <button id="battle-tab-btn" class="tab-btn left-tab-btn active" onclick="showTab('battle')">&#51204;&#53804;</button>
+    <button id="mine-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('mine')">&#44305;&#49328;<br>&#48660;&#47197;&#49884;&#54000;</button>
+    <button id="boss-tab-btn" class="tab-btn left-tab-btn boss-replay-tab-btn" onclick="showTab('boss')">&#48372;&#49828;<br>&#51116;&#49373;&#49892;</button>
+    <button id="armor-tab-btn" class="tab-btn left-tab-btn" onclick="showTab('armor')">&#44060;&#48156;&#49892;</button>
+    <button id="transcend-tab-btn" class="tab-btn left-tab-btn transcend-tab-btn" onclick="showTab('transcend')">&#47532;&#48512;&#53944;</button>
 </div>
 
 <div class="tab-bookmark">
-    <button id="status-tab-btn" class="tab-btn status-right-tab-btn" onclick="showTab('status')">상태</button>
-    <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">동료</button>
-    <button type="button" id="sync-tab-btn" class="tab-btn mobile-sync-tab-btn" onclick="toggleMobileSyncTab(event)">동료<br>싱크로율</button>
-    <button id="card-tab-btn" class="tab-btn" onclick="showTab('card')">카드</button>
-    <button type="button" id="sleep-mode-btn" class="tab-btn mobile-sleep-tab-btn" onclick="event.stopPropagation(); toggleSleepMode();">절전</button>
+    <button id="status-tab-btn" class="tab-btn status-right-tab-btn" onclick="showTab('status')">&#48120;&#49496;<br>&#49345;&#53468;</button>
+    <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">&#46041;&#47308;</button>
+    <button type="button" id="sync-tab-btn" class="tab-btn mobile-sync-tab-btn" onclick="toggleMobileSyncTab(event)">SYNC</button>
+    <button id="card-tab-btn" class="tab-btn" onclick="showTab('card')">&#52852;&#46300;</button>
+    <button type="button" id="sleep-mode-btn" class="tab-btn mobile-sleep-tab-btn" onclick="event.stopPropagation(); toggleSleepMode();">&#51208;&#51204;</button>
 </div>
-
 <div id="resource-wing" class="resource-side-bar" aria-label="보유 재화">
     <div class="resource-side-row"><img src="sprites/item/screw.png" class="resource-icon item-resource-icon" alt="나사"> <span id="screws">0</span></div>
     <div class="resource-side-row"><img src="sprites/item/e_can.png" class="resource-icon item-resource-icon" alt="E캔"> <span id="crystals">0</span></div>
@@ -952,8 +949,12 @@
 
 <div id="mine-tab" class="tab-content">
   <div class="system-panel mine-panel">
-    <h2 class="section-heading-pixel">MINE</h2>
-    <div class="mine-guide-text">피켈맨 : 여기는 야근 수당이 어떻게 돼요?</div>
+    <div id="mine-view-switch" class="mine-view-switch" role="tablist" aria-label="mine view switch">
+      <button type="button" id="mine-view-mine-btn" class="mine-view-btn active" onclick="setMineSubView('mine')" aria-selected="true">MINE</button>
+      <button type="button" id="mine-view-city-btn" class="mine-view-btn" onclick="setMineSubView('city')" aria-selected="false">CITY</button>
+    </div>
+
+    <div id="mine-main-view" class="mine-subview active"><div class="mine-guide-text">피켈맨 : 여기는 야근 수당이 어떻게 돼요?</div>
 
     <div class="mine-screen">
       <div id="miner-area" class="miner-area">
@@ -1012,23 +1013,70 @@
       <div>- 종종 특수 광맥이 등장합니다.</div>
       <div>- 힘내라, 피켈맨!</div>
     </div>
+    </div>
+
+    <div id="mine-city-view" class="mine-subview" hidden>
+      <div class="block-city-panel">
+        <div class="block-city-hero">
+          <img src="sprites/item/block_egg.png" class="block-city-egg-img" alt="BLOCKMAN EGG">
+          <div class="block-city-titlebox">
+            <div class="block-city-title">BLOCK CITY</div>
+            <div id="block-city-state" class="block-city-state">BLOCKMAN EGG LOCKED</div>
+          </div>
+        </div>
+
+        <div class="block-city-grid">
+          <div class="block-city-card"><span>CITY CORE</span><b id="block-city-core">LOCKED</b></div>
+          <div class="block-city-card"><span>BLOCKS</span><b id="block-city-blocks">0 / 10</b></div>
+          <div class="block-city-card"><span>BUILD SLOT</span><b id="block-city-slots">READY SOON</b></div>
+        </div>
+
+        <div id="block-city-note" class="block-city-note">
+          BLOCKMAN vein drops 1 block piece. Gather 10 pieces to wake the EGG and open the first city build.
+        </div>
+
+        <button type="button" id="block-city-egg-btn" class="block-city-egg-btn" onclick="openBlockmanEggPanel()">CHECK EGG</button>
+      </div>
+    </div>
   </div>
 </div>
-
 
 <div id="sync-tab" class="tab-content"><div class="mobile-sync-tab-dummy"></div></div>
 
 <div id="status-tab" class="tab-content">
   <div class="system-panel status-panel">
-    <h2 class="section-heading-pixel status-heading">STATUS</h2>
-
     <div class="status-section">
-      <div class="status-legend"><span class="status-card-bonus">보라색 : 카드</span><span class="status-transcend-bonus">노란색 : 리부트</span><span class="status-ecan-bonus">하늘색 : E캔</span><span class="status-soul-bonus">연두색 : 라이트코어</span></div>
-      <div id="status-stat-rows" class="status-stat-rows"></div>
+      <div class="status-view-switch" role="tablist" aria-label="status view switch">
+        <button type="button" id="status-view-stats-btn" class="status-view-btn active" onclick="setStatusSubView('stats')" aria-selected="true">&#49345;&#53468;</button>
+        <button type="button" id="status-view-missions-btn" class="status-view-btn" onclick="setStatusSubView('missions')" aria-selected="false">&#48120;&#49496; <span id="mission-ready-badge" class="mission-ready-badge"></span></button>
+      </div>
+
+      <div id="status-stats-view" class="status-subview active">
+        <div class="status-legend"><span class="status-card-bonus">CARD</span><span class="status-transcend-bonus">REBOOT</span><span class="status-ecan-bonus">E-CAN</span><span class="status-soul-bonus">LIGHT CORE</span></div>
+        <div id="status-stat-rows" class="status-stat-rows"></div>
+      </div>
+
+      <div id="status-missions-view" class="status-subview">
+        <div class="mission-panel" id="mission-panel">
+          <div class="mission-panel-head">
+            <span>MISSION</span>
+            <b id="mission-summary">0 / 0</b>
+          </div>
+          <div id="mission-list" class="mission-list"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-
+<div id="status-detail-popup" class="status-detail-popup" onclick="closeStatusDetail()">
+  <div class="status-detail-box" onclick="event.stopPropagation()">
+    <button type="button" class="status-detail-close" onclick="closeStatusDetail()" aria-label="상태 상세 닫기">X</button>
+    <div id="status-detail-title" class="status-detail-title">상태 상세</div>
+    <div id="status-detail-total" class="status-detail-total">총합 <b>0</b></div>
+    <div id="status-detail-list" class="status-detail-list"></div>
+    <div class="status-detail-hint">공격력/체력 행을 누르면 다시 확인할 수 있습니다.</div>
+  </div>
+</div>
 <div id="transcend-tab" class="tab-content">
   <div class="system-panel transcend-panel">
     <h2 class="section-heading-pixel reboot-heading">REBOOT</h2>
@@ -1092,7 +1140,7 @@
   </div>
 </div>
 
-<script src="game.js?v=mine_reward_table_v205"></script>
+<script src="game.js?v=block_city_v206"></script>
 
 
 </body>

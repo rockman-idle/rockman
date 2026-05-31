@@ -13,6 +13,10 @@ const defaultData = {
         bossReplayCard: 0
     },
 
+    missions: {
+        claimed: {}
+    },
+
     bossProgress: {
         classic_cutman: {
             clearedLevel: 0
@@ -167,6 +171,7 @@ let gameData = {
     costs: { ...defaultData.costs, ...(savedData.costs || {}) },
     partnerSync: { ...defaultData.partnerSync, ...(savedData.partnerSync || {}) },
     materials: { ...defaultData.materials, ...(savedData.materials || {}) },
+    missions: { ...defaultData.missions, ...(savedData.missions || {}) },
     bossProgress: { ...defaultData.bossProgress, ...(savedData.bossProgress || {}) },
     development: { ...defaultData.development, ...(savedData.development || {}) },
     transcend: { ...defaultData.transcend, ...(savedData.transcend || {}) },
@@ -203,6 +208,8 @@ gameData.materials = { ...defaultData.materials, ...(gameData.materials || {}) }
 Object.keys(defaultData.materials).forEach(key => {
     gameData.materials[key] = Math.max(0, Math.floor(gameData.materials[key] || 0));
 });
+gameData.missions = { ...defaultData.missions, ...(gameData.missions || {}) };
+gameData.missions.claimed = { ...(gameData.missions.claimed || {}) };
 gameData.bossProgress = { ...defaultData.bossProgress, ...(gameData.bossProgress || {}) };
 Object.keys(defaultData.bossProgress).forEach(key => {
     const progress = gameData.bossProgress[key] || {};
@@ -6184,6 +6191,66 @@ function updateDevelopmentLabUI() {
 }
 
 
+let currentMineSubView = 'mine';
+
+function setMineSubView(view = 'mine') {
+    currentMineSubView = view === 'city' ? 'city' : 'mine';
+    updateMineSubView();
+}
+
+function updateMineSubView() {
+    const isCity = currentMineSubView === 'city';
+    const mineView = document.getElementById('mine-main-view');
+    const cityView = document.getElementById('mine-city-view');
+    const mineBtn = document.getElementById('mine-view-mine-btn');
+    const cityBtn = document.getElementById('mine-view-city-btn');
+
+    if (mineView) {
+        mineView.classList.toggle('active', !isCity);
+        mineView.hidden = isCity;
+    }
+    if (cityView) {
+        cityView.classList.toggle('active', isCity);
+        cityView.hidden = !isCity;
+    }
+    if (mineBtn) {
+        mineBtn.classList.toggle('active', !isCity);
+        mineBtn.setAttribute('aria-selected', String(!isCity));
+    }
+    if (cityBtn) {
+        cityBtn.classList.toggle('active', isCity);
+        cityBtn.setAttribute('aria-selected', String(isCity));
+    }
+}
+
+function updateBlockCityUI() {
+    const blocks = Math.max(0, Math.min(MINE_BLOCKMAN_BLOCKS_REQUIRED, Math.floor(gameData.blockmanBlocks || 0)));
+    const eggOwned = !!gameData.blockmanEggOwned;
+    const state = document.getElementById('block-city-state');
+    const core = document.getElementById('block-city-core');
+    const blockText = document.getElementById('block-city-blocks');
+    const slots = document.getElementById('block-city-slots');
+    const note = document.getElementById('block-city-note');
+    const btn = document.getElementById('block-city-egg-btn');
+    const panel = document.querySelector('.block-city-panel');
+
+    if (panel) panel.classList.toggle('egg-owned', eggOwned);
+    if (state) state.innerText = eggOwned ? 'BLOCKMAN EGG READY' : `BLOCK PIECES ${blocks} / ${MINE_BLOCKMAN_BLOCKS_REQUIRED}`;
+    if (core) core.innerText = eggOwned ? 'EGG CORE' : 'LOCKED';
+    if (blockText) blockText.innerText = `${blocks} / ${MINE_BLOCKMAN_BLOCKS_REQUIRED}`;
+    if (slots) slots.innerText = eggOwned ? '1 / 1 READY' : 'LOCKED';
+    if (note) {
+        note.innerText = eggOwned
+            ? 'The EGG is ready. Next step: build Block House, Forge, and Request Board here.'
+            : 'BLOCKMAN vein drops 1 block piece. Gather 10 pieces to wake the EGG and unlock the first city build.';
+    }
+    if (btn) {
+        btn.disabled = !eggOwned;
+        btn.classList.toggle('active', eggOwned);
+        btn.innerText = eggOwned ? 'OPEN EGG' : 'EGG LOCKED';
+    }
+}
+
 function showTab(tabName) {
     if ((bossBattleEntryPending || (isBossBattle && !enemyDead && !playerDead)) && tabName !== 'battle') {
         updateBossBattleTabLockState();
@@ -6213,6 +6280,11 @@ function showTab(tabName) {
     if (targetBtn) targetBtn.classList.add('active');
     refreshMobileSyncTabState(tabName);
 
+    if (tabName === 'mine') {
+        updateMineSubView();
+        updateBlockCityUI();
+    }
+
     if (tabName === 'armor') {
         setTimeout(() => {
             updateDevelopmentLabUI();
@@ -6225,31 +6297,6 @@ function showTab(tabName) {
     if (tabName === 'boss' && typeof stabilizeBossCardsV168 === 'function') {
         stabilizeBossCardsV168();
     }
-}
-
-function showArmorTab(type) {
-    const armorImg = document.querySelector('#armor-tab .armor-main-image') || document.getElementById('armor-img');
-    const armorName = document.getElementById('armor-name');
-
-    const armorData = {
-        'super-r': { name: '슈퍼록맨', img: 'sprites/armor/super-r/super-r.png' },
-        'first': { name: '퍼스트아머', img: 'sprites/armor/super-r/super-r.png' },
-        'second': { name: '세컨드아머', img: 'sprites/armor/super-r/super-r.png' },
-        'third': { name: '서드아머', img: 'sprites/armor/super-r/super-r.png' },
-        'fourth': { name: '포스아머', img: 'sprites/armor/super-r/super-r.png' }
-    };
-
-    if (!armorData[type]) return;
-
-    if (armorImg) armorImg.src = armorData[type].img;
-    if (armorName) armorName.innerText = armorData[type].name;
-
-    document.querySelectorAll('#armor-tab .inner-tab').forEach(btn => {
-        btn.classList.remove('active');
-    });
-
-    const activeBtn = document.querySelector(`#armor-tab .inner-tab[onclick*="${type}"]`);
-    if (activeBtn) activeBtn.classList.add('active');
 }
 
 function toggleBossGroup(groupKey) {
@@ -7316,7 +7363,7 @@ const REGISTERED_PICKAXE_REWARD_RATE = 0.10;
 const MINE_LIGHT_CORE_VEIN_CHANCE = 0.0004;      // 0.04%
 const MINE_BOSS_CARD_VEIN_CHANCE = 0.00025;      // 0.025%
 const MINE_BLOCKMAN_WAS_CHANCE = 0.025;          // 2.5%
-const MINE_BLOCKMAN_BLOCK_DROP_CHANCE = 0.004;   // 블록맨(이었던 것) 발생 시 0.4%
+const MINE_BLOCKMAN_BLOCK_DROP_CHANCE = 1;       // v205: guaranteed block piece from BLOCKMAN vein
 const MINE_BLOCKMAN_BLOCKS_REQUIRED = 10;
 const BLOCKMAN_EGG_ICON_HTML = '<img src="sprites/item/block_egg.png" class="result-resource-icon blockman-egg-result-icon" alt="블록맨 에그">';
 const MINE_RARE_VEIN_SPRITES = {
@@ -7947,6 +7994,226 @@ function startBattleTips() {
 }
 
 
+const MISSION_CONFIG = [
+    {
+        id: 'stage_10',
+        title: '초반 고속도로 돌파',
+        desc: '스테이지 10 도달',
+        type: 'stage',
+        target: 10,
+        rewards: { screws: 1000, crystals: 10 }
+    },
+    {
+        id: 'stage_50',
+        title: '중반 루트 진입',
+        desc: '스테이지 50 도달',
+        type: 'stage',
+        target: 50,
+        rewards: { screws: 15000, crystals: 80, bossReplayCard: 1 }
+    },
+    {
+        id: 'stage_100',
+        title: '리부트 준비 완료',
+        desc: '스테이지 100 도달',
+        type: 'stage',
+        target: 100,
+        rewards: { screws: 50000, crystals: 250, soulStones: 1, bossReplayCard: 3 }
+    },
+    {
+        id: 'reboot_1',
+        title: '첫 REBOOT',
+        desc: '리부트 1회 달성',
+        type: 'reboot',
+        target: 1,
+        rewards: { soulStones: 3, bossReplayCard: 2 }
+    },
+    {
+        id: 'mine_100',
+        title: '광산 적응',
+        desc: '돌 100개 보유',
+        type: 'stones',
+        target: 100,
+        rewards: { screws: 5000, crystals: 30 }
+    },
+    {
+        id: 'card_chip_30',
+        title: '카드 연구 샘플',
+        desc: '카드칩 30개 보유',
+        type: 'cardChip',
+        target: 30,
+        rewards: { optionChangeChip: 2 }
+    },
+    {
+        id: 'cutman_1',
+        title: '컷맨 첫 격파',
+        desc: '컷맨 Lv.1 클리어',
+        type: 'bossCutman',
+        target: 1,
+        rewards: { cardChip: 20, bossReplayCard: 2 }
+    },
+    {
+        id: 'superrock_ready',
+        title: '슈퍼 록맨 해금',
+        desc: '슈퍼 록맨 연구 완료',
+        type: 'superRockUnlocked',
+        target: 1,
+        rewards: { bossReplayCard: 3, optionChangeChip: 2, soulStones: 1 }
+    }
+];
+
+const MISSION_REWARD_META = {
+    screws: { label: '나사', icon: SCREW_ICON_HTML },
+    crystals: { label: 'E캔', icon: CRYSTAL_ICON_HTML },
+    stones: { label: '돌', icon: STONE_ICON_HTML },
+    soulStones: { label: '라이트코어', icon: SOUL_STONE_ICON_HTML },
+    cardChip: { label: '카드칩', icon: '<img src="sprites/boss/reward/cardchip.png" class="result-resource-icon" alt="카드칩">' },
+    superRockChip: { label: '슈퍼록맨칩', icon: '<img src="sprites/boss/reward/superrockchip.png" class="result-resource-icon" alt="슈퍼록맨 데이터칩">' },
+    bluesBusterChip: { label: '블루스칩', icon: '<img src="sprites/boss/reward/bluesbusterchip.png" class="result-resource-icon" alt="블루스 데이터칩">' },
+    superForteChip: { label: '포르테칩', icon: '<img src="sprites/boss/reward/superfortechip.png" class="result-resource-icon" alt="포르테 데이터칩">' },
+    optionChangeChip: { label: '옵션칩', icon: '<img src="sprites/card/option_stone.png" class="result-resource-icon" alt="옵션변경칩">' },
+    bossReplayCard: { label: '보스재생카드', icon: BOSS_REPLAY_CARD_ICON_HTML }
+};
+
+function ensureMissionState() {
+    if (!gameData.missions) gameData.missions = { claimed: {} };
+    if (!gameData.missions.claimed) gameData.missions.claimed = {};
+}
+
+function getMissionProgress(mission) {
+    if (!mission) return 0;
+    if (mission.type === 'stage') return Math.max(0, Math.floor(gameData.stage || 0));
+    if (mission.type === 'reboot') return Math.max(0, Math.floor(gameData.transcend?.count || 0));
+    if (mission.type === 'stones') return Math.max(0, Math.floor(gameData.stones || 0));
+    if (mission.type === 'cardChip') return Math.max(0, Math.floor(gameData.materials?.cardChip || 0));
+    if (mission.type === 'bossCutman') return Math.max(0, Math.floor(gameData.bossProgress?.classic_cutman?.clearedLevel || 0));
+    if (mission.type === 'superRockUnlocked') return gameData.development?.superRockUnlocked ? 1 : 0;
+    return 0;
+}
+
+function getMissionProgressLabel(mission, progress) {
+    if (mission.type === 'superRockUnlocked') return progress >= mission.target ? '완료' : '대기';
+    return `${Math.min(progress, mission.target).toLocaleString()} / ${mission.target.toLocaleString()}`;
+}
+
+function isMissionClaimed(id) {
+    ensureMissionState();
+    return !!gameData.missions.claimed[id];
+}
+
+function isMissionComplete(mission) {
+    return getMissionProgress(mission) >= mission.target;
+}
+
+function addMissionReward(rewards = {}) {
+    gameData.materials = { ...defaultData.materials, ...(gameData.materials || {}) };
+    ['screws', 'crystals', 'stones', 'soulStones'].forEach(key => {
+        if (!rewards[key]) return;
+        gameData[key] = Math.max(0, Math.floor(gameData[key] || 0)) + Math.max(0, Math.floor(rewards[key] || 0));
+    });
+    Object.keys(defaultData.materials).forEach(key => {
+        if (!rewards[key]) return;
+        gameData.materials[key] = Math.max(0, Math.floor(gameData.materials[key] || 0)) + Math.max(0, Math.floor(rewards[key] || 0));
+    });
+}
+
+function getMissionRewardText(rewards = {}) {
+    return Object.entries(rewards)
+        .filter(([, amount]) => Math.max(0, Math.floor(amount || 0)) > 0)
+        .map(([key, amount]) => {
+            const meta = MISSION_REWARD_META[key] || { label: key, icon: '' };
+            return `<span class="mission-reward-item">+${Math.floor(amount).toLocaleString()}${meta.icon}<em>${meta.label}</em></span>`;
+        })
+        .join('');
+}
+
+let currentStatusSubView = 'stats';
+
+function setStatusSubView(view = 'stats') {
+    currentStatusSubView = view === 'missions' ? 'missions' : 'stats';
+    updateStatusSubView();
+}
+
+function updateStatusSubView() {
+    const isMissions = currentStatusSubView === 'missions';
+    const statsView = document.getElementById('status-stats-view');
+    const missionsView = document.getElementById('status-missions-view');
+    const statsBtn = document.getElementById('status-view-stats-btn');
+    const missionsBtn = document.getElementById('status-view-missions-btn');
+
+    if (statsView) {
+        statsView.classList.toggle('active', !isMissions);
+        statsView.hidden = isMissions;
+    }
+    if (missionsView) {
+        missionsView.classList.toggle('active', isMissions);
+        missionsView.hidden = !isMissions;
+    }
+    if (statsBtn) {
+        statsBtn.classList.toggle('active', !isMissions);
+        statsBtn.setAttribute('aria-selected', String(!isMissions));
+    }
+    if (missionsBtn) {
+        missionsBtn.classList.toggle('active', isMissions);
+        missionsBtn.setAttribute('aria-selected', String(isMissions));
+    }
+}
+
+function renderMissionPanel() {
+    const list = document.getElementById('mission-list');
+    const summary = document.getElementById('mission-summary');
+    if (!list) return;
+
+    ensureMissionState();
+    const claimedCount = MISSION_CONFIG.filter(mission => isMissionClaimed(mission.id)).length;
+    const readyCount = MISSION_CONFIG.filter(mission => isMissionComplete(mission) && !isMissionClaimed(mission.id)).length;
+    if (summary) {
+        summary.innerText = readyCount > 0
+            ? `${claimedCount} / ${MISSION_CONFIG.length} · 수령 ${readyCount}`
+            : `${claimedCount} / ${MISSION_CONFIG.length}`;
+    }
+
+    const readyBadge = document.getElementById('mission-ready-badge');
+    if (readyBadge) {
+        readyBadge.innerText = readyCount > 0 ? readyCount.toLocaleString() : '';
+        readyBadge.classList.toggle('active', readyCount > 0);
+    }
+    updateStatusSubView();
+    list.innerHTML = MISSION_CONFIG.map(mission => {
+        const progress = getMissionProgress(mission);
+        const percent = Math.max(0, Math.min(100, Math.floor((progress / mission.target) * 100)));
+        const claimed = isMissionClaimed(mission.id);
+        const complete = progress >= mission.target;
+        const ready = complete && !claimed;
+        const stateClass = claimed ? 'claimed' : ready ? 'ready' : '';
+        const buttonText = claimed ? '완료' : ready ? '수령' : getMissionProgressLabel(mission, progress);
+        return `
+            <div class="mission-card ${stateClass}">
+                <div class="mission-main">
+                    <div class="mission-title">${mission.title}</div>
+                    <div class="mission-desc">${mission.desc}</div>
+                    <div class="mission-progress">
+                        <span style="width:${percent}%"></span>
+                    </div>
+                    <div class="mission-rewards">${getMissionRewardText(mission.rewards)}</div>
+                </div>
+                <button type="button" class="mission-claim-btn ${ready ? 'active' : ''}" onclick="claimMission('${mission.id}')" ${ready ? '' : 'disabled'}>${buttonText}</button>
+            </div>
+        `;
+    }).join('');
+}
+
+function claimMission(id) {
+    ensureMissionState();
+    const mission = MISSION_CONFIG.find(item => item.id === id);
+    if (!mission || isMissionClaimed(id) || !isMissionComplete(mission)) return;
+
+    gameData.missions.claimed[id] = true;
+    addMissionReward(mission.rewards);
+    showStageText(`MISSION CLEAR: ${mission.title}`);
+    updateUI();
+    saveData();
+}
+
 function getTranscendPointReward() {
     if (gameData.stage < TRANSCEND_REQUIRED_STAGE) return 0;
     return Math.max(1, Math.floor(gameData.stage / TRANSCEND_POINT_PER_STAGE));
@@ -8067,15 +8334,53 @@ function closeTranscendOverlay() {
     if (overlay) overlay.classList.remove('active');
 }
 
+function splitStatusMultiplierBonus(sourceValue, totalBonus, rates) {
+    const parts = { transcend: 0, ecan: 0, soul: 0 };
+    const entries = [
+        { key: 'transcend', rate: Math.max(0, Number(rates.transcend || 0)) },
+        { key: 'ecan', rate: Math.max(0, Number(rates.ecan || 0)) },
+        { key: 'soul', rate: Math.max(0, Number(rates.soul || 0)) }
+    ].filter(entry => entry.rate > 0);
+
+    let remaining = Math.max(0, Math.floor(totalBonus || 0));
+    entries.forEach(entry => {
+        const raw = Math.max(0, sourceValue * entry.rate);
+        entry.floor = Math.floor(raw);
+        entry.fraction = raw - entry.floor;
+        parts[entry.key] = Math.min(remaining, entry.floor);
+        remaining -= parts[entry.key];
+    });
+
+    entries
+        .sort((a, b) => b.fraction - a.fraction)
+        .forEach(entry => {
+            if (remaining <= 0) return;
+            parts[entry.key] += 1;
+            remaining -= 1;
+        });
+
+    if (remaining > 0 && entries.length > 0) {
+        parts[entries[0].key] += remaining;
+    }
+
+    return parts;
+}
+
 function getStatusAttackBreakdown() {
     const bonuses = getEquippedCardBonuses();
     const base = Math.max(1, Math.floor(gameData.atk || 0));
     const withCard = Math.max(1, Math.floor((base + bonuses.atkFlat) * (1 + bonuses.atkPercent / 100)));
     const total = getCardAdjustedAtk(gameData.atk);
+    const multiplierParts = splitStatusMultiplierBonus(withCard, total - withCard, {
+        transcend: getTranscendBonus('atk'),
+        ecan: getEcanBonus('atk'),
+        soul: getSoulBonus('atk')
+    });
+
     return {
         base,
         card: Math.max(0, withCard - base),
-        transcend: Math.max(0, total - withCard),
+        ...multiplierParts,
         total
     };
 }
@@ -8083,19 +8388,101 @@ function getStatusAttackBreakdown() {
 function getStatusHpBreakdown() {
     const base = Math.max(1, Math.floor(100 + (Math.max(1, Math.floor(gameData.lv?.hp || 1)) - 1) * 35));
     const total = getEffectivePlayerMaxHp();
+    const multiplierParts = splitStatusMultiplierBonus(base, total - base, {
+        transcend: getTranscendBonus('hp'),
+        ecan: getEcanBonus('hp'),
+        soul: getSoulBonus('hp')
+    });
+
     return {
         base,
         card: 0,
-        transcend: Math.max(0, total - base),
+        ...multiplierParts,
         total
     };
 }
 
 function formatStatusBreakdown(parts) {
-    const cardPart = parts.card > 0 ? ` <span class="status-card-bonus">(+${parts.card.toLocaleString()})</span>` : '';
-    const transcendPart = parts.transcend > 0 ? ` <span class="status-transcend-bonus">(+${parts.transcend.toLocaleString()})</span>` : '';
-    return `${parts.total.toLocaleString()} <small>= ${parts.base.toLocaleString()}${cardPart}${transcendPart}</small>`;
+    const sources = [
+        ['card', 'status-card-bonus'],
+        ['transcend', 'status-transcend-bonus'],
+        ['ecan', 'status-ecan-bonus'],
+        ['soul', 'status-soul-bonus']
+    ];
+    const sourceParts = sources
+        .filter(([key]) => Math.max(0, Math.floor(parts[key] || 0)) > 0)
+        .map(([key, className]) => ` <span class="${className}">(+${Math.floor(parts[key]).toLocaleString()})</span>`)
+        .join('');
+
+    return `${parts.total.toLocaleString()} <small>= ${parts.base.toLocaleString()}${sourceParts}</small>`;
 }
+
+function handleStatusDetailKey(event, type) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openStatusDetail(type);
+}
+
+function formatStatusPercent(rate, digits = 1) {
+    const value = Math.max(0, Number(rate || 0)) * 100;
+    return `${Math.round(value * Math.pow(10, digits)) / Math.pow(10, digits)}%`;
+}
+
+function getStatusDetailRows(type) {
+    const parts = type === 'hp' ? getStatusHpBreakdown() : getStatusAttackBreakdown();
+    const bonuses = getEquippedCardBonuses();
+    const rows = type === 'hp'
+        ? [
+            { label: '기본 체력', value: parts.base, note: '기본 100 + 체력 강화', className: '', base: true },
+            { label: '리부트', value: parts.transcend, note: `+${formatStatusPercent(getTranscendBonus('hp'), 0)}`, className: 'status-transcend-bonus' },
+            { label: 'E캔', value: parts.ecan, note: `+${formatStatusPercent(getEcanBonus('hp'))}`, className: 'status-ecan-bonus' },
+            { label: '라이트코어', value: parts.soul, note: `+${formatStatusPercent(getSoulBonus('hp'))}`, className: 'status-soul-bonus' }
+        ]
+        : [
+            { label: '기본 공격력', value: parts.base, note: '나사 강화 포함', className: '', base: true },
+            { label: '카드', value: parts.card, note: `고정 +${bonuses.atkFlat}, 비율 +${bonuses.atkPercent}%`, className: 'status-card-bonus' },
+            { label: '리부트', value: parts.transcend, note: `+${formatStatusPercent(getTranscendBonus('atk'), 0)}`, className: 'status-transcend-bonus' },
+            { label: 'E캔', value: parts.ecan, note: `+${formatStatusPercent(getEcanBonus('atk'))}`, className: 'status-ecan-bonus' },
+            { label: '라이트코어', value: parts.soul, note: `+${formatStatusPercent(getSoulBonus('atk'))}`, className: 'status-soul-bonus' }
+        ];
+
+    return { parts, rows };
+}
+
+function openStatusDetail(type = 'atk') {
+    const popup = document.getElementById('status-detail-popup');
+    const title = document.getElementById('status-detail-title');
+    const total = document.getElementById('status-detail-total');
+    const list = document.getElementById('status-detail-list');
+    if (!popup || !title || !total || !list) return;
+
+    const detailType = type === 'hp' ? 'hp' : 'atk';
+    const detail = getStatusDetailRows(detailType);
+    title.innerText = detailType === 'hp' ? '체력 상세' : '공격력 상세';
+    total.innerHTML = `총합 <b>${detail.parts.total.toLocaleString()}</b>`;
+    list.innerHTML = detail.rows.map(row => {
+        const valueText = row.base
+            ? row.value.toLocaleString()
+            : `+${Math.max(0, Math.floor(row.value || 0)).toLocaleString()}`;
+        return `
+            <div class="status-detail-line ${row.className}">
+                <span><strong>${row.label}</strong><em>${row.note}</em></span>
+                <b>${valueText}</b>
+            </div>
+        `;
+    }).join('');
+
+    popup.classList.add('active');
+}
+
+function closeStatusDetail() {
+    const popup = document.getElementById('status-detail-popup');
+    if (popup) popup.classList.remove('active');
+}
+
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeStatusDetail();
+});
 
 function updateStatusUI() {
     const bonuses = getEquippedCardBonuses();
@@ -8112,9 +8499,9 @@ function updateStatusUI() {
         rows.innerHTML = `
             <div class="status-row"><span>현재 스테이지</span><b>${gameData.stage.toLocaleString()}</b></div>
             <div class="status-row"><span>리부트 횟수</span><b>${gameData.transcend.count.toLocaleString()}회</b></div>
-            <div class="status-row status-formula-row"><span>공격력</span><b>${formatStatusBreakdown(atkParts)}</b></div>
+            <div class="status-row status-formula-row status-detail-row" role="button" tabindex="0" onclick="openStatusDetail('atk')" onkeydown="handleStatusDetailKey(event, 'atk')"><span>공격력</span><b>${formatStatusBreakdown(atkParts)}</b></div>
             <div class="status-row"><span>공격속도</span><b>${(getPlayerAttackInterval() / 1000).toFixed(2)}초 <em>카드 포함</em></b></div>
-            <div class="status-row status-formula-row"><span>체력</span><b>${formatStatusBreakdown(hpParts)}</b></div>
+            <div class="status-row status-formula-row status-detail-row" role="button" tabindex="0" onclick="openStatusDetail('hp')" onkeydown="handleStatusDetailKey(event, 'hp')"><span>체력</span><b>${formatStatusBreakdown(hpParts)}</b></div>
             <div class="status-row"><span>차지샷 확률</span><b>${getEffectiveCritChance().toFixed(1)}%</b></div>
             <div class="status-row"><span>차지샷 배율</span><b>${gameData.critMultiplier.toFixed(2)}배</b></div>
             <div class="status-row"><span>카드 공격력 보너스</span><b><span class="status-card-bonus">+${bonuses.atkFlat} / +${bonuses.atkPercent}%</span></b></div>
@@ -8158,6 +8545,8 @@ function updateStatusUI() {
         setButtonActive(btn, !maxReached && gameData.transcend.points >= cost);
         if (btn) btn.disabled = !(!maxReached && gameData.transcend.points >= cost);
     });
+
+    renderMissionPanel();
 
     const battleTrans = document.getElementById('battle-transcend-count');
     if (battleTrans) battleTrans.innerText = gameData.transcend.count.toLocaleString();
@@ -8654,6 +9043,7 @@ if (blockmanEggButton) {
     blockmanEggButton.classList.toggle('active', !!gameData.blockmanEggOwned);
     blockmanEggButton.style.display = gameData.blockmanEggOwned ? 'flex' : 'none';
 }
+updateBlockCityUI();
 
 const mineChance = document.getElementById('mine-enhance-chance');
 if (mineChance) mineChance.innerText = `${getMineEnhanceChance()}%`;
@@ -9137,17 +9527,6 @@ function normalizeCutmanBossCardUI() {
 }
 
 
-function normalizeBossTabLayoutV5() {
-    const root = document.getElementById('boss-tab');
-    if (!root) return;
-
-    root.querySelectorAll('.boss-material-status').forEach(el => el.remove());
-
-    root.querySelectorAll('.boss-category-btn').forEach(btn => {
-        btn.textContent = (btn.textContent || '').replace(/[▲▼△▽▴▾⌃⌄↕↑↓]/g, '').trim();
-    });
-}
-
 
 let cutmanPreviewTimer = null;
 let cutmanPreviewTimeouts = [];
@@ -9281,228 +9660,6 @@ function startCutmanPreviewV14() {
     cutmanPreviewV14Interval = setInterval(playCutmanPreviewV14Once, 2200);
 }
 
-// v152: 에어맨 보스카드 미리보기는 컷맨 카드와 같은 레이아웃 안에서
-// 에어맨 팬 01~02 반복 + 소용돌이 불릿 01~03 한 개 반복만 사용합니다.
-let airmanPreviewFrameLoopTimer = null;
-function startAirmanPreviewFrameLoopV152() {
-    const bulletFrames = [
-        'sprites/boss/super-rboss/airman/airman_bullet_01.png',
-        'sprites/boss/super-rboss/airman/airman_bullet_02.png',
-        'sprites/boss/super-rboss/airman/airman_bullet_03.png'
-    ];
-    const fanFrames = [
-        'sprites/boss/super-rboss/airman/airman_w_01.png',
-        'sprites/boss/super-rboss/airman/airman_w_02.png'
-    ];
-    const tornado = document.querySelector('#boss-card-airman .airman-preview-tornado');
-    const fan = document.querySelector('#boss-card-airman .airman-preview-fan');
-    if (!tornado && !fan) return;
-    if (airmanPreviewFrameLoopTimer) clearInterval(airmanPreviewFrameLoopTimer);
-    let bulletFrameIndex = 0;
-    let fanFrameIndex = 0;
-    airmanPreviewFrameLoopTimer = setInterval(() => {
-        bulletFrameIndex = (bulletFrameIndex + 1) % bulletFrames.length;
-        fanFrameIndex = (fanFrameIndex + 1) % fanFrames.length;
-        if (tornado) tornado.src = bulletFrames[bulletFrameIndex];
-        if (fan) fan.src = fanFrames[fanFrameIndex];
-    }, 95);
-}
-
-
-// v156: 보스카드 DOM 정리
-// 문제 원인: 컷맨/에어맨 카드 보정 CSS/JS가 여러 버전 누적되면서
-// 보상 문구가 .boss-card-preview 안에서 잘리거나, 미리보기 영역과 겹치는 상태가 됐습니다.
-// 보스카드 공통 골격은 .boss-card-main 직속으로 정리하고,
-// 보스별 미리보기는 .boss-demo-stage 내부에서만 개별 처리합니다.
-function normalizeBossCardsV156() {
-    const root = document.getElementById('boss-tab');
-    if (!root) return;
-
-    const configs = [
-        {
-            key: 'classic_cutman',
-            cardId: 'boss-card-cutman',
-            className: 'cutman-card',
-            levelId: 'cutman-boss-level-label',
-            rewardClass: 'cutman-reward-line boss-card-reward-line',
-            rewardHtml: `
-                <span class="reward-text-label">획득 가능 :</span>
-                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
-                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
-                <span class="boss-reward-item">슈퍼록맨 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
-            `
-        },
-        {
-            key: 'classic_airman',
-            cardId: 'boss-card-airman',
-            className: 'airman-card',
-            levelId: 'airman-boss-level-label',
-            rewardClass: 'airman-reward-line boss-card-reward-line',
-            rewardHtml: `
-                <span class="reward-text-label">획득 가능 :</span>
-                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
-                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
-                <span class="boss-reward-item">브루스버스터 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/bluesbusterchip.png" alt="브루스버스터 데이터칩"></span>
-            `
-        }
-    ];
-
-    configs.forEach(config => {
-        const card = document.getElementById(config.cardId) || root.querySelector(`[data-boss-key="${config.key}"]`);
-        if (!card) return;
-        const main = card.querySelector('.boss-card-main');
-        const preview = card.querySelector('.boss-card-preview');
-        if (!main || !preview) return;
-
-        card.classList.add('classic-boss-card-template', config.className);
-        card.dataset.bossKey = config.key;
-
-        let line = card.querySelector('.boss-card-reward-line');
-        if (!line) line = document.createElement('div');
-        line.className = config.rewardClass;
-        line.innerHTML = config.rewardHtml;
-        // 보상줄은 반드시 main 직속으로 둡니다. preview 내부에 있으면 보스별 애니메이션/overflow와 충돌합니다.
-        if (line.parentNode !== main) main.appendChild(line);
-
-        const nameEl = card.querySelector('.boss-card-name');
-        if (nameEl && !document.getElementById(config.levelId)) {
-            nameEl.insertAdjacentHTML('beforeend', ` <span id="${config.levelId}" class="boss-level-label">Lv. 1</span>`);
-        }
-
-        const entryCost = card.querySelector('.boss-entry-cost');
-        if (entryCost) {
-            entryCost.innerHTML = '<img class="boss-resource-icon boss-ticket-icon-small" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 1';
-        }
-
-        let message = card.querySelector('.boss-card-message');
-        if (!message) {
-            message = document.createElement('div');
-            message.className = 'boss-card-message';
-            message.id = config.key === 'classic_cutman' ? 'cutman-card-message' : 'airman-card-message';
-        }
-        if (message.parentNode !== main) main.appendChild(message);
-
-        const actionPanel = card.querySelector('.boss-action-panel');
-        if (actionPanel && actionPanel.parentNode !== main) main.appendChild(actionPanel);
-    });
-}
-
-// v159: 보스카드 최종 DOM/애니메이션 보정
-// - 보상줄은 컷맨/에어맨 모두 boss-card-main 직속 하단에 고정합니다.
-// - 에어맨 미리보기는 CSS 충돌에 영향받지 않도록 Web Animations API로 이동을 강제합니다.
-let bossCardV159AnimationStarted = false;
-let bossCardV159FrameTimer = null;
-function normalizeBossCardsV159() {
-    const root = document.getElementById('boss-tab');
-    if (!root) return;
-
-    const rewards = {
-        'boss-card-cutman': {
-            cls: 'cutman-reward-line boss-card-reward-line',
-            html: `
-                <span class="reward-text-label">획득 가능 :</span>
-                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
-                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
-                <span class="boss-reward-item">슈퍼록맨 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/superrockchip.png" alt="슈퍼록맨 데이터칩"></span>
-            `
-        },
-        'boss-card-airman': {
-            cls: 'airman-reward-line boss-card-reward-line',
-            html: `
-                <span class="reward-text-label">획득 가능 :</span>
-                <span class="boss-reward-item">나사 <img class="boss-reward-icon" src="sprites/item/screw.png" alt="나사"></span>
-                <span class="boss-reward-item">카드칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"></span>
-                <span class="boss-reward-item">브루스버스터 데이터칩 <img class="boss-reward-chip-icon" src="sprites/boss/reward/bluesbusterchip.png" alt="브루스버스터 데이터칩"></span>
-            `
-        }
-    };
-
-    Object.entries(rewards).forEach(([cardId, config]) => {
-        const card = document.getElementById(cardId);
-        if (!card) return;
-        const main = card.querySelector('.boss-card-main');
-        if (!main) return;
-        card.classList.add('classic-boss-card-template');
-        let line = card.querySelector('.boss-card-reward-line');
-        if (!line) line = document.createElement('div');
-        line.className = config.cls;
-        line.innerHTML = config.html;
-        if (line.parentNode !== main) main.appendChild(line);
-        main.appendChild(line); // 항상 마지막 하단 공통 영역으로 재배치
-    });
-
-    const classic = document.getElementById('boss-group-classic');
-    if (classic) {
-        classic.style.display = 'flex';
-        classic.style.flexDirection = 'column';
-        classic.style.gap = '12px';
-    }
-}
-
-function startAirmanPreviewAnimationV159() {
-    const card = document.getElementById('boss-card-airman');
-    if (!card) return;
-    const fan = card.querySelector('.airman-preview-fan');
-    const tornado = card.querySelector('.airman-preview-tornado');
-    const rockman = card.querySelector('.airman-preview-rockman');
-    if (!fan || !tornado || !rockman) return;
-
-    const fanFrames = [
-        'sprites/boss/super-rboss/airman/airman_w_01.png',
-        'sprites/boss/super-rboss/airman/airman_w_02.png'
-    ];
-    const bulletFrames = [
-        'sprites/boss/super-rboss/airman/airman_bullet_01.png',
-        'sprites/boss/super-rboss/airman/airman_bullet_02.png',
-        'sprites/boss/super-rboss/airman/airman_bullet_03.png'
-    ];
-
-    if (bossCardV159FrameTimer) clearInterval(bossCardV159FrameTimer);
-    let fanIndex = 0;
-    let bulletIndex = 0;
-    fan.style.backgroundImage = `url("${fanFrames[0]}")`;
-    tornado.style.backgroundImage = `url("${bulletFrames[0]}")`;
-    rockman.style.backgroundImage = 'url("sprites/rock/rock_st.png")';
-
-    bossCardV159FrameTimer = setInterval(() => {
-        fanIndex = (fanIndex + 1) % fanFrames.length;
-        bulletIndex = (bulletIndex + 1) % bulletFrames.length;
-        fan.style.backgroundImage = `url("${fanFrames[fanIndex]}")`;
-        tornado.style.backgroundImage = `url("${bulletFrames[bulletIndex]}")`;
-    }, 110);
-
-    if (bossCardV159AnimationStarted) return;
-    bossCardV159AnimationStarted = true;
-
-    tornado.animate([
-        { transform: 'translateX(0px)', opacity: 0, offset: 0 },
-        { transform: 'translateX(0px)', opacity: 1, offset: 0.08 },
-        { transform: 'translateX(72px)', opacity: 1, offset: 0.53 },
-        { transform: 'translateX(118px)', opacity: 1, offset: 0.86 },
-        { transform: 'translateX(142px)', opacity: 0, offset: 1 }
-    ], {
-        duration: 1550,
-        iterations: Infinity,
-        easing: 'linear'
-    });
-
-    rockman.animate([
-        { transform: 'translateX(0px) scaleX(-1)', opacity: 1, offset: 0 },
-        { transform: 'translateX(0px) scaleX(-1)', opacity: 1, offset: 0.52 },
-        { transform: 'translateX(50px) scaleX(-1)', opacity: 1, offset: 0.86 },
-        { transform: 'translateX(72px) scaleX(-1)', opacity: 0.74, offset: 1 }
-    ], {
-        duration: 1550,
-        iterations: Infinity,
-        easing: 'linear'
-    });
-}
-
-function applyBossCardFinalFixV159() {
-    normalizeBossCardsV159();
-    startAirmanPreviewAnimationV159();
-}
-
 
 // v160: 보스카드 최종 보정
 // 기존 v149~v159 누적 CSS/JS의 transform !important 충돌 때문에
@@ -9580,13 +9737,6 @@ function startAirmanPreviewAnimationV160() {
     const rockman = card.querySelector('.airman-preview-rockman');
     if (!fan || !tornado || !rockman) return;
 
-    if (bossCardV159FrameTimer) {
-        clearInterval(bossCardV159FrameTimer);
-        bossCardV159FrameTimer = null;
-    }
-    if (typeof bossCardV159AnimationStarted !== 'undefined') {
-        bossCardV159AnimationStarted = false;
-    }
     [tornado, rockman].forEach(el => {
         if (el && typeof el.getAnimations === 'function') {
             el.getAnimations().forEach(anim => anim.cancel());
