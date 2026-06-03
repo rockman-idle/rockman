@@ -17030,3 +17030,11 @@ body.mobile-mode .block-city-action-btn {
 .block-city-action-btn.group-hidden {
   display: none !important;
 }
+.block-city-cost-icon {
+  width: 12px;
+  height: 12px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  vertical-align: -2px;
+  margin-right: 2px;
+}
