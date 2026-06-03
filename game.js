@@ -85,6 +85,38 @@ const defaultData = {
     registeredPickaxes: [null, null, null],
     blockmanBlocks: 0,
     blockmanEggOwned: false,
+    blockCityRebuild: {
+        sand: 0,
+        blocks: 0,
+        rubble: 0,
+        power: 0,
+        ease: 0,
+        attention: 0,
+        hope: 0,
+        love: 0,
+        workers: 0,
+        sandShortageTicks: 0,
+        rescued: false,
+        zones: {
+            sandPit: false,
+            press: false,
+            generator: false,
+            depot: false,
+            shelter: false,
+            notice: false,
+            beacon: false
+        },
+        levels: {
+            sandPit: 0,
+            press: 0,
+            generator: 0,
+            depot: 0,
+            shelter: 0,
+            notice: 0,
+            beacon: 0,
+            community: 0
+        }
+    },
     mineRockMaxHp: 2,
     mineRockHp: 2,
 
@@ -181,6 +213,14 @@ let gameData = {
     partnerSpeedLv: { ...defaultData.partnerSpeedLv, ...(savedData.partnerSpeedLv || {}) },
     sniperJoeRewardClaimed: { ...defaultData.sniperJoeRewardClaimed, ...(savedData.sniperJoeRewardClaimed || {}) },
     registeredPickaxes: Array.isArray(savedData.registeredPickaxes) ? savedData.registeredPickaxes : defaultData.registeredPickaxes.slice(),
+    blockCityRebuild: {
+        ...defaultData.blockCityRebuild,
+        ...(savedData.blockCityRebuild || {}),
+        zones: {
+            ...defaultData.blockCityRebuild.zones,
+            ...((savedData.blockCityRebuild || {}).zones || {})
+        }
+    },
     cards: { ...defaultData.cards, ...(savedData.cards || {}) }
 };
 
@@ -268,6 +308,34 @@ gameData.registeredPickaxes = [0, 1, 2].map(index => {
 });
 gameData.blockmanBlocks = Math.max(0, Math.min(10, Math.floor(gameData.blockmanBlocks || 0)));
 gameData.blockmanEggOwned = !!gameData.blockmanEggOwned;
+delete gameData.blockCity;
+gameData.blockCityRebuild = {
+    ...defaultData.blockCityRebuild,
+    ...(gameData.blockCityRebuild || {}),
+    zones: {
+        ...defaultData.blockCityRebuild.zones,
+        ...((gameData.blockCityRebuild || {}).zones || {})
+    }
+};
+['sand', 'blocks', 'rubble', 'power', 'ease', 'attention', 'hope', 'love'].forEach(key => {
+    gameData.blockCityRebuild[key] = Math.max(0, Number(gameData.blockCityRebuild[key] || 0));
+});
+gameData.blockCityRebuild.workers = Math.max(0, Math.min(16, Math.floor(gameData.blockCityRebuild.workers || 0)));
+gameData.blockCityRebuild.sandShortageTicks = Math.max(0, Math.floor(gameData.blockCityRebuild.sandShortageTicks || 0));
+gameData.blockCityRebuild.rescued = !!gameData.blockCityRebuild.rescued;
+['sandPit', 'press', 'generator', 'depot', 'shelter', 'notice', 'beacon'].forEach(key => {
+    gameData.blockCityRebuild.zones[key] = !!gameData.blockCityRebuild.zones[key];
+});
+const zones = gameData.blockCityRebuild.zones;
+if (zones.workshop) zones.press = true;
+if (zones.housing) zones.shelter = true;
+if (zones.beacon) zones.notice = true;
+if (zones.notice) zones.shelter = true;
+if (zones.shelter) zones.depot = true;
+if (zones.depot) zones.generator = true;
+if (zones.generator) zones.press = true;
+if (zones.press) zones.sandPit = true;
+if (zones.sandPit) gameData.blockCityRebuild.rescued = true;
 if (gameData.blockmanEggOwned && gameData.blockmanBlocks < 10) gameData.blockmanBlocks = 10;
 gameData.mineRockMaxHp = Math.max(2, Math.floor(gameData.mineRockMaxHp || 2));
 gameData.mineRockHp = Math.max(1, Math.min(gameData.mineRockMaxHp, Math.floor(gameData.mineRockHp || gameData.mineRockMaxHp)));
@@ -6223,33 +6291,1051 @@ function updateMineSubView() {
     }
 }
 
-function updateBlockCityUI() {
-    const blocks = Math.max(0, Math.min(MINE_BLOCKMAN_BLOCKS_REQUIRED, Math.floor(gameData.blockmanBlocks || 0)));
-    const eggOwned = !!gameData.blockmanEggOwned;
-    const state = document.getElementById('block-city-state');
-    const core = document.getElementById('block-city-core');
-    const blockText = document.getElementById('block-city-blocks');
-    const slots = document.getElementById('block-city-slots');
-    const note = document.getElementById('block-city-note');
-    const btn = document.getElementById('block-city-egg-btn');
-    const panel = document.querySelector('.block-city-panel');
+const BLOCK_CITY_REST_SPRITE = 'sprites/mine/blockcity/blockman/blockman_rest.png';
+const BLOCK_CITY_AWAKE_SPRITE = 'sprites/mine/blockcity/blockman/blockman_awake.png';
+let blockCityRebuildTimer = null;
+let blockCityRebuildTickCount = 0;
 
-    if (panel) panel.classList.toggle('egg-owned', eggOwned);
-    if (state) state.innerText = eggOwned ? 'BLOCKMAN EGG READY' : `BLOCK PIECES ${blocks} / ${MINE_BLOCKMAN_BLOCKS_REQUIRED}`;
-    if (core) core.innerText = eggOwned ? 'EGG CORE' : 'LOCKED';
-    if (blockText) blockText.innerText = `${blocks} / ${MINE_BLOCKMAN_BLOCKS_REQUIRED}`;
-    if (slots) slots.innerText = eggOwned ? '1 / 1 READY' : 'LOCKED';
-    if (note) {
-        note.innerText = eggOwned
-            ? 'The EGG is ready. Next step: build Block House, Forge, and Request Board here.'
-            : 'BLOCKMAN vein drops 1 block piece. Gather 10 pieces to wake the EGG and unlock the first city build.';
-    }
-    if (btn) {
-        btn.disabled = !eggOwned;
-        btn.classList.toggle('active', eggOwned);
-        btn.innerText = eggOwned ? 'OPEN EGG' : 'EGG LOCKED';
-    }
+const BLOCK_CITY_LEVEL_KEYS = ['sandPit', 'press', 'generator', 'depot', 'shelter', 'notice', 'beacon', 'community'];
+const BLOCK_CITY_RESOURCE_ORDER = ['sand', 'blocks', 'rubble', 'power', 'ease', 'attention', 'love', 'hope'];
+const BLOCK_CITY_RESOURCE = {
+    sand: { icon: '🏖️', name: '모래' },
+    blocks: { icon: '🪨', name: '석재' },
+    rubble: { icon: '⛏️', name: '광석' },
+    power: { icon: '⚡', name: '동력' },
+    ease: { icon: '🔧', name: '금속' },
+    attention: { icon: '⚙️', name: '부품' },
+    love: { icon: '📘', name: '연구' },
+    hope: { icon: '✨', name: '희망' },
+    workers: { icon: '🤖', name: '건설 로봇' },
+    screws: { icon: '🔩', name: '나사' },
+    crystals: { icon: '🧪', name: 'E캔' },
+    stones: { icon: '🪨', name: '돌' }
+};
+
+
+let currentBlockCitySubView = 'city';
+const BLOCK_CITY_SUBVIEW_BUTTON_IDS = {
+    craft: [
+        'block-city-sand-btn',
+        'block-city-block-btn',
+        'block-city-rubble-btn',
+        'block-city-smelt-btn',
+        'block-city-parts-btn',
+        'block-city-research-btn',
+        'block-city-hope-btn'
+    ],
+    city: [
+        'block-city-rescue-btn',
+        'block-city-sandpit-btn',
+        'block-city-press-btn',
+        'block-city-generator-btn',
+        'block-city-worker-btn',
+        'block-city-depot-btn',
+        'block-city-shelter-btn',
+        'block-city-upgrade-sandpit-btn',
+        'block-city-upgrade-press-btn',
+        'block-city-upgrade-generator-btn',
+        'block-city-upgrade-depot-btn',
+        'block-city-upgrade-shelter-btn'
+    ],
+    research: [
+        'block-city-notice-btn',
+        'block-city-beacon-btn',
+        'block-city-upgrade-notice-btn',
+        'block-city-upgrade-beacon-btn',
+        'block-city-share-love-btn'
+    ]
+};
+
+function setBlockCitySubView(view = 'city') {
+    currentBlockCitySubView = Object.prototype.hasOwnProperty.call(BLOCK_CITY_SUBVIEW_BUTTON_IDS, view) ? view : 'city';
+    updateBlockCitySubView();
 }
+
+function updateBlockCitySubView() {
+    const activeIds = new Set(BLOCK_CITY_SUBVIEW_BUTTON_IDS[currentBlockCitySubView] || BLOCK_CITY_SUBVIEW_BUTTON_IDS.city);
+    Object.values(BLOCK_CITY_SUBVIEW_BUTTON_IDS).flat().forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.toggle('group-hidden', !activeIds.has(id));
+    });
+    ['craft', 'city', 'research'].forEach(view => {
+        const tab = document.getElementById(`block-city-view-${view}-btn`);
+        if (!tab) return;
+        const active = view === currentBlockCitySubView;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-selected', String(active));
+    });
+}
+function normalizeBlockCityLevels(city) {
+    if (!city.levels || typeof city.levels !== 'object') city.levels = {};
+    BLOCK_CITY_LEVEL_KEYS.forEach(key => {
+        city.levels[key] = Math.max(0, Math.floor(Number(city.levels[key] || 0)));
+    });
+    ['sandPit', 'press', 'generator', 'depot', 'shelter', 'notice', 'beacon'].forEach(key => {
+        if (city.zones?.[key] && city.levels[key] < 1) city.levels[key] = 1;
+    });
+    return city.levels;
+}
+
+function getBlockCityRebuildData() {
+    if (!gameData.blockCityRebuild || typeof gameData.blockCityRebuild !== 'object') {
+        gameData.blockCityRebuild = {
+            sand: 0,
+            blocks: 0,
+            rubble: 0,
+            power: 0,
+            ease: 0,
+            attention: 0,
+            hope: 0,
+            love: 0,
+            workers: 0,
+            rescued: false,
+            zones: {},
+            levels: {}
+        };
+    }
+    if (!gameData.blockCityRebuild.zones || typeof gameData.blockCityRebuild.zones !== 'object') gameData.blockCityRebuild.zones = {};
+    BLOCK_CITY_RESOURCE_ORDER.forEach(key => {
+        gameData.blockCityRebuild[key] = Math.max(0, Number(gameData.blockCityRebuild[key] || 0));
+    });
+    gameData.blockCityRebuild.rescued = !!gameData.blockCityRebuild.rescued;
+['sandPit', 'press', 'generator', 'depot', 'shelter', 'notice', 'beacon'].forEach(key => {
+    gameData.blockCityRebuild.zones[key] = !!gameData.blockCityRebuild.zones[key];
+});
+const zones = gameData.blockCityRebuild.zones;
+if (zones.workshop) zones.press = true;
+if (zones.housing) zones.shelter = true;
+if (zones.beacon) zones.notice = true;
+if (zones.notice) zones.shelter = true;
+if (zones.shelter) zones.depot = true;
+if (zones.depot) zones.generator = true;
+if (zones.generator) zones.press = true;
+if (zones.press) zones.sandPit = true;
+if (zones.sandPit) gameData.blockCityRebuild.rescued = true;
+    normalizeBlockCityLevels(gameData.blockCityRebuild);
+    gameData.blockCityRebuild.workers = Math.max(0, Math.min(getBlockCityWorkerLimit(gameData.blockCityRebuild), Math.floor(gameData.blockCityRebuild.workers || 0)));
+    gameData.blockCityRebuild.sandShortageTicks = Math.max(0, Math.floor(gameData.blockCityRebuild.sandShortageTicks || 0));
+    return gameData.blockCityRebuild;
+}
+
+function formatBlockCityNumber(value) {
+    return Math.floor(Number(value || 0)).toLocaleString();
+}
+
+function getBlockCityResourceLabel(key) {
+    const item = BLOCK_CITY_RESOURCE[key];
+    return item ? `${item.icon} ${item.name}` : key;
+}
+
+function getBlockCityWorkerLimit(city = getBlockCityRebuildData()) {
+    const levels = normalizeBlockCityLevels(city);
+    return 8 + levels.depot * 4 + levels.community * 2;
+}
+
+function getBlockCityLevel(city, key) {
+    return normalizeBlockCityLevels(city)[key] || 0;
+}
+
+function getBlockCityGrowthPower(city = getBlockCityRebuildData()) {
+    const levels = normalizeBlockCityLevels(city);
+    return BLOCK_CITY_LEVEL_KEYS.reduce((sum, key) => sum + (levels[key] || 0), 0);
+}
+
+function getBlockCityRebuildRates(city = getBlockCityRebuildData()) {
+    if (!gameData.blockmanEggOwned) {
+        return { sand: 0, blocks: 0, rubble: 0, power: 0, ease: 0, attention: 0, love: 0, hope: 0 };
+    }
+    const levels = normalizeBlockCityLevels(city);
+    const builders = Math.floor(city.workers || 0);
+    const devBoost = 1 + levels.community * 0.1;
+    const materialBoost = 1 + levels.depot * 0.06 + levels.community * 0.04;
+    const smelterBoost = 1 + levels.shelter * 0.18 + levels.generator * 0.05;
+    const energyBoost = 1 + levels.generator * 0.06 + levels.community * 0.04;
+    const researchBoost = 1 + levels.notice * 0.1 + levels.community * 0.05;
+    const sandRobots = Math.max(0, levels.sandPit);
+    const sandGain = sandRobots ? (0.65 + sandRobots * 0.5) * materialBoost * smelterBoost : 0;
+    const builderSandCost = builders ? builders * Math.max(0.32, 0.52 - levels.generator * 0.025 - levels.depot * 0.015 - levels.shelter * 0.015) : 0;
+    const builderOre = builders ? (0.08 + builders * 0.1 + levels.press * 0.035) * (1 + levels.generator * 0.05 + levels.depot * 0.05) : 0;
+    return {
+        sand: sandGain - builderSandCost,
+        blocks: levels.press ? (0.08 + levels.press * 0.08) * (1 + city.sand * 0.00022) * materialBoost : 0,
+        rubble: builderOre + (levels.depot ? (0.04 + levels.depot * 0.04) * (1 + city.blocks * 0.00025) : 0),
+        power: levels.generator ? (0.45 + levels.generator * 0.24 + builders * 0.045) * energyBoost : 0,
+        ease: levels.shelter ? (0.05 + levels.shelter * 0.1 + builders * 0.012) * (1 + city.rubble * 0.00045 + city.power * 0.0002) * devBoost : 0,
+        attention: levels.depot ? (0.03 + levels.depot * 0.05 + levels.shelter * 0.035) * (1 + city.ease * 0.00065 + city.power * 0.00025) * devBoost : 0,
+        love: levels.notice ? (0.018 + levels.notice * 0.055) * (1 + city.attention * 0.001 + city.power * 0.00035) * researchBoost : 0,
+        hope: levels.beacon ? (0.004 + levels.beacon * 0.016) * (1 + city.love * 0.0012 + city.attention * 0.0007 + levels.community * 0.12) : 0
+    };
+}
+
+function getBlockCityRebuildProgress(city = getBlockCityRebuildData()) {
+    const zones = city.zones || {};
+    const stepFlags = [
+        city.blocks >= 1 || city.rescued || zones.sandPit || zones.press || zones.generator || zones.depot || zones.shelter || zones.notice || zones.beacon,
+        city.rubble >= 1 || city.rescued || zones.sandPit || zones.press || zones.generator || zones.depot || zones.shelter || zones.notice || zones.beacon,
+        city.ease >= 1 || zones.shelter || zones.notice || zones.beacon,
+        city.attention >= 1 || zones.notice || zones.beacon,
+        city.love >= 1 || zones.beacon,
+        city.hope >= 1 || zones.beacon,
+        city.rescued || zones.sandPit || zones.press || zones.generator || zones.depot || zones.shelter || zones.notice || zones.beacon,
+        zones.sandPit || zones.press || zones.generator || zones.depot || zones.shelter || zones.notice || zones.beacon,
+        zones.generator || zones.depot || zones.shelter || zones.notice || zones.beacon,
+        zones.notice || zones.beacon,
+        zones.beacon
+    ].filter(Boolean).length;
+    return Math.round((stepFlags / 11) * 100);
+}
+
+function getBlockCityRebuildTitle(city = getBlockCityRebuildData()) {
+    const milestone = getBlockCityMilestone(city);
+    if (milestone === 'locked') return '에그 잠금';
+    if (milestone === 'block') return '모래밭';
+    if (milestone === 'rubble') return '석재 가공';
+    if (milestone === 'rescue') return '첫 광석';
+    if (milestone === 'sandPit') return '블록맨 기상';
+    if (milestone === 'press') return '모래 로봇';
+    if (milestone === 'generator') return '석재 쉘터';
+    if (milestone === 'workers') return '건설 로봇';
+    if (milestone === 'depot') return '발전기';
+    if (milestone === 'shelter') return '저장고';
+    if (milestone === 'notice') return '광석 제련소';
+    if (milestone === 'beacon') return '연구소';
+    return '희망 정제';
+}
+
+function getBlockCityMilestone(city = getBlockCityRebuildData()) {
+    if (!gameData.blockmanEggOwned) return 'locked';
+    if (city.zones.beacon) return 'complete';
+    if (city.zones.notice) return 'beacon';
+    if (city.zones.shelter) return 'notice';
+    if (city.zones.depot) return 'shelter';
+    if (city.zones.generator && city.workers >= 2) return 'depot';
+    if (city.zones.generator) return 'workers';
+    if (city.zones.press) return 'generator';
+    if (city.zones.sandPit) return 'press';
+    if (city.rescued) return 'sandPit';
+    if (city.rubble >= 1) return 'rescue';
+    if (city.blocks >= 1) return 'rubble';
+    return 'block';
+}
+
+function getBlockCityGoalText(city = getBlockCityRebuildData()) {
+    const milestone = getBlockCityMilestone(city);
+    if (milestone === 'locked') return `블록 조각 ${Math.floor(gameData.blockmanBlocks || 0)}/10. 에그 해금이 먼저입니다.`;
+    if (milestone === 'block') return '목표: 모래를 모아 첫 석재를 가공하세요.';
+    if (milestone === 'rubble') return '목표: 석재로 광석을 선별하세요.';
+    if (milestone === 'rescue') return '목표: 블록맨을 깨워 자동 로봇 기반을 여세요.';
+    if (milestone === 'sandPit') return '목표: 모래 자동채집 로봇을 들여 모래 수급을 만드세요.';
+    if (milestone === 'press') return '목표: 석재 쉘터를 지어 건설 로봇을 입사시키세요.';
+    if (milestone === 'generator') return '목표: 건설 로봇이 가져오는 광석으로 발전기를 복구하세요.';
+    if (milestone === 'workers') return '목표: 모래 수급을 보며 건설 로봇 2기를 유지하세요.';
+    if (milestone === 'depot') return '목표: 저장고를 열어 광석과 부품 흐름을 안정화하세요.';
+    if (milestone === 'shelter') return '목표: 광석 제련소를 열어 모래 로봇 효율과 금속 생산을 올리세요.';
+    if (milestone === 'notice') return '목표: 연구소를 열어 부품을 연구로 바꾸세요.';
+    if (milestone === 'beacon') return '목표: 희망 정제소를 열어 마지막 정수를 생산하세요.';
+    return '목표: 연구와 부품을 희망 정제에 투입하고, 희망으로 개발소를 강화하세요.';
+}
+
+function getBlockCityNextEffectText(city = getBlockCityRebuildData()) {
+    const milestone = getBlockCityMilestone(city);
+    if (milestone === 'locked') return '다음 효과: 블록맨 에그 해금 필요';
+    if (milestone === 'block') return '다음 효과: 석재 가공 해금';
+    if (milestone === 'rubble') return '다음 효과: 광석 선별 해금';
+    if (milestone === 'rescue') return '다음 효과: 블록맨 기상';
+    if (milestone === 'sandPit') return '다음 효과: 모래 자동채집 로봇 1기';
+    if (milestone === 'press') return '다음 효과: 건설 로봇 1기 입사';
+    if (milestone === 'generator') return '다음 효과: 광석 기반 발전기';
+    if (milestone === 'workers') return `다음 효과: 저장고 조건 (${city.workers}/2기)`;
+    if (milestone === 'depot') return '다음 효과: 저장고, 광석/부품 흐름 안정';
+    if (milestone === 'shelter') return '다음 효과: 제련소가 모래 로봇 효율도 올림';
+    if (milestone === 'notice') return '다음 효과: 연구 자동 생산';
+    if (milestone === 'beacon') return '다음 효과: 희망 정제 자동화';
+    return '효과: 모래 로봇, 건설 로봇, 제련소의 균형이 전체 생산을 밀어줍니다.';
+}
+function canSpendBlockCityCost(cost) {
+    const city = getBlockCityRebuildData();
+    return Object.keys(cost).every(key => {
+        const need = Number(cost[key] || 0);
+        if (BLOCK_CITY_RESOURCE_ORDER.includes(key)) return city[key] >= need;
+        if (key === 'screws') return Math.floor(gameData.screws || 0) >= need;
+        if (key === 'crystals') return Math.floor(gameData.crystals || 0) >= need;
+        if (key === 'stones') return Math.floor(gameData.stones || 0) >= need;
+        return true;
+    });
+}
+
+function spendBlockCityCost(cost) {
+    if (!canSpendBlockCityCost(cost)) return false;
+    const city = getBlockCityRebuildData();
+    Object.keys(cost).forEach(key => {
+        const value = Number(cost[key] || 0);
+        if (BLOCK_CITY_RESOURCE_ORDER.includes(key)) city[key] -= value;
+        if (key === 'screws') gameData.screws -= value;
+        if (key === 'crystals') gameData.crystals -= value;
+        if (key === 'stones') gameData.stones -= value;
+    });
+    return true;
+}
+
+function describeBlockCityCost(cost) {
+    const parts = Object.keys(cost)
+        .filter(key => Number(cost[key] || 0) > 0)
+        .map(key => `${getBlockCityResourceLabel(key)} ${Number(cost[key]).toLocaleString()}`);
+    return parts.length ? parts.join(' / ') : '비용 없음';
+}
+
+function formatBlockCityCost(cost) {
+    return describeBlockCityCost(cost);
+}
+
+function setBlockCityAction(id, config) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    const hidden = !!config.hidden;
+    btn.hidden = hidden;
+    btn.classList.toggle('is-hidden', hidden);
+    if (hidden) {
+        btn.disabled = true;
+        btn.classList.remove('active', 'locked');
+        btn.classList.toggle('complete', !!config.complete);
+        return;
+    }
+    const enabled = !!config.enabled;
+    const complete = !!config.complete;
+    const lockedReason = config.unlock || config.locked || '조건/재화 부족';
+    const cost = complete
+        ? (config.completeCost || '효과 적용 중')
+        : (!enabled && !complete && config.unlock ? config.unlock : (config.cost || '비용 없음'));
+    const hasUnlockCost = typeof cost === 'string' && cost.startsWith('해금:');
+    const status = config.status || (complete ? (config.completeStatus || '가동 중') : enabled ? '실행 가능' : hasUnlockCost ? '해금 대기' : lockedReason);
+    const effect = complete ? (config.completeEffect || config.effect || '효과 적용 중') : (config.effect || '');
+    btn.disabled = !enabled;
+    btn.classList.toggle('active', enabled);
+    btn.classList.toggle('complete', complete);
+    btn.classList.toggle('locked', !enabled && !complete);
+    btn.innerHTML = `<b>${config.label}</b><span>${cost}</span><em>${effect}</em><small class="block-city-card-status">${status}</small>`;
+}
+
+function showBlockCityLog(message) {
+    const log = document.getElementById('block-city-rebuild-log');
+    if (log) log.innerText = message;
+}
+
+function scaleBlockCityCost(base, level, growth = 1.48) {
+    const exponent = Math.max(0, Math.floor(level || 0) - 1);
+    return Object.fromEntries(Object.entries(base).map(([key, value]) => [key, Math.max(1, Math.floor(Number(value) * Math.pow(growth, exponent)))]));
+}
+
+function getBlockCityUpgradeCost(key, city = getBlockCityRebuildData()) {
+    const level = getBlockCityLevel(city, key);
+    if (key === 'sandPit') return scaleBlockCityCost({ blocks: 10, screws: 160 }, level);
+    if (key === 'press') return scaleBlockCityCost({ sand: 90, blocks: 20, rubble: 5 }, level);
+    if (key === 'generator') return scaleBlockCityCost({ blocks: 24, rubble: 20, screws: 420 }, level);
+    if (key === 'depot') return scaleBlockCityCost({ blocks: 34, ease: 16, attention: 3, power: 26 }, level);
+    if (key === 'shelter') return scaleBlockCityCost({ rubble: 36, power: 32, ease: 10 }, level);
+    if (key === 'notice') return scaleBlockCityCost({ attention: 12, ease: 20, power: 42, love: 4 }, level);
+    if (key === 'beacon') return scaleBlockCityCost({ love: 28, attention: 12, power: 80, hope: 1 }, level);
+    if (key === 'community') return scaleBlockCityCost({ hope: 8, love: 35, attention: 25, ease: 20 }, Math.max(1, level + 1), 1.55);
+    return {};
+}
+
+function getBlockCityUpgradeEffectText(key, nextLevel) {
+    if (key === 'sandPit') return `효과: 모래 자동채집 로봇 ${nextLevel}기`;
+    if (key === 'press') return `효과: 석재 쉘터 안정도 ${nextLevel}`;
+    if (key === 'generator') return `효과: 발전기 안정화 ${nextLevel}`;
+    if (key === 'depot') return `효과: 저장 동선 정리 ${nextLevel}`;
+    if (key === 'shelter') return `효과: 광석 제련소 효율 ${nextLevel}`;
+    if (key === 'notice') return `효과: 연구소 레벨 ${nextLevel}`;
+    if (key === 'beacon') return `효과: 희망 정제 레벨 ${nextLevel}`;
+    if (key === 'community') return '효과: 희망을 전체 생산 보너스로 전환';
+    return '효과: 레벨 상승';
+}
+
+function getBlockCityUpgradeName(key) {
+    return {
+        sandPit: '모래 로봇 추가',
+        press: '석재 쉘터 정비',
+        generator: '발전기 안정화',
+        depot: '저장 동선 정리',
+        shelter: '제련소 확장',
+        notice: '연구소 확장',
+        beacon: '희망 정제 강화',
+        community: '개발소 강화'
+    }[key] || key;
+}
+function gatherBlockCitySand() {
+    const city = getBlockCityRebuildData();
+    if (!gameData.blockmanEggOwned) {
+        showBlockCityLog(`블록 조각 ${Math.floor(gameData.blockmanBlocks || 0)}/10. 에그를 먼저 열어야 합니다.`);
+        return;
+    }
+    const gain = city.rescued ? 3 + Math.floor(getBlockCityLevel(city, 'sandPit') / 2) : 1;
+    city.sand += gain;
+    showBlockCityLog(`🏖️ 모래 +${gain}. ${getBlockCityGoalText(city)}`);
+    saveData();
+    updateUI();
+}
+
+function craftBlockCityBlock() {
+    const cost = { sand: 10 };
+    const city = getBlockCityRebuildData();
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`석재 가공 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.blocks += 1;
+    showBlockCityLog('🪨 석재 +1. 모래가 단단한 재건 자재로 굳었습니다.');
+    saveData();
+    updateUI();
+}
+
+function clearBlockCityRubble() {
+    const cost = { blocks: 2 };
+    const city = getBlockCityRebuildData();
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`광석 선별 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.rubble += 1;
+    showBlockCityLog('⛏️ 광석 +1. 석재 사이에서 쓸만한 광맥을 골라냈습니다.');
+    saveData();
+    updateUI();
+}
+
+function smeltBlockCityMetal() {
+    const cost = { rubble: 3, power: 4 };
+    const city = getBlockCityRebuildData();
+    if (!city.zones.shelter) {
+        showBlockCityLog('광석 제련소가 먼저 필요합니다.');
+        return;
+    }
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`금속 제련 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.ease += 1;
+    showBlockCityLog('🔧 금속 +1. 광석이 공업용 금속으로 제련되었습니다.');
+    saveData();
+    updateUI();
+}
+
+function craftBlockCityParts() {
+    const cost = { ease: 2, power: 5 };
+    const city = getBlockCityRebuildData();
+    if (!city.zones.depot) {
+        showBlockCityLog('저장고가 먼저 필요합니다.');
+        return;
+    }
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`부품 가공 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.attention += 1;
+    showBlockCityLog('⚙️ 부품 +1. 금속이 로봇 정비 부품으로 가공되었습니다.');
+    saveData();
+    updateUI();
+}
+
+function runBlockCityResearch() {
+    const cost = { attention: 2, power: 8 };
+    const city = getBlockCityRebuildData();
+    if (!city.zones.notice) {
+        showBlockCityLog('연구소가 먼저 필요합니다.');
+        return;
+    }
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`연구 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.love += 1;
+    showBlockCityLog('📘 연구 +1. 부품 운용 지식이 정리되었습니다.');
+    saveData();
+    updateUI();
+}
+
+function refineBlockCityHope() {
+    const cost = { love: 4, attention: 2, power: 12 };
+    const city = getBlockCityRebuildData();
+    if (!city.zones.beacon) {
+        showBlockCityLog('희망 정제소가 먼저 필요합니다.');
+        return;
+    }
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`희망 정제 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.hope += 1;
+    showBlockCityLog('✨ 희망 +1. 블록시티의 마지막 정수가 생겼습니다.');
+    saveData();
+    updateUI();
+}
+
+function rescueBlockman() {
+    const city = getBlockCityRebuildData();
+    const cost = { sand: 30, blocks: 3, stones: 20 };
+    if (!gameData.blockmanEggOwned) {
+        showBlockCityLog('블록맨 에그가 먼저 필요합니다.');
+        return;
+    }
+    if (city.rescued) {
+        showBlockCityLog('블록맨은 이미 일어나 있습니다.');
+        return;
+    }
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`블록맨 기상 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.rescued = true;
+    city.power += 2;
+    showBlockCityLog('블록맨이 일어났습니다. 이제 로봇을 불러 재건을 시작할 수 있습니다.');
+    saveData();
+    updateUI();
+}
+
+function buildBlockCitySandPit() {
+    const city = getBlockCityRebuildData();
+    const cost = { blocks: 6, screws: 180 };
+    if (!city.rescued) {
+        showBlockCityLog('블록맨을 먼저 깨워야 합니다.');
+        return;
+    }
+    if (city.zones.sandPit) {
+        showBlockCityLog('모래 자동채집 로봇은 이미 들어와 있습니다.');
+        return;
+    }
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`모래 로봇 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.zones.sandPit = true;
+    normalizeBlockCityLevels(city);
+    showBlockCityLog('모래 자동채집 로봇 1기가 합류했습니다. 모래가 천천히 쌓입니다.');
+    saveData();
+    updateUI();
+}
+
+function buildBlockCityPress() {
+    const city = getBlockCityRebuildData();
+    const cost = { sand: 80, blocks: 14, screws: 220 };
+    if (!city.zones.sandPit) {
+        showBlockCityLog('모래 자동채집 로봇이 먼저 필요합니다.');
+        return;
+    }
+    if (city.zones.press) {
+        showBlockCityLog('석재 쉘터는 이미 지어져 있습니다.');
+        return;
+    }
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`석재 쉘터 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.zones.press = true;
+    if ((city.workers || 0) < 1) city.workers = 1;
+    normalizeBlockCityLevels(city);
+    showBlockCityLog('석재 쉘터 완성. 구직중이던 건설 로봇 1기가 입사했습니다.');
+    saveData();
+    updateUI();
+}
+
+function repairBlockCityGenerator() {
+    const city = getBlockCityRebuildData();
+    const cost = { rubble: 25, screws: 500, crystals: 1 };
+    if (!city.zones.press) {
+        showBlockCityLog('석재 쉘터와 건설 로봇이 먼저 필요합니다.');
+        return;
+    }
+    if (city.zones.generator) {
+        showBlockCityLog('발전기는 이미 가동 중입니다.');
+        return;
+    }
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`발전기 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.zones.generator = true;
+    normalizeBlockCityLevels(city);
+    showBlockCityLog('발전기 복구. 건설 로봇 유지비가 조금 낮아지고 동력이 쌓입니다.');
+    saveData();
+    updateUI();
+}
+
+function hireBlockCityWorker() {
+    const city = getBlockCityRebuildData();
+    const nextWorker = Math.floor(city.workers || 0) + 1;
+    const limit = getBlockCityWorkerLimit(city);
+    const cost = { sand: 40 + nextWorker * 18, blocks: 10 + nextWorker * 5, screws: 180 + nextWorker * 90 };
+    if (!city.zones.press) {
+        showBlockCityLog('석재 쉘터가 먼저 필요합니다.');
+        return;
+    }
+    if (nextWorker > limit) {
+        showBlockCityLog(`현재 건설 로봇 한도는 ${limit}기입니다.`);
+        return;
+    }
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`건설 로봇 입사 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.workers = nextWorker;
+    city.sandShortageTicks = 0;
+    showBlockCityLog(`건설 로봇 ${nextWorker}기. 광석을 가져오지만 모래를 조금씩 먹습니다.`);
+    saveData();
+    updateUI();
+}
+
+function restoreBlockCityDepot() {
+    const city = getBlockCityRebuildData();
+    const cost = { blocks: 35, ease: 12, power: 24 };
+    if (!city.zones.generator || city.workers < 2) {
+        showBlockCityLog('발전기와 건설 로봇 2기가 먼저 필요합니다.');
+        return;
+    }
+    if (city.zones.depot) {
+        showBlockCityLog('저장고는 이미 열려 있습니다.');
+        return;
+    }
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`저장고 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.zones.depot = true;
+    normalizeBlockCityLevels(city);
+    showBlockCityLog('저장고 개방. 광석과 부품 흐름이 안정됩니다.');
+    saveData();
+    updateUI();
+}
+
+function restoreBlockCityShelter() {
+    const city = getBlockCityRebuildData();
+    const cost = { rubble: 45, power: 40, blocks: 15 };
+    if (!city.zones.depot) {
+        showBlockCityLog('저장고가 먼저 필요합니다.');
+        return;
+    }
+    if (city.zones.shelter) {
+        showBlockCityLog('광석 제련소는 이미 가동 중입니다.');
+        return;
+    }
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`광석 제련소 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.zones.shelter = true;
+    normalizeBlockCityLevels(city);
+    showBlockCityLog('광석 제련소 가동. 금속 생산과 모래 로봇 효율이 함께 올라갑니다.');
+    saveData();
+    updateUI();
+}
+
+function openBlockCityNoticeBoard() {
+    const city = getBlockCityRebuildData();
+    const cost = { attention: 10, ease: 25, power: 60, screws: 1200 };
+    if (!city.zones.shelter) {
+        showBlockCityLog('광석 제련소가 먼저 필요합니다.');
+        return;
+    }
+    if (city.zones.notice) {
+        showBlockCityLog('연구소는 이미 운영 중입니다.');
+        return;
+    }
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`연구소 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.zones.notice = true;
+    normalizeBlockCityLevels(city);
+    showBlockCityLog('연구소 개방. 부품을 연구로 전환할 수 있습니다.');
+    saveData();
+    updateUI();
+}
+
+function lightBlockCityBeacon() {
+    const city = getBlockCityRebuildData();
+    const cost = { love: 25, attention: 20, crystals: 5 };
+    if (!city.zones.notice || city.workers < 4) {
+        showBlockCityLog('연구소와 건설 로봇 4기가 먼저 필요합니다.');
+        return;
+    }
+    if (city.zones.beacon) {
+        showBlockCityLog('희망 정제소는 이미 가동 중입니다.');
+        return;
+    }
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`희망 정제소 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    city.zones.beacon = true;
+    city.hope += 3;
+    normalizeBlockCityLevels(city);
+    showBlockCityLog('희망 정제소 가동. 연구가 마지막 정수인 희망으로 이어집니다.');
+    saveData();
+    updateUI();
+}
+
+function upgradeBlockCityLevel(key) {
+    const city = getBlockCityRebuildData();
+    const zoneKey = key === 'community' ? 'beacon' : key;
+    if (!gameData.blockmanEggOwned) {
+        showBlockCityLog('블록맨 에그가 먼저 필요합니다.');
+        return;
+    }
+    if (key !== 'community' && !city.zones[zoneKey]) {
+        showBlockCityLog(`${getBlockCityUpgradeName(key)} 해금이 먼저 필요합니다.`);
+        return;
+    }
+    if (key === 'community' && !city.zones.beacon) {
+        showBlockCityLog('희망 정제소가 먼저 필요합니다.');
+        return;
+    }
+    const levels = normalizeBlockCityLevels(city);
+    const currentLevel = getBlockCityLevel(city, key);
+    const cost = getBlockCityUpgradeCost(key, city);
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`${getBlockCityUpgradeName(key)} 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    levels[key] = currentLevel + 1;
+    if (key === 'community') {
+        city.love += 2 + levels[key];
+        city.power += 2 + levels[key];
+    }
+    showBlockCityLog(`${getBlockCityUpgradeName(key)} Lv.${levels[key]}. ${getBlockCityUpgradeEffectText(key, levels[key])}`);
+    saveData();
+    updateUI();
+}
+
+function upgradeBlockCitySandPit() { upgradeBlockCityLevel('sandPit'); }
+function upgradeBlockCityPress() { upgradeBlockCityLevel('press'); }
+function upgradeBlockCityGenerator() { upgradeBlockCityLevel('generator'); }
+function upgradeBlockCityDepot() { upgradeBlockCityLevel('depot'); }
+function upgradeBlockCityShelter() { upgradeBlockCityLevel('shelter'); }
+function upgradeBlockCityNotice() { upgradeBlockCityLevel('notice'); }
+function upgradeBlockCityBeacon() { upgradeBlockCityLevel('beacon'); }
+function shareBlockCityLove() { upgradeBlockCityLevel('community'); }
+function tickBlockCityRebuild() {
+    const city = getBlockCityRebuildData();
+    if (gameData.blockmanEggOwned) {
+        const rates = getBlockCityRebuildRates(city);
+        let sandShort = false;
+        BLOCK_CITY_RESOURCE_ORDER.forEach(key => {
+            const nextValue = Number(city[key] || 0) + (rates[key] || 0);
+            if (key === 'sand' && (rates[key] || 0) < 0 && nextValue <= 0) {
+                city[key] = 0;
+                sandShort = true;
+            } else {
+                city[key] = Math.max(0, nextValue);
+            }
+        });
+        if (sandShort && city.workers > 0) {
+            city.sandShortageTicks = Math.max(0, Math.floor(city.sandShortageTicks || 0)) + 1;
+            if (city.sandShortageTicks >= 8) {
+                city.workers = Math.max(0, Math.floor(city.workers || 0) - 1);
+                city.sandShortageTicks = 0;
+                showBlockCityLog('모래가 바닥나 건설 로봇 1기가 퇴사했습니다. 모래 로봇을 조금 늘려주세요.');
+            }
+        } else {
+            city.sandShortageTicks = 0;
+        }
+        blockCityRebuildTickCount++;
+        if (blockCityRebuildTickCount % 5 === 0) saveData();
+    }
+    updateBlockCityUI();
+}
+function startBlockCityRebuildLoop() {
+    if (blockCityRebuildTimer) clearInterval(blockCityRebuildTimer);
+    blockCityRebuildTimer = setInterval(tickBlockCityRebuild, 1000);
+    updateBlockCityUI();
+}
+
+function updateBlockCityUI() {
+    const city = getBlockCityRebuildData();
+    const stage = document.getElementById('block-city-stage');
+    const blockmanImg = document.getElementById('block-city-blockman-img');
+    const progress = getBlockCityRebuildProgress(city);
+    const rates = getBlockCityRebuildRates(city);
+    const workerLimit = getBlockCityWorkerLimit(city);
+    const lightLevel = !gameData.blockmanEggOwned ? 0
+        : city.zones.beacon ? 5
+            : city.zones.shelter ? 4
+                : city.zones.generator ? 3
+                    : city.rescued ? 2
+                        : city.blocks >= 1 ? 1
+                            : 0;
+
+    if (stage) stage.className = `block-city-stage block-city-portrait-stage light-${lightLevel}`;
+    if (blockmanImg) {
+        blockmanImg.src = city.rescued ? BLOCK_CITY_AWAKE_SPRITE : BLOCK_CITY_REST_SPRITE;
+        blockmanImg.className = `block-city-blockman-img ${city.rescued ? 'awake' : 'resting'}`;
+    }
+
+    const portraitState = document.getElementById('block-city-portrait-state');
+    if (portraitState) portraitState.innerText = !gameData.blockmanEggOwned ? '잠김' : (city.rescued ? '블록맨' : '조난');
+    const title = document.getElementById('block-city-rebuild-title');
+    if (title) title.innerText = getBlockCityRebuildTitle(city);
+    const progressText = document.getElementById('block-city-rebuild-progress');
+    if (progressText) progressText.innerText = `${progress}%`;
+    const progressFill = document.getElementById('block-city-progress-fill');
+    if (progressFill) progressFill.style.width = `${progress}%`;
+    const goal = document.getElementById('block-city-current-goal');
+    if (goal) goal.innerText = getBlockCityGoalText(city);
+    const effect = document.getElementById('block-city-next-effect');
+    if (effect) effect.innerText = getBlockCityNextEffectText(city);
+    const crew = document.getElementById('block-city-crew-line');
+    if (crew) crew.innerText = `${BLOCK_CITY_RESOURCE.workers.icon} 건설 로봇 ${formatBlockCityNumber(city.workers)} / ${workerLimit}`;
+
+    BLOCK_CITY_RESOURCE_ORDER.forEach(key => {
+        const el = document.getElementById(`block-city-${key}`);
+        if (el) el.innerText = formatBlockCityNumber(city[key]);
+    });
+
+    const rateLine = document.getElementById('block-city-rate-line');
+    if (rateLine) {
+        const parts = BLOCK_CITY_RESOURCE_ORDER
+            .filter(key => Math.abs(rates[key] || 0) >= 0.005)
+            .map(key => `${BLOCK_CITY_RESOURCE[key].icon} ${(rates[key] >= 0 ? '+' : '')}${rates[key].toFixed(2)}/초`);
+        rateLine.innerText = parts.length ? parts.join(' · ') : '자동화 없음';
+    }
+
+    const stoneCost = { sand: 10 };
+    const oreCost = { blocks: 2 };
+    const metalCost = { rubble: 3, power: 4 };
+    const partsCost = { ease: 3, power: 6 };
+    const researchCost = { attention: 2, power: 8 };
+    const hopeCost = { love: 4, attention: 2, power: 12 };
+    const rescueCost = { sand: 30, blocks: 3, stones: 20 };
+    const sandPitCost = { blocks: 6, screws: 180 };
+    const pressCost = { sand: 80, blocks: 14, screws: 220 };
+    const generatorCost = { rubble: 25, screws: 500, crystals: 1 };
+    const nextWorker = Math.floor(city.workers || 0) + 1;
+    const workerCost = { sand: 40 + nextWorker * 18, blocks: 10 + nextWorker * 5, screws: 180 + nextWorker * 90 };
+    const depotCost = { blocks: 35, ease: 12, power: 24 };
+    const shelterCost = { rubble: 45, power: 40, blocks: 15 };
+    const noticeCost = { attention: 10, ease: 25, power: 60, screws: 1200 };
+    const beaconCost = { love: 25, attention: 20, crystals: 5 };
+
+    setBlockCityAction('block-city-sand-btn', {
+        enabled: !!gameData.blockmanEggOwned,
+        label: gameData.blockmanEggOwned ? '🏖️ 모래 줍기' : `🔒 조각 ${Math.floor(gameData.blockmanBlocks || 0)}/10`,
+        cost: '비용 없음',
+        effect: city.rescued ? '수동: 🏖️ +3 이상' : '수동: 🏖️ +1'
+    });
+    setBlockCityAction('block-city-block-btn', {
+        enabled: canSpendBlockCityCost(stoneCost),
+        label: '🪨 석재 가공',
+        cost: describeBlockCityCost(stoneCost),
+        effect: '효과: 🪨 석재 +1'
+    });
+    setBlockCityAction('block-city-rubble-btn', {
+        enabled: canSpendBlockCityCost(oreCost),
+        label: '⛏️ 광석 선별',
+        cost: describeBlockCityCost(oreCost),
+        effect: '효과: ⛏️ 광석 +1'
+    });
+    setBlockCityAction('block-city-smelt-btn', {
+        enabled: city.zones.shelter && canSpendBlockCityCost(metalCost),
+        label: '🔧 금속 제련',
+        cost: city.zones.shelter ? describeBlockCityCost(metalCost) : '해금: 광석 제련소 건설',
+        effect: '효과: 🔧 금속 +1',
+        locked: city.zones.shelter ? '재료 부족' : '해금: 광석 제련소 건설'
+    });
+    setBlockCityAction('block-city-parts-btn', {
+        enabled: city.zones.depot && canSpendBlockCityCost(partsCost),
+        label: '⚙️ 부품 가공',
+        cost: city.zones.depot ? describeBlockCityCost(partsCost) : '해금: 저장고 건설',
+        effect: '효과: ⚙️ 부품 +1',
+        locked: city.zones.depot ? '재료 부족' : '해금: 저장고 건설'
+    });
+    setBlockCityAction('block-city-research-btn', {
+        enabled: city.zones.notice && canSpendBlockCityCost(researchCost),
+        label: '📘 연구 수행',
+        cost: city.zones.notice ? describeBlockCityCost(researchCost) : '해금: 연구소 건설',
+        effect: '효과: 📘 연구 +1',
+        locked: city.zones.notice ? '재료 부족' : '해금: 연구소 건설'
+    });
+    setBlockCityAction('block-city-hope-btn', {
+        enabled: city.zones.beacon && canSpendBlockCityCost(hopeCost),
+        label: '✨ 희망 정제',
+        cost: city.zones.beacon ? describeBlockCityCost(hopeCost) : '해금: 희망 정제소 건설',
+        effect: '효과: ✨ 희망 +1',
+        locked: city.zones.beacon ? '재료 부족' : '해금: 희망 정제소 건설'
+    });
+
+    setBlockCityAction('block-city-rescue-btn', {
+        enabled: !!gameData.blockmanEggOwned && !city.rescued && canSpendBlockCityCost(rescueCost),
+        complete: city.rescued,
+        hidden: city.rescued,
+        label: city.rescued ? '🤖 블록맨 기상' : '🤖 블록맨 깨우기',
+        cost: gameData.blockmanEggOwned ? describeBlockCityCost(rescueCost) : '해금: 블록맨 에그',
+        effect: '효과: 블록맨 기상',
+        locked: !gameData.blockmanEggOwned ? '해금: 블록맨 에그' : '재료 부족'
+    });
+    setBlockCityAction('block-city-sandpit-btn', {
+        enabled: city.rescued && !city.zones.sandPit && canSpendBlockCityCost(sandPitCost),
+        complete: city.zones.sandPit,
+        hidden: city.zones.sandPit,
+        label: '🤖 모래 자동채집 로봇',
+        cost: city.rescued ? describeBlockCityCost(sandPitCost) : '해금: 블록맨 깨우기',
+        effect: '효과: 모래 +/초',
+        locked: city.rescued ? '재료 부족' : '해금: 블록맨 깨우기'
+    });
+    setBlockCityAction('block-city-press-btn', {
+        enabled: city.zones.sandPit && !city.zones.press && canSpendBlockCityCost(pressCost),
+        complete: city.zones.press,
+        hidden: city.zones.press,
+        label: '🏠 석재 쉘터 건설',
+        cost: city.zones.sandPit ? describeBlockCityCost(pressCost) : '해금: 모래 자동채집 로봇',
+        effect: '효과: 건설 로봇 1기 입사',
+        locked: city.zones.sandPit ? '재료 부족' : '해금: 모래 자동채집 로봇'
+    });
+    setBlockCityAction('block-city-generator-btn', {
+        enabled: city.zones.press && !city.zones.generator && canSpendBlockCityCost(generatorCost),
+        complete: city.zones.generator,
+        hidden: city.zones.generator,
+        label: '⚡ 발전기 복구',
+        cost: city.zones.press ? describeBlockCityCost(generatorCost) : '해금: 석재 쉘터 건설',
+        effect: '효과: ⚡ 동력 자동 생산',
+        locked: city.zones.press ? '재료 부족' : '해금: 석재 쉘터 건설'
+    });
+    setBlockCityAction('block-city-worker-btn', {
+        enabled: city.zones.press && nextWorker <= workerLimit && canSpendBlockCityCost(workerCost),
+        complete: nextWorker > workerLimit,
+        hidden: nextWorker > workerLimit,
+        label: `🏗️ 건설 로봇 입사 ${nextWorker}/${workerLimit}`,
+        cost: !city.zones.press ? '해금: 석재 쉘터 건설' : nextWorker > workerLimit ? '현재 한도 도달' : describeBlockCityCost(workerCost),
+        effect: '효과: 광석 +/초, 모래 -/초',
+        locked: !city.zones.press ? '해금: 석재 쉘터 건설' : nextWorker > workerLimit ? '현재 한도 도달' : '재료 부족'
+    });
+    setBlockCityAction('block-city-depot-btn', {
+        enabled: city.zones.generator && city.workers >= 2 && !city.zones.depot && canSpendBlockCityCost(depotCost),
+        complete: city.zones.depot,
+        hidden: city.zones.depot,
+        label: '📦 저장고',
+        cost: (city.zones.generator && city.workers >= 2) ? describeBlockCityCost(depotCost) : '해금: 발전기 + 건설 로봇 2기',
+        effect: '효과: 광석/부품 흐름과 로봇 한도',
+        locked: (city.zones.generator && city.workers >= 2) ? '재료 부족' : '해금: 발전기 + 건설 로봇 2기'
+    });
+    setBlockCityAction('block-city-shelter-btn', {
+        enabled: city.zones.depot && !city.zones.shelter && canSpendBlockCityCost(shelterCost),
+        complete: city.zones.shelter,
+        hidden: city.zones.shelter,
+        label: '🔧 광석 제련소',
+        cost: city.zones.depot ? describeBlockCityCost(shelterCost) : '해금: 저장고 건설',
+        effect: '효과: 금속 제련, 모래 로봇 효율',
+        locked: city.zones.depot ? '재료 부족' : '해금: 저장고 건설'
+    });
+    setBlockCityAction('block-city-notice-btn', {
+        enabled: city.zones.shelter && !city.zones.notice && canSpendBlockCityCost(noticeCost),
+        complete: city.zones.notice,
+        hidden: city.zones.notice,
+        label: '📘 연구소',
+        cost: city.zones.shelter ? describeBlockCityCost(noticeCost) : '해금: 광석 제련소 건설',
+        effect: '효과: 📘 연구 해금',
+        locked: city.zones.shelter ? '재료 부족' : '해금: 광석 제련소 건설'
+    });
+    setBlockCityAction('block-city-beacon-btn', {
+        enabled: city.zones.notice && city.workers >= 4 && !city.zones.beacon && canSpendBlockCityCost(beaconCost),
+        complete: city.zones.beacon,
+        hidden: city.zones.beacon,
+        label: '✨ 희망 정제소',
+        cost: (city.zones.notice && city.workers >= 4) ? describeBlockCityCost(beaconCost) : '해금: 연구소 + 건설 로봇 4기',
+        effect: '효과: ✨ 희망 정제 해금',
+        locked: (city.zones.notice && city.workers >= 4) ? '재료 부족' : '해금: 연구소 + 건설 로봇 4기'
+    });
+
+    const upgradeKeys = ['sandPit', 'press', 'generator', 'depot', 'shelter', 'notice', 'beacon', 'community'];
+    const upgradeButtonIds = {
+        sandPit: 'block-city-upgrade-sandpit-btn',
+        press: 'block-city-upgrade-press-btn',
+        generator: 'block-city-upgrade-generator-btn',
+        depot: 'block-city-upgrade-depot-btn',
+        shelter: 'block-city-upgrade-shelter-btn',
+        notice: 'block-city-upgrade-notice-btn',
+        beacon: 'block-city-upgrade-beacon-btn',
+        community: 'block-city-share-love-btn'
+    };
+    const upgradeLabels = {
+        sandPit: '🤖 모래 로봇 추가',
+        press: '🏠 석재 쉘터 정비',
+        generator: '⚡ 발전기 안정화',
+        depot: '📦 저장 동선 정리',
+        shelter: '🔧 제련소 확장',
+        notice: '📘 연구소 확장',
+        beacon: '✨ 희망 정제 강화',
+        community: '🏛️ 개발소 강화'
+    };
+    const upgradeRequiredZones = {
+        sandPit: 'sandPit',
+        press: 'press',
+        generator: 'generator',
+        depot: 'depot',
+        shelter: 'shelter',
+        notice: 'notice',
+        beacon: 'beacon',
+        community: 'beacon'
+    };
+    const upgradeUnlockLabels = {
+        sandPit: '모래 자동채집 로봇 건설',
+        press: '석재 쉘터 건설',
+        generator: '발전기 복구',
+        depot: '저장고 건설',
+        shelter: '광석 제련소 건설',
+        notice: '연구소 건설',
+        beacon: '희망 정제소 건설',
+        community: '희망 정제소 건설'
+    };
+    upgradeKeys.forEach(key => {
+        const level = getBlockCityLevel(city, key);
+        const nextLevel = level + 1;
+        const cost = getBlockCityUpgradeCost(key, city);
+        const requiredZone = upgradeRequiredZones[key];
+        const unlocked = key === 'community' ? city.zones.beacon : city.zones[requiredZone];
+        const unlockText = `해금: ${upgradeUnlockLabels[key] || '관련 시설 건설'}`;
+        setBlockCityAction(upgradeButtonIds[key], {
+            enabled: !!unlocked && canSpendBlockCityCost(cost),
+            label: `${upgradeLabels[key]} Lv.${level}`,
+            cost: unlocked ? describeBlockCityCost(cost) : unlockText,
+            effect: getBlockCityUpgradeEffectText(key, nextLevel),
+            status: unlocked ? `Lv.${level} → ${nextLevel}` : '해금 대기',
+            locked: unlocked ? '재료 부족' : unlockText
+        });
+    });
+    updateBlockCitySubView();
+}
+
+if (typeof window !== 'undefined') {
+    Object.assign(window, {
+        setMineSubView,
+        setBlockCitySubView,
+        gatherBlockCitySand,
+        craftBlockCityBlock,
+        clearBlockCityRubble,
+        smeltBlockCityMetal,
+        craftBlockCityParts,
+        runBlockCityResearch,
+        refineBlockCityHope,
+        rescueBlockman,
+        buildBlockCitySandPit,
+        buildBlockCityPress,
+        repairBlockCityGenerator,
+        hireBlockCityWorker,
+        restoreBlockCityDepot,
+        restoreBlockCityShelter,
+        openBlockCityNoticeBoard,
+        lightBlockCityBeacon,
+        upgradeBlockCitySandPit,
+        upgradeBlockCityPress,
+        upgradeBlockCityGenerator,
+        upgradeBlockCityDepot,
+        upgradeBlockCityShelter,
+        upgradeBlockCityNotice,
+        upgradeBlockCityBeacon,
+        shareBlockCityLove,
+        openBlockmanEggPanel
+    });
+}
+
+startBlockCityRebuildLoop();
 
 function showTab(tabName) {
     if ((bossBattleEntryPending || (isBossBattle && !enemyDead && !playerDead)) && tabName !== 'battle') {
@@ -7920,10 +9006,9 @@ function showMineDamageText(reward = null) {
 }
 
 function openBlockmanEggPanel() {
-    if (!gameData.blockmanEggOwned) return;
-    showMineResult(`블록맨 에그 ${BLOCKMAN_EGG_ICON_HTML} / 다음 성장 화면은 준비 중입니다.`);
+    showTab('mine');
+    setMineSubView('city');
 }
-
 function showMineResult(message) {
     const result = document.getElementById('mine-result-text');
     if (!result) return;
@@ -9038,11 +10123,6 @@ if (mineRegisteredBonusInline) {
     slot.innerHTML = `<img src="${getRegisteredPickaxeSprite(item)}" alt="등록 곡괭이"><b>+${item.enhance}</b><em>+${slotBonus.screws} / +${slotBonus.stones}</em><small>${getRegisteredPickaxeName(item)}</small>`;
 });
 
-const blockmanEggButton = document.getElementById('blockman-egg-button');
-if (blockmanEggButton) {
-    blockmanEggButton.classList.toggle('active', !!gameData.blockmanEggOwned);
-    blockmanEggButton.style.display = gameData.blockmanEggOwned ? 'flex' : 'none';
-}
 updateBlockCityUI();
 
 const mineChance = document.getElementById('mine-enhance-chance');

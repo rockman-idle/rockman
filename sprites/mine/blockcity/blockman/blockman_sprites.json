@@ -1,0 +1,11 @@
+{
+  "source": "../marshadowslime.png",
+  "transparentKeys": ["#546E8C", "#749AD4"],
+  "sheets": {
+    "blockman_walk_small.png": { "frameWidth": 32, "frameHeight": 36, "frames": 4, "note": "small NES-style walk rough cut" },
+    "blockman_block_drop_small.png": { "frameWidth": 32, "frameHeight": 36, "frames": 4, "note": "small NES-style block-drop rough cut" },
+    "blockman_giant_idle.png": { "frameWidth": 136, "frameHeight": 118, "frames": 7, "note": "giant pose row" },
+    "blockman_giant_block_drop.png": { "frameWidth": 136, "frameHeight": 134, "frames": 7, "note": "giant attack/block-drop row" },
+    "blockman_giant_motion.png": { "frameWidth": 136, "frameHeight": 118, "frames": 5, "note": "giant motion follow-up row" }
+  }
+}

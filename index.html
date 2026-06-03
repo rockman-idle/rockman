@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=block_city_v206">
+<link rel="stylesheet" href="style.css?v=block_city_tabs_balance_v255">
 </head>
 
 <body>
@@ -311,7 +311,7 @@
 <div class="tab-bookmark">
     <button id="status-tab-btn" class="tab-btn status-right-tab-btn" onclick="showTab('status')">&#48120;&#49496;<br>&#49345;&#53468;</button>
     <button id="partner-tab-btn" class="tab-btn" onclick="showTab('partner')">&#46041;&#47308;</button>
-    <button type="button" id="sync-tab-btn" class="tab-btn mobile-sync-tab-btn" onclick="toggleMobileSyncTab(event)">SYNC</button>
+    <button type="button" id="sync-tab-btn" class="tab-btn mobile-sync-tab-btn" onclick="toggleMobileSyncTab(event)">&#46041;&#47308;<br>&#49905;&#53356;</button>
     <button id="card-tab-btn" class="tab-btn" onclick="showTab('card')">&#52852;&#46300;</button>
     <button type="button" id="sleep-mode-btn" class="tab-btn mobile-sleep-tab-btn" onclick="event.stopPropagation(); toggleSleepMode();">&#51208;&#51204;</button>
 </div>
@@ -473,7 +473,7 @@
         </div>
 
         <div class="tip-board" aria-live="polite">
-            <div id="battle-tip-message" class="tip-message">TIP</div>
+            <div id="battle-tip-message" class="tip-message">&#54017;</div>
         </div>
 
         <div class="battle-upgrade-tabs" role="tablist" aria-label="전투 강화 재화 탭">
@@ -576,49 +576,49 @@
                     <img src="sprites/partner/rush/rush_portrait.png" class="partner-inventory-icon" alt="러쉬">
                     <span class="partner-inventory-name">러쉬</span>
                     <span class="partner-inventory-fragments"><span id="rush-fragments">DATA 미제작</span></span>
-                    <span id="rush-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
+                    <span id="rush-complete-badge" class="complete-badge partner-complete-badge">&#50756;&#47308;</span>
                 </button>
 
                 <button type="button" id="partner-tile-beat" class="partner-inventory-card" onclick="openPartnerInventoryPopup('beat')">
                     <img src="sprites/partner/beat/beat_portrait.png" class="partner-inventory-icon" alt="비트">
                     <span class="partner-inventory-name">비트</span>
                     <span class="partner-inventory-fragments"><span id="beat-fragments">DATA 미제작</span></span>
-                    <span id="beat-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
+                    <span id="beat-complete-badge" class="complete-badge partner-complete-badge">&#50756;&#47308;</span>
                 </button>
 
                 <button type="button" id="partner-tile-blues" class="partner-inventory-card" onclick="openPartnerInventoryPopup('blues')">
                     <img src="sprites/partner/blues/blues_portrait.png" class="partner-inventory-icon" alt="블루스">
                     <span class="partner-inventory-name">블루스</span>
                     <span class="partner-inventory-fragments"><span id="blues-fragments">DATA 미제작</span></span>
-                    <span id="blues-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
+                    <span id="blues-complete-badge" class="complete-badge partner-complete-badge">&#50756;&#47308;</span>
                 </button>
 
                 <button type="button" id="partner-tile-forte" class="partner-inventory-card" onclick="openPartnerInventoryPopup('forte')">
                     <img src="sprites/partner/forte/forte_portrait.png" class="partner-inventory-icon" alt="포르테">
                     <span class="partner-inventory-name">포르테</span>
                     <span class="partner-inventory-fragments"><span id="forte-fragments">DATA 미제작</span></span>
-                    <span id="forte-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
+                    <span id="forte-complete-badge" class="complete-badge partner-complete-badge">&#50756;&#47308;</span>
                 </button>
 
                 <button type="button" id="partner-tile-x" class="partner-inventory-card" onclick="openPartnerInventoryPopup('x')">
                     <img src="sprites/partner/x/x_portrait.png" class="partner-inventory-icon" alt="엑스">
                     <span class="partner-inventory-name">엑스</span>
                     <span class="partner-inventory-fragments"><span id="x-fragments">DATA 미제작</span></span>
-                    <span id="x-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
+                    <span id="x-complete-badge" class="complete-badge partner-complete-badge">&#50756;&#47308;</span>
                 </button>
 
                 <button type="button" id="partner-tile-zero" class="partner-inventory-card" onclick="openPartnerInventoryPopup('zero')">
                     <img src="sprites/partner/zero/zero_portrait.png" class="partner-inventory-icon" alt="제로">
                     <span class="partner-inventory-name">제로</span>
                     <span class="partner-inventory-fragments"><span id="zero-fragments">DATA 미제작</span></span>
-                    <span id="zero-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
+                    <span id="zero-complete-badge" class="complete-badge partner-complete-badge">&#50756;&#47308;</span>
                 </button>
 
                 <button type="button" id="partner-tile-exeRockman" class="partner-inventory-card" onclick="openPartnerInventoryPopup('exeRockman')">
                     <img src="sprites/partner/rockexe/rockexe_portrait.png" class="partner-inventory-icon" alt="록맨.EXE">
                     <span class="partner-inventory-name">록맨.EXE</span>
                     <span class="partner-inventory-fragments"><span id="exeRockman-fragments">DATA 미제작</span></span>
-                    <span id="exeRockman-complete-badge" class="complete-badge partner-complete-badge">COMPLETE</span>
+                    <span id="exeRockman-complete-badge" class="complete-badge partner-complete-badge">&#50756;&#47308;</span>
                 </button>
             </div>
 
@@ -644,7 +644,7 @@
                         </button>
                         <button type="button" id="partner-popup-summon" class="partner-popup-btn partner-popup-summon" onclick="event.preventDefault(); event.stopPropagation(); summonPartnerFromInventory(); return false;">
                             <span class="partner-popup-btn-title">소환</span>
-                            <span class="partner-popup-btn-cost partner-popup-btn-cost-plain" id="partner-popup-summon-sub">READY</span>
+                            <span class="partner-popup-btn-cost partner-popup-btn-cost-plain" id="partner-popup-summon-sub">&#51456;&#48708;&#46120;</span>
                         </button>
 
                     </div>
@@ -949,9 +949,9 @@
 
 <div id="mine-tab" class="tab-content">
   <div class="system-panel mine-panel">
-    <div id="mine-view-switch" class="mine-view-switch" role="tablist" aria-label="mine view switch">
-      <button type="button" id="mine-view-mine-btn" class="mine-view-btn active" onclick="setMineSubView('mine')" aria-selected="true">MINE</button>
-      <button type="button" id="mine-view-city-btn" class="mine-view-btn" onclick="setMineSubView('city')" aria-selected="false">CITY</button>
+    <div id="mine-view-switch" class="mine-view-switch" role="tablist" aria-label="&#44305;&#49328; &#48372;&#44592; &#51204;&#54872;">
+      <button type="button" id="mine-view-mine-btn" class="mine-view-btn active" onclick="document.getElementById('mine-main-view').classList.add('active');document.getElementById('mine-main-view').hidden=false;document.getElementById('mine-city-view').classList.remove('active');document.getElementById('mine-city-view').hidden=true;document.getElementById('mine-view-mine-btn').classList.add('active');document.getElementById('mine-view-mine-btn').setAttribute('aria-selected','true');document.getElementById('mine-view-city-btn').classList.remove('active');document.getElementById('mine-view-city-btn').setAttribute('aria-selected','false');" aria-selected="true">&#44305;&#49328;</button>
+      <button type="button" id="mine-view-city-btn" class="mine-view-btn" onclick="document.getElementById('mine-main-view').classList.remove('active');document.getElementById('mine-main-view').hidden=true;document.getElementById('mine-city-view').classList.add('active');document.getElementById('mine-city-view').hidden=false;document.getElementById('mine-view-mine-btn').classList.remove('active');document.getElementById('mine-view-mine-btn').setAttribute('aria-selected','false');document.getElementById('mine-view-city-btn').classList.add('active');document.getElementById('mine-view-city-btn').setAttribute('aria-selected','true');" aria-selected="false">&#48660;&#47197;&#49884;&#54000;</button>
     </div>
 
     <div id="mine-main-view" class="mine-subview active"><div class="mine-guide-text">피켈맨 : 여기는 야근 수당이 어떻게 돼요?</div>
@@ -970,12 +970,7 @@
       <div id="mine-rock-area" class="mine-rock-area">
         <img id="mine-rock-img" src="sprites/mine/stone.png" class="mine-rock-img" alt="돌">
       </div>
-
-      <button id="blockman-egg-button" class="blockman-egg-button" onclick="event.preventDefault(); event.stopPropagation(); openBlockmanEggPanel(); return false;" aria-label="블록맨 에그">
-        <img src="sprites/item/block_egg.png" alt="블록맨 에그">
-      </button>
-
-    </div>
+</div>
 
     <div id="mine-result-text" class="mine-result-text"></div>
 
@@ -1017,25 +1012,118 @@
 
     <div id="mine-city-view" class="mine-subview" hidden>
       <div class="block-city-panel">
-        <div class="block-city-hero">
-          <img src="sprites/item/block_egg.png" class="block-city-egg-img" alt="BLOCKMAN EGG">
-          <div class="block-city-titlebox">
-            <div class="block-city-title">BLOCK CITY</div>
-            <div id="block-city-state" class="block-city-state">BLOCKMAN EGG LOCKED</div>
+        <div class="block-city-rebuild-top">
+          <div class="block-city-stage block-city-portrait-stage" id="block-city-stage" aria-label="블록맨 상태">
+            <div class="block-city-spotlight" aria-hidden="true"></div>
+            <span class="block-city-light-ring" aria-hidden="true"></span>
+            <img id="block-city-blockman-img" src="sprites/mine/blockcity/blockman/blockman_rest.png" class="block-city-blockman-img resting" alt="블록맨">
+            <span id="block-city-portrait-state" class="block-city-portrait-state">블록맨</span>
+          </div>
+
+          <div class="block-city-summary">
+            <div class="block-city-rebuild-head">
+              <span id="block-city-rebuild-title">모래밭</span>
+              <b id="block-city-rebuild-progress">0%</b>
+            </div>
+            <div class="block-city-progress-bar"><i id="block-city-progress-fill"></i></div>
+            <div id="block-city-current-goal" class="block-city-current-goal">모래를 모아 첫 석재를 가공하세요.</div>
+            <div id="block-city-next-effect" class="block-city-next-effect">다음 효과: 석재 가공 해금</div>
+            <div id="block-city-crew-line" class="block-city-crew-line">건설 로봇 0 / 8</div>
           </div>
         </div>
 
-        <div class="block-city-grid">
-          <div class="block-city-card"><span>CITY CORE</span><b id="block-city-core">LOCKED</b></div>
-          <div class="block-city-card"><span>BLOCKS</span><b id="block-city-blocks">0 / 10</b></div>
-          <div class="block-city-card"><span>BUILD SLOT</span><b id="block-city-slots">READY SOON</b></div>
-        </div>
+        <div class="block-city-rebuild">          <div class="block-city-resource-grid">
+            <div><span>🏖️ 모래</span><b id="block-city-sand">0</b></div>
+            <div><span>🪨 석재</span><b id="block-city-blocks">0</b></div>
+            <div><span>⛏️ 광석</span><b id="block-city-rubble">0</b></div>
+            <div><span>⚡ 동력</span><b id="block-city-power">0</b></div>
+            <div><span>🔧 금속</span><b id="block-city-ease">0</b></div>
+            <div><span>⚙️ 부품</span><b id="block-city-attention">0</b></div>
+            <div><span>📘 연구</span><b id="block-city-love">0</b></div>
+            <div><span>✨ 희망</span><b id="block-city-hope">0</b></div>
+          </div>
+<div class="block-city-rate-line" id="block-city-rate-line">자동화 없음</div>
 
-        <div id="block-city-note" class="block-city-note">
-          BLOCKMAN vein drops 1 block piece. Gather 10 pieces to wake the EGG and open the first city build.
-        </div>
+          <div class="block-city-view-switch" role="tablist" aria-label="블록시티 보기 전환">
+            <button type="button" id="block-city-view-craft-btn" class="block-city-view-btn" onclick="setBlockCitySubView('craft')" aria-selected="false">가공</button>
+            <button type="button" id="block-city-view-city-btn" class="block-city-view-btn active" onclick="setBlockCitySubView('city')" aria-selected="true">블록시티</button>
+            <button type="button" id="block-city-view-research-btn" class="block-city-view-btn" onclick="setBlockCitySubView('research')" aria-selected="false">연구</button>
+          </div>
+          <div class="block-city-action-grid">
+            <button type="button" id="block-city-sand-btn" class="block-city-action-btn primary" onclick="gatherBlockCitySand()">
+              <b>🏖️ 모래 줍기</b><span>비용 없음</span><em>블록맨이 손으로 모래를 긁어모읍니다.</em>
+            </button>
+            <button type="button" id="block-city-block-btn" class="block-city-action-btn" onclick="craftBlockCityBlock()">
+              <b>🪨 석재 가공</b><span>🏖️ 모래 10</span><em>모래를 압축해 석재 자재를 만듭니다.</em>
+            </button>
+            <button type="button" id="block-city-rubble-btn" class="block-city-action-btn" onclick="clearBlockCityRubble()">
+              <b>⛏️ 광석 선별</b><span>🪨 석재 2</span><em>석재를 깨서 쓸만한 광석을 골라냅니다.</em>
+            </button>
+                        <button type="button" id="block-city-smelt-btn" class="block-city-action-btn process" onclick="smeltBlockCityMetal()">
+              <b>🔧 금속 제련</b><span>해금 필요</span><em>광석과 동력으로 금속을 만듭니다.</em>
+            </button>
+            <button type="button" id="block-city-parts-btn" class="block-city-action-btn process" onclick="craftBlockCityParts()">
+              <b>⚙️ 부품 가공</b><span>해금 필요</span><em>금속과 동력으로 부품을 만듭니다.</em>
+            </button>
+            <button type="button" id="block-city-research-btn" class="block-city-action-btn process" onclick="runBlockCityResearch()">
+              <b>📘 연구 수행</b><span>해금 필요</span><em>부품과 동력으로 연구를 축적합니다.</em>
+            </button>
+            <button type="button" id="block-city-hope-btn" class="block-city-action-btn process" onclick="refineBlockCityHope()">
+              <b>✨ 희망 정제</b><span>해금 필요</span><em>연구와 부품으로 희망을 정제합니다.</em>
+            </button><button type="button" id="block-city-rescue-btn" class="block-city-action-btn" onclick="rescueBlockman()">
+              <b>🤖 블록맨 깨우기</b><span>🏖️ 모래 30 / 🪨 석재 3 / 🪨 돌 20</span><em>블록맨이 일어나 로봇 재건을 시작합니다.</em>
+            </button>
+            <button type="button" id="block-city-sandpit-btn" class="block-city-action-btn" onclick="buildBlockCitySandPit()">
+              <b>🤖 모래 자동채집 로봇</b><span>🪨 석재 6 / 🔩 180</span><em>모래를 자동으로 모으는 첫 로봇입니다.</em>
+            </button>
+            <button type="button" id="block-city-press-btn" class="block-city-action-btn" onclick="buildBlockCityPress()">
+              <b>🏠 석재 쉘터 건설</b><span>🏖️ 모래 80 / 🪨 석재 14 / 🔩 220</span><em>구직중이던 건설 로봇이 입사합니다.</em>
+            </button>
+            <button type="button" id="block-city-generator-btn" class="block-city-action-btn" onclick="repairBlockCityGenerator()">
+              <b>⚡ 발전기 복구</b><span>⛏️ 광석 25 / 🔩 500 / 🧪 1</span><em>동력 자동 생산을 시작합니다.</em>
+            </button>
+            <button type="button" id="block-city-worker-btn" class="block-city-action-btn" onclick="hireBlockCityWorker()">
+              <b>🏗️ 건설 로봇 입사</b><span>모래 / 석재 / 나사</span><em>광석을 가져오지만 모래를 조금씩 씁니다.</em>
+            </button>
+            <button type="button" id="block-city-depot-btn" class="block-city-action-btn" onclick="restoreBlockCityDepot()">
+              <b>📦 저장고</b><span>🪨 석재 35 / 🔧 금속 12 / ⚡ 동력 24</span><em>건설 로봇 한도와 광석/부품 흐름이 증가합니다.</em>
+            </button>
+            <button type="button" id="block-city-shelter-btn" class="block-city-action-btn" onclick="restoreBlockCityShelter()">
+              <b>🔧 광석 제련소</b><span>⛏️ 광석 45 / ⚡ 동력 40 / 🪨 석재 15</span><em>금속을 만들고 모래 로봇 효율도 올립니다.</em>
+            </button>
+            <button type="button" id="block-city-notice-btn" class="block-city-action-btn" onclick="openBlockCityNoticeBoard()">
+              <b>📘 연구소</b><span>⚙️ 부품 10 / 🔧 금속 25 / ⚡ 동력 60 / 🔩 1,200</span><em>부품을 연구로 바꾸는 시설입니다.</em>
+            </button>
+            <button type="button" id="block-city-beacon-btn" class="block-city-action-btn" onclick="lightBlockCityBeacon()">
+              <b>✨ 희망 정제소</b><span>📘 연구 25 / ⚙️ 부품 20 / 🧪 5</span><em>연구를 마지막 정수인 희망으로 정제합니다.</em>
+            </button>
+                      <button type="button" id="block-city-upgrade-sandpit-btn" class="block-city-action-btn growth" onclick="upgradeBlockCitySandPit()">
+              <b>🤖 모래 로봇 추가</b><span>해금 필요</span><em>모래 자동채집을 늘립니다.</em>
+            </button>
+            <button type="button" id="block-city-upgrade-press-btn" class="block-city-action-btn growth" onclick="upgradeBlockCityPress()">
+              <b>🏠 석재 쉘터 정비</b><span>해금 필요</span><em>건설 로봇이 버틸 기반을 다집니다.</em>
+            </button>
+            <button type="button" id="block-city-upgrade-generator-btn" class="block-city-action-btn growth" onclick="upgradeBlockCityGenerator()">
+              <b>⚡ 발전기 안정화</b><span>해금 필요</span><em>동력 생산과 로봇 유지비를 보정합니다.</em>
+            </button>
+            <button type="button" id="block-city-upgrade-depot-btn" class="block-city-action-btn growth" onclick="upgradeBlockCityDepot()">
+              <b>📦 저장 동선 정리</b><span>해금 필요</span><em>광석과 부품 흐름을 정리합니다.</em>
+            </button>
+            <button type="button" id="block-city-upgrade-shelter-btn" class="block-city-action-btn growth" onclick="upgradeBlockCityShelter()">
+              <b>🔧 제련소 확장</b><span>해금 필요</span><em>금속과 모래 로봇 효율을 함께 올립니다.</em>
+            </button>
+            <button type="button" id="block-city-upgrade-notice-btn" class="block-city-action-btn growth" onclick="upgradeBlockCityNotice()">
+              <b>📘 연구소 확장</b><span>해금 필요</span><em>부품에서 연구로 이어지는 공정을 키웁니다.</em>
+            </button>
+            <button type="button" id="block-city-upgrade-beacon-btn" class="block-city-action-btn growth" onclick="upgradeBlockCityBeacon()">
+              <b>✨ 희망 정제 강화</b><span>해금 필요</span><em>연구가 희망으로 이어지는 정제 효율을 키웁니다.</em>
+            </button>
+            <button type="button" id="block-city-share-love-btn" class="block-city-action-btn growth" onclick="shareBlockCityLove()">
+              <b>🏛️ 개발소 강화</b><span>해금 필요</span><em>희망을 전체 생산 보너스로 전환합니다.</em>
+            </button></div>
 
-        <button type="button" id="block-city-egg-btn" class="block-city-egg-btn" onclick="openBlockmanEggPanel()">CHECK EGG</button>
+          <div id="block-city-rebuild-log" class="block-city-rebuild-log">블록맨은 모래 한 줌에서 도시를 다시 세우려 합니다.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1046,20 +1134,20 @@
 <div id="status-tab" class="tab-content">
   <div class="system-panel status-panel">
     <div class="status-section">
-      <div class="status-view-switch" role="tablist" aria-label="status view switch">
+      <div class="status-view-switch" role="tablist" aria-label="&#49345;&#53468; &#48372;&#44592; &#51204;&#54872;">
         <button type="button" id="status-view-stats-btn" class="status-view-btn active" onclick="setStatusSubView('stats')" aria-selected="true">&#49345;&#53468;</button>
         <button type="button" id="status-view-missions-btn" class="status-view-btn" onclick="setStatusSubView('missions')" aria-selected="false">&#48120;&#49496; <span id="mission-ready-badge" class="mission-ready-badge"></span></button>
       </div>
 
       <div id="status-stats-view" class="status-subview active">
-        <div class="status-legend"><span class="status-card-bonus">CARD</span><span class="status-transcend-bonus">REBOOT</span><span class="status-ecan-bonus">E-CAN</span><span class="status-soul-bonus">LIGHT CORE</span></div>
+        <div class="status-legend"><span class="status-card-bonus">&#52852;&#46300;</span><span class="status-transcend-bonus">&#47532;&#48512;&#53944;</span><span class="status-ecan-bonus">E&#52884;</span><span class="status-soul-bonus">&#46972;&#51060;&#53944;&#53076;&#50612;</span></div>
         <div id="status-stat-rows" class="status-stat-rows"></div>
       </div>
 
       <div id="status-missions-view" class="status-subview">
         <div class="mission-panel" id="mission-panel">
           <div class="mission-panel-head">
-            <span>MISSION</span>
+            <span>&#48120;&#49496;</span>
             <b id="mission-summary">0 / 0</b>
           </div>
           <div id="mission-list" class="mission-list"></div>
@@ -1140,7 +1228,7 @@
   </div>
 </div>
 
-<script src="game.js?v=block_city_v206"></script>
+<script src="game.js?v=block_city_tabs_balance_v255"></script>
 
 
 </body>
