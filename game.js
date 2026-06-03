@@ -6314,58 +6314,93 @@ const BLOCK_CITY_RESOURCE = {
 };
 
 
-let currentBlockCitySubView = 'city';
+let currentBlockCitySubView = 'research';
+const BLOCK_CITY_RESEARCH_BUTTON_IDS = [
+    'block-city-sand-btn',
+    'block-city-block-btn',
+    'block-city-rescue-btn',
+    'block-city-sandpit-btn',
+    'block-city-upgrade-sandpit-btn',
+    'block-city-press-btn',
+    'block-city-upgrade-press-btn',
+    'block-city-worker-btn',
+    'block-city-generator-btn',
+    'block-city-upgrade-generator-btn',
+    'block-city-depot-btn',
+    'block-city-upgrade-depot-btn',
+    'block-city-shelter-btn',
+    'block-city-upgrade-shelter-btn',
+    'block-city-notice-btn',
+    'block-city-upgrade-notice-btn',
+    'block-city-beacon-btn',
+    'block-city-upgrade-beacon-btn',
+    'block-city-share-love-btn'
+];
+const BLOCK_CITY_SHOP_BUTTON_IDS = [
+    'block-city-shop-screws-btn',
+    'block-city-shop-card-chip-btn',
+    'block-city-shop-boss-ticket-btn',
+    'block-city-shop-lightcore-btn'
+];
 const BLOCK_CITY_SUBVIEW_BUTTON_IDS = {
-    craft: [
-        'block-city-sand-btn',
-        'block-city-block-btn',
-        'block-city-rubble-btn',
-        'block-city-smelt-btn',
-        'block-city-parts-btn',
-        'block-city-research-btn',
-        'block-city-hope-btn'
-    ],
-    city: [
-        'block-city-rescue-btn',
-        'block-city-sandpit-btn',
-        'block-city-press-btn',
-        'block-city-generator-btn',
-        'block-city-worker-btn',
-        'block-city-depot-btn',
-        'block-city-shelter-btn',
-        'block-city-upgrade-sandpit-btn',
-        'block-city-upgrade-press-btn',
-        'block-city-upgrade-generator-btn',
-        'block-city-upgrade-depot-btn',
-        'block-city-upgrade-shelter-btn'
-    ],
-    research: [
-        'block-city-notice-btn',
-        'block-city-beacon-btn',
-        'block-city-upgrade-notice-btn',
-        'block-city-upgrade-beacon-btn',
-        'block-city-share-love-btn'
-    ]
+    research: BLOCK_CITY_RESEARCH_BUTTON_IDS,
+    shop: BLOCK_CITY_SHOP_BUTTON_IDS,
+    craft: BLOCK_CITY_RESEARCH_BUTTON_IDS,
+    city: BLOCK_CITY_RESEARCH_BUTTON_IDS
+};
+const BLOCK_CITY_ACTION_ORDER = {
+    'block-city-sand-btn': 10,
+    'block-city-block-btn': 20,
+    'block-city-rescue-btn': 25,
+    'block-city-sandpit-btn': 30,
+    'block-city-upgrade-sandpit-btn': 35,
+    'block-city-press-btn': 40,
+    'block-city-upgrade-press-btn': 45,
+    'block-city-worker-btn': 50,
+    'block-city-generator-btn': 60,
+    'block-city-upgrade-generator-btn': 65,
+    'block-city-depot-btn': 70,
+    'block-city-upgrade-depot-btn': 75,
+    'block-city-shelter-btn': 80,
+    'block-city-upgrade-shelter-btn': 85,
+    'block-city-notice-btn': 90,
+    'block-city-upgrade-notice-btn': 95,
+    'block-city-beacon-btn': 100,
+    'block-city-upgrade-beacon-btn': 105,
+    'block-city-share-love-btn': 110,
+    'block-city-shop-screws-btn': 10,
+    'block-city-shop-card-chip-btn': 20,
+    'block-city-shop-boss-ticket-btn': 30,
+    'block-city-shop-lightcore-btn': 40
 };
 
-function setBlockCitySubView(view = 'city') {
-    currentBlockCitySubView = Object.prototype.hasOwnProperty.call(BLOCK_CITY_SUBVIEW_BUTTON_IDS, view) ? view : 'city';
+function setBlockCitySubView(view = 'research') {
+    currentBlockCitySubView = view === 'shop' ? 'shop' : 'research';
     updateBlockCitySubView();
 }
 
 function updateBlockCitySubView() {
-    const activeIds = new Set(BLOCK_CITY_SUBVIEW_BUTTON_IDS[currentBlockCitySubView] || BLOCK_CITY_SUBVIEW_BUTTON_IDS.city);
-    Object.values(BLOCK_CITY_SUBVIEW_BUTTON_IDS).flat().forEach(id => {
+    const activeIds = new Set(BLOCK_CITY_SUBVIEW_BUTTON_IDS[currentBlockCitySubView] || BLOCK_CITY_RESEARCH_BUTTON_IDS);
+    const allIds = new Set(Object.values(BLOCK_CITY_SUBVIEW_BUTTON_IDS).flat());
+    allIds.forEach(id => {
         const btn = document.getElementById(id);
-        if (btn) btn.classList.toggle('group-hidden', !activeIds.has(id));
+        if (!btn) return;
+        btn.classList.toggle('group-hidden', !activeIds.has(id));
+        btn.style.order = String(BLOCK_CITY_ACTION_ORDER[id] || 999);
     });
-    ['craft', 'city', 'research'].forEach(view => {
+    ['research', 'shop'].forEach(view => {
         const tab = document.getElementById(`block-city-view-${view}-btn`);
         if (!tab) return;
         const active = view === currentBlockCitySubView;
         tab.classList.toggle('active', active);
         tab.setAttribute('aria-selected', String(active));
     });
+    const shopNote = document.getElementById('block-city-shop-note');
+    if (shopNote) {
+        const shopActive = currentBlockCitySubView === 'shop';
+        shopNote.hidden = !shopActive;
+        shopNote.classList.toggle('group-hidden', !shopActive);
+    }
 }
 function normalizeBlockCityLevels(city) {
     if (!city.levels || typeof city.levels !== 'object') city.levels = {};
@@ -6378,6 +6413,77 @@ function normalizeBlockCityLevels(city) {
     return city.levels;
 }
 
+const BLOCK_CITY_SHOP_ITEMS = {
+    screws: {
+        buttonId: 'block-city-shop-screws-btn',
+        label: '🔩 나사 100,000개',
+        baseHope: 24,
+        rewardText: '🔩 나사 +100,000'
+    },
+    cardChip: {
+        buttonId: 'block-city-shop-card-chip-btn',
+        label: '💿 카드칩 1개',
+        baseHope: 36,
+        rewardText: '💿 카드칩 +1'
+    },
+    bossTicket: {
+        buttonId: 'block-city-shop-boss-ticket-btn',
+        label: '🎫 보스티켓 1개',
+        baseHope: 48,
+        rewardText: '🎫 보스티켓 +1'
+    },
+    lightCore: {
+        buttonId: 'block-city-shop-lightcore-btn',
+        label: '💡 라이트코어 1개',
+        baseHope: 85,
+        rewardText: '💡 라이트코어 +1'
+    }
+};
+const BLOCK_CITY_SHOP_COST_GROWTH = 1.35;
+
+function ensureBlockCityShopPurchases(city = getBlockCityRebuildData()) {
+    if (!city.shopPurchases || typeof city.shopPurchases !== 'object') city.shopPurchases = {};
+    Object.keys(BLOCK_CITY_SHOP_ITEMS).forEach(key => {
+        city.shopPurchases[key] = Math.max(0, Math.floor(Number(city.shopPurchases[key] || 0)));
+    });
+    return city.shopPurchases;
+}
+
+function getBlockCityShopCost(key, city = getBlockCityRebuildData()) {
+    const item = BLOCK_CITY_SHOP_ITEMS[key];
+    if (!item) return { hope: 999999 };
+    const count = ensureBlockCityShopPurchases(city)[key] || 0;
+    return { hope: Math.max(1, Math.ceil(item.baseHope * Math.pow(BLOCK_CITY_SHOP_COST_GROWTH, count))) };
+}
+
+function grantBlockCityShopReward(key) {
+    if (!gameData.materials) gameData.materials = { ...defaultData.materials };
+    if (key === 'screws') gameData.screws = Math.floor(gameData.screws || 0) + 100000;
+    if (key === 'lightCore') gameData.soulStones = Math.floor(gameData.soulStones || 0) + 1;
+    if (key === 'bossTicket') gameData.materials.bossReplayCard = Math.floor(gameData.materials.bossReplayCard || 0) + 1;
+    if (key === 'cardChip') gameData.materials.cardChip = Math.floor(gameData.materials.cardChip || 0) + 1;
+}
+
+function buyBlockCityShopItem(key) {
+    const city = getBlockCityRebuildData();
+    const item = BLOCK_CITY_SHOP_ITEMS[key];
+    if (!item) return;
+    if (!city.zones.beacon) {
+        showBlockCityLog('희망 정제소를 먼저 지어야 상점을 이용할 수 있습니다.');
+        return;
+    }
+    const cost = getBlockCityShopCost(key, city);
+    if (!spendBlockCityCost(cost)) {
+        showBlockCityLog(`${item.label} 구매 비용 부족: ${describeBlockCityCost(cost)}`);
+        return;
+    }
+    grantBlockCityShopReward(key);
+    const purchases = ensureBlockCityShopPurchases(city);
+    purchases[key] += 1;
+    showBlockCityLog(`${item.rewardText} 구매 완료. 다음 가격이 조금 올라갑니다.`);
+    saveData();
+    updateUI();
+}
 function getBlockCityRebuildData() {
     if (!gameData.blockCityRebuild || typeof gameData.blockCityRebuild !== 'object') {
         gameData.blockCityRebuild = {
@@ -6414,6 +6520,7 @@ if (zones.generator) zones.press = true;
 if (zones.press) zones.sandPit = true;
 if (zones.sandPit) gameData.blockCityRebuild.rescued = true;
     normalizeBlockCityLevels(gameData.blockCityRebuild);
+    ensureBlockCityShopPurchases(gameData.blockCityRebuild);
     gameData.blockCityRebuild.workers = Math.max(0, Math.min(getBlockCityWorkerLimit(gameData.blockCityRebuild), Math.floor(gameData.blockCityRebuild.workers || 0)));
     gameData.blockCityRebuild.sandShortageTicks = Math.max(0, Math.floor(gameData.blockCityRebuild.sandShortageTicks || 0));
     return gameData.blockCityRebuild;
@@ -6638,7 +6745,11 @@ function renderBlockCityCardText(value) {
     return String(value ?? '')
         .replace(/🔩\s*나사/g, '<img class="block-city-cost-icon" src="sprites/item/screw.png" alt="나사"> 나사')
         .replace(/🧪\s*E캔/g, '<img class="block-city-cost-icon" src="sprites/item/e_can.png" alt="E캔"> E캔')
-        .replace(/🪨\s*돌/g, '<img class="block-city-cost-icon" src="sprites/mine/stone.png" alt="돌"> 돌');
+        .replace(/🪨\s*돌/g, '<img class="block-city-cost-icon" src="sprites/mine/stone.png" alt="돌"> 돌')
+        .replace(/💡\s*라이트코어/g, '<img class="block-city-cost-icon" src="sprites/item/light_stone.png" alt="라이트코어"> 라이트코어')
+        .replace(/🎫\s*보스티켓/g, '<img class="block-city-cost-icon" src="sprites/item/boss_ticket.png" alt="보스티켓"> 보스티켓')
+        .replace(/🎫\s*보스재생카드/g, '<img class="block-city-cost-icon" src="sprites/item/boss_ticket.png" alt="보스재생카드"> 보스재생카드')
+        .replace(/💿\s*카드칩/g, '<img class="block-city-cost-icon block-city-cardchip-icon" src="sprites/boss/reward/cardchip.png" alt="카드칩"> 카드칩');
 }
 function setBlockCityAction(id, config) {
     const btn = document.getElementById(id);
@@ -6661,14 +6772,16 @@ function setBlockCityAction(id, config) {
     const hasUnlockCost = typeof cost === 'string' && cost.startsWith('해금:');
     const status = config.status || (complete ? (config.completeStatus || '가동 중') : enabled ? '실행 가능' : hasUnlockCost ? '해금 대기' : lockedReason);
     const effect = complete ? (config.completeEffect || config.effect || '효과 적용 중') : (config.effect || '');
+    const renderedLabel = renderBlockCityCardText(config.label);
     const renderedCost = renderBlockCityCardText(cost);
     const renderedEffect = renderBlockCityCardText(effect);
     const renderedStatus = renderBlockCityCardText(status);
+    const effectHtml = renderedEffect ? `<em>${renderedEffect}</em>` : '';
     btn.disabled = !enabled;
     btn.classList.toggle('active', enabled);
     btn.classList.toggle('complete', complete);
     btn.classList.toggle('locked', !enabled && !complete);
-    btn.innerHTML = `<b>${config.label}</b><span>${renderedCost}</span><em>${renderedEffect}</em><small class="block-city-card-status">${renderedStatus}</small>`;
+    btn.innerHTML = `<b>${renderedLabel}</b><span>${renderedCost}</span>${effectHtml}<small class="block-city-card-status">${renderedStatus}</small>`;
 }
 
 function showBlockCityLog(message) {
@@ -7215,15 +7328,8 @@ function updateBlockCityUI() {
     const zones = city.zones || {};
     const hasAnyZone = Object.values(zones).some(Boolean);
     const hasReachedBlocks = city.sand >= stoneCost.sand || city.blocks > 0 || city.rubble > 0 || city.rescued || hasAnyZone;
-    const hasReachedRubble = city.blocks >= oreCost.blocks || city.rubble > 0 || city.rescued || hasAnyZone;
-    const hasReachedRescue = city.rubble >= 1 || city.rescued || hasAnyZone;
+    const hasReachedRescue = city.blocks >= rescueCost.blocks || city.rescued || hasAnyZone;
     const showBlockCraftAction = hasReachedBlocks;
-    const showRubbleCraftAction = hasReachedRubble;
-    const showMetalCraftAction = zones.shelter || city.ease > 0 || zones.notice || zones.beacon;
-    const showPartsCraftAction = zones.depot || city.attention > 0 || zones.notice || zones.beacon;
-    const showResearchCraftAction = zones.notice || city.love > 0 || zones.beacon;
-    const showHopeCraftAction = zones.beacon || city.hope > 0;
-
     setBlockCityAction('block-city-sand-btn', {
         enabled: !!gameData.blockmanEggOwned,
         label: gameData.blockmanEggOwned ? '🏖️ 모래 줍기' : `🔒 조각 ${Math.floor(gameData.blockmanBlocks || 0)}/10`,
@@ -7239,14 +7345,14 @@ function updateBlockCityUI() {
     });
     setBlockCityAction('block-city-rubble-btn', {
         enabled: canSpendBlockCityCost(oreCost),
-        hidden: !showRubbleCraftAction,
+        hidden: true,
         label: '⛏️ 광석 선별',
         cost: describeBlockCityCost(oreCost),
         effect: '효과: ⛏️ 광석 +1'
     });
     setBlockCityAction('block-city-smelt-btn', {
         enabled: city.zones.shelter && canSpendBlockCityCost(metalCost),
-        hidden: !showMetalCraftAction,
+        hidden: true,
         label: '🔧 금속 제련',
         cost: city.zones.shelter ? describeBlockCityCost(metalCost) : '해금: 광석 제련소 건설',
         effect: '효과: 🔧 금속 +1',
@@ -7254,7 +7360,7 @@ function updateBlockCityUI() {
     });
     setBlockCityAction('block-city-parts-btn', {
         enabled: city.zones.depot && canSpendBlockCityCost(partsCost),
-        hidden: !showPartsCraftAction,
+        hidden: true,
         label: '⚙️ 부품 가공',
         cost: city.zones.depot ? describeBlockCityCost(partsCost) : '해금: 저장고 건설',
         effect: '효과: ⚙️ 부품 +1',
@@ -7262,7 +7368,7 @@ function updateBlockCityUI() {
     });
     setBlockCityAction('block-city-research-btn', {
         enabled: city.zones.notice && canSpendBlockCityCost(researchCost),
-        hidden: !showResearchCraftAction,
+        hidden: true,
         label: '📘 연구 수행',
         cost: city.zones.notice ? describeBlockCityCost(researchCost) : '해금: 연구소 건설',
         effect: '효과: 📘 연구 +1',
@@ -7270,7 +7376,7 @@ function updateBlockCityUI() {
     });
     setBlockCityAction('block-city-hope-btn', {
         enabled: city.zones.beacon && canSpendBlockCityCost(hopeCost),
-        hidden: !showHopeCraftAction,
+        hidden: true,
         label: '✨ 희망 정제',
         cost: city.zones.beacon ? describeBlockCityCost(hopeCost) : '해금: 희망 정제소 건설',
         effect: '효과: ✨ 희망 +1',
@@ -7453,6 +7559,22 @@ function updateBlockCityUI() {
             hidden: !unlocked
         });
     });
+
+    Object.keys(BLOCK_CITY_SHOP_ITEMS).forEach(key => {
+        const item = BLOCK_CITY_SHOP_ITEMS[key];
+        const cost = getBlockCityShopCost(key, city);
+        const unlocked = !!city.zones.beacon;
+        const canBuy = unlocked && canSpendBlockCityCost(cost);
+        const purchases = ensureBlockCityShopPurchases(city)[key] || 0;
+        setBlockCityAction(item.buttonId, {
+            enabled: canBuy,
+            label: item.label,
+            cost: unlocked ? describeBlockCityCost(cost) : '해금: 희망 정제소 건설',
+            effect: '',
+            status: unlocked ? (canBuy ? `${purchases}회 구매` : '희망 부족') : '해금 대기',
+            locked: unlocked ? '희망 부족' : '해금: 희망 정제소 건설'
+        });
+    });
     updateBlockCitySubView();
 }
 
@@ -7460,6 +7582,7 @@ if (typeof window !== 'undefined') {
     Object.assign(window, {
         setMineSubView,
         setBlockCitySubView,
+        buyBlockCityShopItem,
         gatherBlockCitySand,
         craftBlockCityBlock,
         clearBlockCityRubble,

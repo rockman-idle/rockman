@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>rockman idle</title>
-<link rel="stylesheet" href="style.css?v=block_city_metal_gate_v258">
+<link rel="stylesheet" href="style.css?v=block_city_shop_v260">
 </head>
 
 <body>
@@ -1045,10 +1045,10 @@
 <div class="block-city-rate-line" id="block-city-rate-line">자동화 없음</div>
 
           <div class="block-city-view-switch" role="tablist" aria-label="블록시티 보기 전환">
-            <button type="button" id="block-city-view-craft-btn" class="block-city-view-btn" onclick="setBlockCitySubView('craft')" aria-selected="false">가공</button>
-            <button type="button" id="block-city-view-city-btn" class="block-city-view-btn active" onclick="setBlockCitySubView('city')" aria-selected="true">블록시티</button>
-            <button type="button" id="block-city-view-research-btn" class="block-city-view-btn" onclick="setBlockCitySubView('research')" aria-selected="false">연구</button>
+            <button type="button" id="block-city-view-research-btn" class="block-city-view-btn active" onclick="setBlockCitySubView('research')" aria-selected="true">연구</button>
+            <button type="button" id="block-city-view-shop-btn" class="block-city-view-btn shop" onclick="setBlockCitySubView('shop')" aria-selected="false">상점</button>
           </div>
+          <div id="block-city-shop-note" class="block-city-shop-note group-hidden" hidden>구매할수록 더 많은 희망이 필요합니다.</div>
           <div class="block-city-action-grid">
             <button type="button" id="block-city-sand-btn" class="block-city-action-btn primary" onclick="gatherBlockCitySand()">
               <b>🏖️ 모래 줍기</b><span>비용 없음</span><em>블록맨이 손으로 모래를 긁어모읍니다.</em>
@@ -1120,7 +1120,20 @@
             </button>
             <button type="button" id="block-city-share-love-btn" class="block-city-action-btn growth" onclick="shareBlockCityLove()">
               <b>🏛️ 개발소 강화</b><span>해금 필요</span><em>희망을 전체 생산 보너스로 전환합니다.</em>
-            </button></div>
+            </button>
+            <button type="button" id="block-city-shop-screws-btn" class="block-city-action-btn shop" onclick="buyBlockCityShopItem('screws')">
+              <b>🔩 나사 100,000개</b><span>✨ 희망</span><em></em>
+            </button>
+            <button type="button" id="block-city-shop-card-chip-btn" class="block-city-action-btn shop" onclick="buyBlockCityShopItem('cardChip')">
+              <b>💿 카드칩 1개</b><span>✨ 희망</span><em></em>
+            </button>
+            <button type="button" id="block-city-shop-boss-ticket-btn" class="block-city-action-btn shop" onclick="buyBlockCityShopItem('bossTicket')">
+              <b>🎫 보스티켓 1개</b><span>✨ 희망</span><em></em>
+            </button>
+            <button type="button" id="block-city-shop-lightcore-btn" class="block-city-action-btn shop premium" onclick="buyBlockCityShopItem('lightCore')">
+              <b>💡 라이트코어 1개</b><span>✨ 희망</span><em></em>
+            </button>
+          </div>
 
           <div id="block-city-rebuild-log" class="block-city-rebuild-log">블록맨은 모래 한 줌에서 도시를 다시 세우려 합니다.</div>
         </div>
@@ -1228,7 +1241,7 @@
   </div>
 </div>
 
-<script src="game.js?v=block_city_metal_gate_v258"></script>
+<script src="game.js?v=block_city_shop_v260"></script>
 
 
 </body>
